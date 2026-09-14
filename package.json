@@ -1,14 +1,14 @@
 {
   "name": "titanbot",
   "version": "1.0.0",
-  "description": "Bot para grupos de WhatsApp",
+  "description": "TITANBOT - WhatsApp bot con vinculación QR web",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "latest",
-    "pino": "latest",
-    "qrcode": "latest"
+    "@whiskeysockets/baileys": "7.0.0-rc.14",
+    "pino": "^9.7.0",
+    "qrcode": "^1.5.4"
   }
 }
