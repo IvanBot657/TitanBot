@@ -995,4 +995,4 @@ ${admins || "No encontrados."}`
 // 🚀 INICIAR
 // ==========================================
 
-iniciarBot();        
+iniciarBot();
