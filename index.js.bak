@@ -9,7 +9,6 @@ const {
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
-  fetchLatestWaWebVersion,
   Browsers
 } = require("@whiskeysockets/baileys");
 
@@ -525,7 +524,7 @@ const extraCommands = {
   logs: '📋 Los logs muestran lo que ocurre en el servidor.',
   servidor: '🖥️ Un servidor procesa solicitudes y ejecuta servicios.',
   puerto: '🔌 Un puerto permite recibir conexiones de red.',
-  qr: '🔐 La vinculación actual de TITANBOT usa Pairing Code.',
+  qr: '📷 La vinculación actual de TITANBOT usa QR.',
   vincular: '📱 Ve a WhatsApp → Dispositivos vinculados → Vincular dispositivo.',
   conexion: '🔗 TITANBOT usa una conexión con WhatsApp Web.',
   perfil2: '👤 Usa .perfil para ver tu perfil.',
@@ -1407,70 +1406,30 @@ async function setTitanBotProfilePicture() {
 async function startBot() {
   try {
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-
-    // WhatsApp puede rechazar el emparejamiento si usamos una versión
-    // de Web desactualizada. Preferimos la revisión viva de web.whatsapp.com
-    // y dejamos fetchLatestBaileysVersion() como respaldo.
-    let version;
-    try {
-      const live = await fetchLatestWaWebVersion({});
-      version = live.version;
-      console.log(`🌐 WhatsApp Web live version: ${version.join(".")}`);
-    } catch (liveError) {
-      const fallback = await fetchLatestBaileysVersion({});
-      version = fallback.version;
-      console.log(`⚠️ No se pudo obtener la versión Web en vivo. Usando Baileys: ${version.join(".")}`);
-    }
+    const { version } = await fetchLatestBaileysVersion();
 
     sock = makeWASocket({
       version,
       auth: state,
       printQRInTerminal: false,
       logger: pino({ level: "silent" }),
-      // Chrome/Linux mantiene el flujo como WEB_BROWSER y evita anunciar
-      // un cliente Desktop de macOS desde Render.
-      browser: Browsers.ubuntu("Chrome"),
-      generateHighQualityLinkPreview: true,
-      syncFullHistory: false
+      browser: Browsers.macOS("TitanBot"),
+      generateHighQualityLinkPreview: true
     });
 
     sock.ev.on("creds.update", saveCreds);
-
-    let pairingRequested = false;
 
     sock.ev.on("connection.update", async update => {
       try {
         const { connection, lastDisconnect, qr } = update;
 
-        // Baileys emite un QR internamente antes de aceptar el Pairing Code.
-        // Lo usamos solamente como señal de que el socket ya está listo;
-        // el QR nunca se muestra ni se ofrece al usuario.
-        if (qr && !state.creds.registered && !pairingRequested) {
-          pairingRequested = true;
-          currentQR = null;
-          botConnection = "pairing";
-
-          if (!PAIRING_NUMBER) {
-            pairingRequested = false;
-            botConnection = "pairing_error";
-            console.log("❌ Falta PAIRING_NUMBER en las variables de entorno.");
-            console.log("📱 Configura PAIRING_NUMBER en formato internacional, sin + ni espacios.");
-          } else {
-            try {
-              const code = await sock.requestPairingCode(PAIRING_NUMBER);
-              pairingCode = code;
-              console.log("================================");
-              console.log("📱 CÓDIGO DE VINCULACIÓN TITANBOT");
-              console.log(`🔐 ${pairingCode}`);
-              console.log("📲 WhatsApp > Dispositivos vinculados > Vincular dispositivo > Vincular con número de teléfono");
-              console.log("================================");
-            } catch (error) {
-              pairingRequested = false;
-              pairingCode = null;
-              botConnection = "pairing_error";
-              console.error("❌ No se pudo generar el Pairing Code:", error?.message || error);
-            }
-          }
+        if (qr && !state.creds.registered) {
+          currentQR = qr;
+          botConnection = "qr";
+          console.log("================================");
+          console.log("📷 QR DE VINCULACIÓN DISPONIBLE EN LA PÁGINA WEB");
+          console.log("📱 Abre la URL de TITANBOT y escanea el QR.");
+          console.log("================================");
         }
 
         if (connection === "connecting") {
@@ -1516,8 +1475,28 @@ async function startBot() {
       }
     });
 
-    // El Pairing Code se solicita dentro de connection.update cuando Baileys
-    // ya emitió la señal QR/handshake. Así evitamos pedirlo demasiado pronto.
+    // Vinculación mediante Pairing Code. El número se configura en Render
+    // con PAIRING_NUMBER, por ejemplo: 573001234567 (sin + ni espacios).
+    if (!state.creds.registered) {
+      if (!PAIRING_NUMBER) {
+        console.log("❌ Falta PAIRING_NUMBER en las variables de entorno.");
+        console.log("📱 Configura PAIRING_NUMBER con tu número en formato internacional, sin +.");
+      } else {
+        try {
+          await sleep(1500);
+          pairingCode = await sock.requestPairingCode(PAIRING_NUMBER);
+          botConnection = "pairing";
+          console.log("================================");
+          console.log("📱 CÓDIGO DE VINCULACIÓN TITANBOT");
+          console.log(`🔐 ${pairingCode}`);
+          console.log("📲 WhatsApp > Dispositivos vinculados > Vincular dispositivo > Vincular con número de teléfono");
+          console.log("================================");
+        } catch (error) {
+          console.error("❌ No se pudo generar el Pairing Code:", error?.message || error);
+          botConnection = "pairing_error";
+        }
+      }
+    }
   } catch (error) {
     console.error("❌ Error iniciando TitanBot:", error);
     setTimeout(startBot, 10000);
