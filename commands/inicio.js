@@ -31,26 +31,32 @@ async function inicio(sock, chat, comando) {
 `👑 CREADOR
 
 🤖 ${config.nombre}
-📦 Versión: ${config.version}`
+📦 Versión: ${config.version}
+
+👑 Número:
+${config.creador}`
     });
   }
 
   if (comando === "menu") {
+
     return sock.sendMessage(chat, {
       text:
-`╔══════════════════════╗
-║     🤖 TITANBOT      ║
-║        V2.5          ║
-╚══════════════════════╝
+`╔════════════════════════════╗
+║       🤖 TITANBOT         ║
+║          V2.5.0           ║
+╚════════════════════════════╝
 
 🎮 INICIO
 .ping
 .info
 .owner
 .version
+.menu
 
 👤 USUARIO
 .perfil
+.registrar
 .nivel
 .xp
 .rank
@@ -62,19 +68,65 @@ async function inicio(sock, chat, comando) {
 .trabajar
 .minar
 .pescar
+.depositar
+.retirar
 .inventario
 .tienda
 .comprar
+.transferir
 
 🎲 JUEGOS
 .dado
 .moneda
 .8ball
+.suerte
+.numero
+.adivina
+.ppt
+.dados
+.juegos
+
+🎌 ANIME
+.anime
+.animeinfo
+.personaje
+
+👥 GRUPOS
+.grupo
+.admins
+.tagall
+.miembros
+.idgrupo
+.reglas
+.grupomenu
 
 🛠️ HERRAMIENTAS
+.herramientas
 .hora
 .fecha
-.calculadora`
+.calculadora
+.id
+.botinfo
+
+⚙️ AJUSTES
+.ajustes
+.estado
+.prefijo
+.configgrupo
+.bienvenida on/off
+.despedida on/off
+
+👑 OWNER
+.owner
+.ownermenu
+.botstatus
+.reiniciar
+
+╔════════════════════════════╗
+║ 🤖 ${config.nombre}
+║ 📦 v${config.version}
+║ 🟢 ONLINE
+╚════════════════════════════╝`
     });
   }
 
