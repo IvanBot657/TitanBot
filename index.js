@@ -1,6 +1,12 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require("@whiskeysockets/baileys");
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason
+} = require("@whiskeysockets/baileys");
+
 const P = require("pino");
-const qrcode = require("qrcode-terminal");
+const QRCode = require("qrcode");
+const fs = require("fs");
 
 async function iniciarBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth_info");
@@ -13,10 +19,16 @@ async function iniciarBot() {
 
   sock.ev.on("creds.update", saveCreds);
 
-  sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
+  sock.ev.on("connection.update", async ({ connection, lastDisconnect, qr }) => {
     if (qr) {
-      console.log("Escanea este código QR para conectar el bot:");
-      qrcode.generate(qr, { small: true });
+      console.log("📱 Escanea el siguiente QR:");
+
+      try {
+        await QRCode.toFile("qr.png", qr);
+        console.log("✅ QR generado correctamente en qr.png");
+      } catch (error) {
+        console.error("❌ Error generando QR:", error);
+      }
     }
 
     if (connection === "open") {
