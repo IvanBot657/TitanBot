@@ -8,572 +8,766 @@ const pino = require("pino");
 const http = require("http");
 const QRCode = require("qrcode");
 
+const config = require("./config");
+
 // ==============================
 // COMANDOS
 // ==============================
 
 const inicio = require("./commands/inicio");
-const usuario = require("./commands/usuario");
+
+const {
+  usuario,
+  ganarXP
+} = require("./commands/usuario");
+
 const economia = require("./commands/economia");
 const juegos = require("./commands/juegos");
 const grupos = require("./commands/grupos");
+const anime = require("./commands/anime");
+const herramientas = require("./commands/herramientas");
+const ajustes = require("./commands/ajustes");
+const owner = require("./commands/owner");
 
 // ==============================
-// CONFIGURACIÓN
+// SERVIDOR WEB
 // ==============================
 
 const PORT = process.env.PORT || 10000;
 
 let qrActual = null;
-let estado = "Iniciando TitanBot...";
-let sockActual = null;
-let iniciando = false;
-
-// ==============================
-// PÁGINA WEB DEL QR
-// ==============================
+let estado = "🔴 Desconectado";
 
 const server = http.createServer(async (req, res) => {
 
   if (req.url === "/qr") {
 
-    let contenidoQR = "";
-
-    if (qrActual) {
-
-      try {
-
-        contenidoQR =
-          await QRCode.toDataURL(qrActual);
-
-      } catch (error) {
-
-        contenidoQR = "";
-      }
-    }
-
     res.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8"
     });
 
-    res.end(`
+    if (!qrActual) {
+
+      res.end(`
 <!DOCTYPE html>
 <html lang="es">
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="5">
 
 <title>TitanBot QR</title>
 
 <style>
-
 body {
-  margin: 0;
-  padding: 0;
   background: #111;
   color: white;
   font-family: Arial, sans-serif;
   text-align: center;
-}
-
-.contenedor {
-  max-width: 500px;
-  margin: 40px auto;
-  padding: 25px;
+  padding: 30px;
 }
 
 h1 {
-  font-size: 30px;
+  color: #00ff88;
 }
 
-.estado {
-  margin: 20px 0;
+p {
   font-size: 18px;
 }
-
-.qr {
-  background: white;
-  padding: 15px;
-  border-radius: 15px;
-  display: inline-block;
-}
-
-.qr img {
-  width: 280px;
-  height: 280px;
-}
-
-.info {
-  margin-top: 25px;
-  line-height: 1.7;
-}
-
-.boton {
-  display: inline-block;
-  margin-top: 20px;
-  padding: 12px 20px;
-  background: #25D366;
-  color: white;
-  text-decoration: none;
-  border-radius: 10px;
-}
-
 </style>
-
-<meta http-equiv="refresh" content="5">
 
 </head>
 
 <body>
 
-<div class="contenedor">
+<h1>🤖 TITANBOT V2.5</h1>
 
-<h1>🤖 TitanBot v2.5</h1>
+<p>Estado: ${estado}</p>
 
-<div class="estado">
-${estado}
-</div>
+<p>⏳ Esperando código QR...</p>
 
-${
-  contenidoQR
-    ? `
-<div class="qr">
-<img src="${contenidoQR}" alt="QR de WhatsApp">
-</div>
-
-<div class="info">
-📱 Abre WhatsApp<br>
-➡️ Dispositivos vinculados<br>
-➡️ Vincular dispositivo<br>
-➡️ Escanea este código QR
-</div>
-`
-    : `
-<div class="info">
-⏳ Esperando código QR...
-<br><br>
-La página se actualizará automáticamente.
-</div>
-`
-}
-
-</div>
+<p>La página se actualizará automáticamente.</p>
 
 </body>
 </html>
 `);
+
+      return;
+    }
+
+    try {
+
+      const imagen =
+        await QRCode.toDataURL(qrActual);
+
+      res.end(`
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Conectar TitanBot</title>
+
+<style>
+body {
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+}
+
+h1 {
+  color: #00ff88;
+}
+
+img {
+  width: 320px;
+  max-width: 90%;
+  background: white;
+  padding: 10px;
+  border-radius: 15px;
+}
+
+p {
+  font-size: 18px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>🤖 TITANBOT V2.5</h1>
+
+<p>📱 Escanea este QR con WhatsApp</p>
+
+<img src="${imagen}">
+
+<p>Estado: ${estado}</p>
+
+</body>
+</html>
+`);
+
+    } catch (error) {
+
+      res.end(`
+        <h1>❌ Error generando QR</h1>
+        <p>${error.message}</p>
+      `);
+
+    }
 
     return;
   }
 
   res.writeHead(200, {
-    "Content-Type": "text/html; charset=utf-8"
+    "Content-Type": "text/plain; charset=utf-8"
   });
 
-  res.end(`
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-<title>TitanBot</title>
-</head>
+  res.end(
+    `🤖 ${config.nombre} v${config.version}\n${estado}`
+  );
 
-<body style="
-font-family:Arial;
-text-align:center;
-background:#111;
-color:white;
-padding:40px;
-">
-
-<h1>🤖 TitanBot v2.5</h1>
-
-<p>${estado}</p>
-
-<a href="/qr"
-style="
-display:inline-block;
-padding:15px 25px;
-background:#25D366;
-color:white;
-text-decoration:none;
-border-radius:10px;
-">
-📱 Ver QR de WhatsApp
-</a>
-
-</body>
-</html>
-`);
 });
 
-server.listen(PORT, "0.0.0.0", () => {
+server.listen(PORT, () => {
 
   console.log(
     `🌐 Servidor iniciado en puerto ${PORT}`
   );
 
   console.log(
-    "📱 Abre la URL de Render y entra en /qr"
+    `📱 Página QR disponible en /qr`
   );
+
 });
 
 // ==============================
-// INICIAR WHATSAPP
+// INICIAR BOT
 // ==============================
 
 async function iniciarBot() {
 
-  if (iniciando) return;
+  const {
+    state,
+    saveCreds
+  } = await useMultiFileAuthState("./session");
 
-  iniciando = true;
+  const sock = makeWASocket({
 
-  try {
+    auth: state,
 
-    estado = "🔄 Conectando con WhatsApp...";
+    logger: pino({
+      level: "silent"
+    }),
 
-    console.log("");
-    console.log(
-      "🤖 Iniciando TitanBot v2.5..."
-    );
+    printQRInTerminal: false,
 
-    const {
-      state,
-      saveCreds
-    } = await useMultiFileAuthState("./session");
+    browser: [
+      "TitanBot",
+      "Chrome",
+      "2.5.0"
+    ]
 
-    const sock = makeWASocket({
+  });
 
-      auth: state,
+  // ==============================
+  // GUARDAR SESIÓN
+  // ==============================
 
-      logger: pino({
-        level: "silent"
-      }),
+  sock.ev.on(
+    "creds.update",
+    saveCreds
+  );
 
-      printQRInTerminal: false,
+  // ==============================
+  // CONEXIÓN
+  // ==============================
 
-      markOnlineOnConnect: false,
+  sock.ev.on(
+    "connection.update",
+    async (update) => {
 
-      browser: [
-        "TitanBot",
-        "Chrome",
-        "1.0.0"
-      ]
-    });
+      const {
+        connection,
+        lastDisconnect,
+        qr
+      } = update;
 
-    sockActual = sock;
+      // NUEVO QR
 
-    sock.ev.on(
-      "creds.update",
-      saveCreds
-    );
+      if (qr) {
 
-    // ==============================
-    // CONEXIÓN Y QR
-    // ==============================
+        qrActual = qr;
 
-    sock.ev.on(
-      "connection.update",
-      async (update) => {
+        estado =
+          "🟡 Esperando escaneo del QR";
 
-        const {
-          connection,
-          qr,
-          lastDisconnect
-        } = update;
+        console.log(
+          "📱 Nuevo QR disponible en /qr"
+        );
 
-        // NUEVO QR
-        if (qr) {
+      }
 
-          qrActual = qr;
+      // CONECTANDO
 
-          estado =
-            "📱 QR listo. Escanéalo desde WhatsApp.";
+      if (connection === "connecting") {
 
-          console.log("");
-          console.log(
-            "📱 ¡QR GENERADO!"
-          );
+        estado =
+          "🟡 Conectando...";
 
-          console.log(
-            "🌐 Abre la URL de Render y entra en /qr"
-          );
+        console.log(
+          "🔄 Conectando TitanBot..."
+        );
 
-          console.log("");
-        }
+      }
 
-        // CONECTANDO
-        if (connection === "connecting") {
+      // CONECTADO
 
-          estado =
-            "🔄 Conectando con WhatsApp...";
+      if (connection === "open") {
 
-          console.log(
-            "🔄 Conectando con WhatsApp..."
-          );
-        }
+        qrActual = null;
 
-        // CONECTADO
-        if (connection === "open") {
+        estado =
+          "🟢 Conectado";
 
-          iniciando = false;
+        console.log(
+          `✅ ${config.nombre} conectado correctamente`
+        );
 
-          qrActual = null;
+      }
 
-          estado =
-            "🟢 TitanBot conectado a WhatsApp.";
+      // DESCONECTADO
 
-          console.log("");
-          console.log(
-            "╔════════════════════════════╗"
-          );
-          console.log(
-            "║     🤖 TITANBOT V2.5      ║"
-          );
-          console.log(
-            "║      🟢 CONECTADO         ║"
-          );
-          console.log(
-            "╚════════════════════════════╝"
-          );
-          console.log("");
-        }
+      if (connection === "close") {
 
-        // CERRADO
-        if (connection === "close") {
+        estado =
+          "🔴 Desconectado";
 
-          iniciando = false;
+        const codigo =
+          lastDisconnect?.error?.output?.statusCode;
 
-          const codigo =
-            lastDisconnect?.error?.output?.statusCode;
+        const debeReconectar =
+          codigo !== DisconnectReason.loggedOut;
 
-          console.log("");
-          console.log(
-            "⚠️ Conexión cerrada."
-          );
+        console.log(
+          "❌ Conexión cerrada. Código:",
+          codigo
+        );
+
+        if (debeReconectar) {
 
           console.log(
-            "Código:",
-            codigo || "desconocido"
+            "🔄 Reconectando en 10 segundos..."
           );
 
-          estado =
-            "⚠️ Conexión cerrada. Esperando reconexión...";
-
-          // Si se cerró la sesión
-          if (
-            codigo === DisconnectReason.loggedOut
-          ) {
-
-            qrActual = null;
-
-            estado =
-              "❌ Sesión cerrada. Se necesita volver a vincular.";
-
-            console.log(
-              "❌ Sesión cerrada."
-            );
-
-            return;
-          }
-
-          // Esperar antes de reconectar
           setTimeout(() => {
-
-            console.log(
-              "🔄 Intentando reconectar..."
-            );
 
             iniciarBot();
 
           }, 10000);
+
+        } else {
+
+          console.log(
+            "🚪 Sesión cerrada."
+          );
+
+          console.log(
+            "Elimina la carpeta session para volver a vincular."
+          );
+
         }
+
       }
-    );
 
-    // ==============================
-    // MENSAJES
-    // ==============================
+    }
+  );
 
-    sock.ev.on(
-      "messages.upsert",
-      async ({ messages }) => {
+  // ==============================
+  // MENSAJES
+  // ==============================
+
+  sock.ev.on(
+    "messages.upsert",
+    async ({ messages }) => {
+
+      try {
+
+        const msg =
+          messages[0];
+
+        if (!msg || !msg.message) {
+          return;
+        }
+
+        if (msg.key.fromMe) {
+          return;
+        }
+
+        const chat =
+          msg.key.remoteJid;
+
+        if (!chat) {
+          return;
+        }
+
+        // ==============================
+        // OBTENER TEXTO
+        // ==============================
+
+        const texto =
+          msg.message.conversation ||
+          msg.message.extendedTextMessage?.text ||
+          msg.message.imageMessage?.caption ||
+          msg.message.videoMessage?.caption ||
+          "";
+
+        if (!texto) {
+          return;
+        }
+
+        const textoLimpio =
+          texto.trim();
+
+        // ==============================
+        // COMPROBAR PREFIJO
+        // ==============================
+
+        if (
+          !textoLimpio.startsWith(
+            config.prefijo
+          )
+        ) {
+
+          return;
+
+        }
+
+        // ==============================
+        // COMANDO Y ARGUMENTOS
+        // ==============================
+
+        const partes =
+          textoLimpio
+            .slice(config.prefijo.length)
+            .trim()
+            .split(/\s+/);
+
+        const comando =
+          (partes.shift() || "")
+            .toLowerCase();
+
+        const args =
+          partes;
+
+        if (!comando) {
+          return;
+        }
+
+        // ==============================
+        // ID DEL USUARIO
+        // ==============================
+
+        const id =
+          msg.key.participant ||
+          msg.key.remoteJid;
+
+        // ==============================
+        // GRUPO
+        // ==============================
+
+        const isGroup =
+          chat.endsWith("@g.us");
+
+        let isAdmin = false;
+
+        if (isGroup) {
+
+          try {
+
+            const metadata =
+              await sock.groupMetadata(chat);
+
+            const participante =
+              metadata.participants.find(
+                p => p.id === id
+              );
+
+            isAdmin =
+              participante?.admin === "admin" ||
+              participante?.admin === "superadmin";
+
+          } catch (error) {
+
+            console.log(
+              "⚠️ No se pudo comprobar el administrador."
+            );
+
+          }
+
+        }
+
+        // ==============================
+        // GANAR XP
+        // ==============================
 
         try {
 
-          const mensaje = messages[0];
+          const resultadoXP =
+            ganarXP(id);
 
-          if (!mensaje) return;
+          if (
+            resultadoXP &&
+            resultadoXP.subioNivel
+          ) {
 
-          if (!mensaje.message) return;
+            await sock.sendMessage(chat, {
 
-          if (mensaje.key.fromMe) return;
+              text:
+`🎉 ¡SUBISTE DE NIVEL!
 
-          const chat =
-            mensaje.key.remoteJid;
+⭐ Nuevo nivel:
+${resultadoXP.nivel}
 
-          if (!chat) return;
+✨ XP ganada:
++${resultadoXP.xpGanada}
 
-          const texto =
-            mensaje.message.conversation ||
-            mensaje.message.extendedTextMessage?.text ||
-            "";
+💰 Recompensa:
++${resultadoXP.recompensa} monedas`
 
-          if (!texto.startsWith(".")) return;
+            });
 
-          const partes =
-            texto
-              .slice(1)
-              .trim()
-              .split(/\s+/);
-
-          const comando =
-            (partes.shift() || "")
-              .toLowerCase();
-
-          const args = partes;
-
-          const id =
-            mensaje.key.participant ||
-            mensaje.key.remoteJid;
-
-          const isGroup =
-            chat.endsWith("@g.us");
-
-          let isAdmin = false;
-
-          // ==========================
-          // ADMIN
-          // ==========================
-
-          if (isGroup) {
-
-            try {
-
-              const metadata =
-                await sock.groupMetadata(chat);
-
-              const participante =
-                metadata.participants.find(
-                  p => p.id === id
-                );
-
-              isAdmin =
-                participante?.admin === "admin" ||
-                participante?.admin === "superadmin";
-
-            } catch {
-
-              isAdmin = false;
-            }
-          }
-
-          let respondio = false;
-
-          // INICIO
-          if (!respondio) {
-
-            respondio =
-              await inicio(
-                sock,
-                chat,
-                comando
-              );
-          }
-
-          // USUARIO
-          if (!respondio) {
-
-            respondio =
-              await usuario.usuario(
-                sock,
-                chat,
-                comando,
-                id
-              );
-          }
-
-          // ECONOMÍA
-          if (!respondio) {
-
-            respondio =
-              await economia(
-                sock,
-                chat,
-                comando,
-                args,
-                id
-              );
-          }
-
-          // JUEGOS
-          if (!respondio) {
-
-            respondio =
-              await juegos(
-                sock,
-                chat,
-                comando,
-                args,
-                id
-              );
-          }
-
-          // GRUPOS
-          if (!respondio) {
-
-            respondio =
-              await grupos(
-                sock,
-                chat,
-                comando,
-                args,
-                id,
-                isGroup,
-                isAdmin
-              );
           }
 
         } catch (error) {
 
           console.log(
-            "❌ Error procesando mensaje:"
-          );
-
-          console.log(
+            "⚠️ Error en XP:",
             error.message
           );
+
         }
+
+        // ==============================
+        // INICIO
+        // ==============================
+
+        try {
+
+          const ejecutado =
+            await inicio(
+              sock,
+              chat,
+              comando,
+              args,
+              id
+            );
+
+          if (ejecutado) {
+            return;
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error en inicio:",
+            error.message
+          );
+
+        }
+
+        // ==============================
+        // USUARIO
+        // ==============================
+
+        try {
+
+          const ejecutado =
+            await usuario(
+              sock,
+              chat,
+              comando,
+              args,
+              id
+            );
+
+          if (ejecutado) {
+            return;
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error en usuario:",
+            error.message
+          );
+
+        }
+
+        // ==============================
+        // ECONOMÍA
+        // ==============================
+
+        try {
+
+          const ejecutado =
+            await economia(
+              sock,
+              chat,
+              comando,
+              args,
+              id
+            );
+
+          if (ejecutado) {
+            return;
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error en economía:",
+            error.message
+          );
+
+        }
+
+        // ==============================
+        // JUEGOS
+        // ==============================
+
+        try {
+
+          const ejecutado =
+            await juegos(
+              sock,
+              chat,
+              comando,
+              args
+            );
+
+          if (ejecutado) {
+            return;
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error en juegos:",
+            error.message
+          );
+
+        }
+
+        // ==============================
+        // GRUPOS
+        // ==============================
+
+        try {
+
+          const ejecutado =
+            await grupos(
+              sock,
+              chat,
+              comando,
+              args,
+              id,
+              isGroup,
+              isAdmin
+            );
+
+          if (ejecutado) {
+            return;
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error en grupos:",
+            error.message
+          );
+
+        }
+
+        // ==============================
+        // ANIME
+        // ==============================
+
+        try {
+
+          const ejecutado =
+            await anime(
+              sock,
+              chat,
+              comando,
+              args
+            );
+
+          if (ejecutado) {
+            return;
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error en anime:",
+            error.message
+          );
+
+        }
+
+        // ==============================
+        // HERRAMIENTAS
+        // ==============================
+
+        try {
+
+          const ejecutado =
+            await herramientas(
+              sock,
+              chat,
+              comando,
+              args
+            );
+
+          if (ejecutado) {
+            return;
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error en herramientas:",
+            error.message
+          );
+
+        }
+
+        // ==============================
+        // AJUSTES
+        // ==============================
+
+        try {
+
+          const ejecutado =
+            await ajustes(
+              sock,
+              chat,
+              comando,
+              args,
+              id,
+              isGroup,
+              isAdmin
+            );
+
+          if (ejecutado) {
+            return;
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error en ajustes:",
+            error.message
+          );
+
+        }
+
+        // ==============================
+        // OWNER
+        // ==============================
+
+        try {
+
+          const ejecutado =
+            await owner(
+              sock,
+              chat,
+              comando,
+              args,
+              id
+            );
+
+          if (ejecutado) {
+            return;
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error en owner:",
+            error.message
+          );
+
+        }
+
+      } catch (error) {
+
+        console.log(
+          "❌ Error procesando mensaje:",
+          error
+        );
+
       }
-    );
 
-  } catch (error) {
+    }
+  );
 
-    iniciando = false;
-
-    estado =
-      "❌ Error iniciando TitanBot.";
-
-    console.log("");
-    console.log(
-      "❌ Error iniciando TitanBot:"
-    );
-
-    console.log(
-      error.message
-    );
-
-    console.log("");
-  }
 }
 
 // ==============================
-// INICIAR
+// ARRANCAR
 // ==============================
 
-iniciarBot();
+iniciarBot().catch(error => {
+
+  console.error(
+    "❌ Error iniciando TitanBot:",
+    error
+  );
+
+});
