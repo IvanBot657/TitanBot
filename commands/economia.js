@@ -13,17 +13,13 @@ function cargarUsuarios() {
   }
 
   try {
-
     return JSON.parse(
       fs.readFileSync(DB, "utf8")
     );
-
   } catch {
-
     return {};
   }
 }
-
 
 function guardarUsuarios(db) {
 
@@ -59,8 +55,6 @@ function obtenerUsuario(db, id) {
 
     };
   }
-
-  // Compatibilidad con usuarios antiguos
 
   if (typeof db[id].dinero !== "number") {
     db[id].dinero = 0;
@@ -112,7 +106,8 @@ async function economia(
   chat,
   comando,
   args,
-  id
+  id,
+  msg
 ) {
 
   const db =
@@ -164,7 +159,6 @@ ${user.dinero + user.banco}`
       DAILY -
       (ahora - user.ultimoDaily);
 
-
     if (
       user.ultimoDaily &&
       restante > 0
@@ -194,12 +188,10 @@ ${horas}h ${minutos}m`
       });
     }
 
-
     const recompensa =
       Math.floor(
         Math.random() * 501
       ) + 500;
-
 
     user.dinero +=
       recompensa;
@@ -208,7 +200,6 @@ ${horas}h ${minutos}m`
       ahora;
 
     guardarUsuarios(db);
-
 
     return sock.sendMessage(chat, {
 
@@ -238,7 +229,6 @@ ${user.dinero}`
       TRABAJO -
       (ahora - user.ultimoTrabajo);
 
-
     if (
       user.ultimoTrabajo &&
       restante > 0
@@ -262,7 +252,6 @@ ${minutos} minutos.`
       });
     }
 
-
     const trabajos = [
 
       "👨‍🍳 Cocinaste en un restaurante.",
@@ -274,7 +263,6 @@ ${minutos} minutos.`
 
     ];
 
-
     const trabajo =
       trabajos[
         Math.floor(
@@ -283,12 +271,10 @@ ${minutos} minutos.`
         )
       ];
 
-
     const recompensa =
       Math.floor(
         Math.random() * 401
       ) + 200;
-
 
     user.dinero +=
       recompensa;
@@ -297,7 +283,6 @@ ${minutos} minutos.`
       ahora;
 
     guardarUsuarios(db);
-
 
     return sock.sendMessage(chat, {
 
@@ -329,7 +314,6 @@ ${user.dinero}`
       MINERIA -
       (ahora - user.ultimoMineria);
 
-
     if (
       user.ultimoMineria &&
       restante > 0
@@ -351,12 +335,10 @@ ${minutos} minutos.`
       });
     }
 
-
     const recompensa =
       Math.floor(
         Math.random() * 501
       ) + 300;
-
 
     user.dinero +=
       recompensa;
@@ -365,7 +347,6 @@ ${minutos} minutos.`
       ahora;
 
     guardarUsuarios(db);
-
 
     return sock.sendMessage(chat, {
 
@@ -397,7 +378,6 @@ ${user.dinero}`
       PESCA -
       (ahora - user.ultimaPesca);
 
-
     if (
       user.ultimaPesca &&
       restante > 0
@@ -419,7 +399,6 @@ ${minutos} minutos.`
       });
     }
 
-
     const peces = [
 
       "🐟 Pez común",
@@ -429,7 +408,6 @@ ${minutos} minutos.`
 
     ];
 
-
     const pez =
       peces[
         Math.floor(
@@ -438,12 +416,10 @@ ${minutos} minutos.`
         )
       ];
 
-
     const recompensa =
       Math.floor(
         Math.random() * 301
       ) + 100;
-
 
     user.dinero +=
       recompensa;
@@ -452,7 +428,6 @@ ${minutos} minutos.`
       ahora;
 
     guardarUsuarios(db);
-
 
     return sock.sendMessage(chat, {
 
@@ -481,7 +456,6 @@ ${user.dinero}`
     const cantidad =
       Number(args[0]);
 
-
     if (
       !Number.isInteger(cantidad) ||
       cantidad <= 0
@@ -503,7 +477,6 @@ Ejemplo:
       });
     }
 
-
     if (
       cantidad >
       user.dinero
@@ -516,7 +489,6 @@ Ejemplo:
       });
     }
 
-
     user.dinero -=
       cantidad;
 
@@ -524,7 +496,6 @@ Ejemplo:
       cantidad;
 
     guardarUsuarios(db);
-
 
     return sock.sendMessage(chat, {
 
@@ -553,7 +524,6 @@ ${user.banco}`
     const cantidad =
       Number(args[0]);
 
-
     if (
       !Number.isInteger(cantidad) ||
       cantidad <= 0
@@ -575,7 +545,6 @@ Ejemplo:
       });
     }
 
-
     if (
       cantidad >
       user.banco
@@ -588,7 +557,6 @@ Ejemplo:
       });
     }
 
-
     user.banco -=
       cantidad;
 
@@ -596,7 +564,6 @@ Ejemplo:
       cantidad;
 
     guardarUsuarios(db);
-
 
     return sock.sendMessage(chat, {
 
@@ -625,7 +592,6 @@ ${user.banco}`
     const inventario =
       user.inventario || [];
 
-
     if (
       inventario.length === 0
     ) {
@@ -636,7 +602,6 @@ ${user.banco}`
           "🎒 Tu inventario está vacío."
       });
     }
-
 
     return sock.sendMessage(chat, {
 
@@ -698,7 +663,6 @@ Ejemplo:
     const opcion =
       Number(args[0]);
 
-
     const productos = {
 
       1: {
@@ -723,10 +687,8 @@ Ejemplo:
 
     };
 
-
     const producto =
       productos[opcion];
-
 
     if (!producto) {
 
@@ -736,7 +698,6 @@ Ejemplo:
           "❌ Producto no encontrado.\n\nUsa .tienda"
       });
     }
-
 
     if (
       user.dinero <
@@ -750,18 +711,14 @@ Ejemplo:
       });
     }
 
-
     user.dinero -=
       producto.precio;
-
 
     user.inventario.push(
       producto.nombre
     );
 
-
     guardarUsuarios(db);
-
 
     return sock.sendMessage(chat, {
 
@@ -776,62 +733,135 @@ ${producto.precio}
 💵 Dinero restante:
 ${user.dinero}
 
-// ========================================
-// TRANSFERIR
-// ========================================
+🎒 Añadido al inventario.`
 
-if (comando === "transferir") {
+    });
+  }
 
-  const numeroDestino = String(args[0] || "")
-    .replace(/\D/g, "");
 
-  const cantidad = Number(args[1]);
+  // ========================================
+  // TRANSFERIR
+  // ========================================
 
-  if (
-    !numeroDestino ||
-    !Number.isInteger(cantidad) ||
-    cantidad <= 0
-  ) {
+  if (comando === "transferir") {
 
-    return sock.sendMessage(chat, {
-      text:
+    let idDestino = null;
+
+    // Buscar personas mencionadas
+    const mencionados =
+      msg?.message
+        ?.extendedTextMessage
+        ?.contextInfo
+        ?.mentionedJid || [];
+
+    // Si mencionó a alguien
+    if (mencionados.length > 0) {
+
+      idDestino =
+        mencionados[0];
+
+    } else {
+
+      // Si escribió número
+      const numeroDestino =
+        String(args[0] || "")
+          .replace(/\D/g, "");
+
+      if (numeroDestino) {
+
+        idDestino =
+          numeroDestino +
+          "@s.whatsapp.net";
+      }
+    }
+
+    // Cantidad
+    let cantidad;
+
+    if (mencionados.length > 0) {
+      cantidad =
+        Number(args[1]);
+    } else {
+      cantidad =
+        Number(args[1]);
+    }
+
+    // Validar
+    if (
+      !idDestino ||
+      !Number.isInteger(cantidad) ||
+      cantidad <= 0
+    ) {
+
+      return sock.sendMessage(chat, {
+
+        text:
 `💸 TRANSFERIR
 
-Uso:
+Puedes usar:
+
+.transferir @usuario cantidad
+
+O:
 
 .transferir número cantidad
 
-Ejemplo:
+Ejemplos:
+
+.transferir @usuario 500
 
 .transferir 573001234567 500`
-    });
 
-  }
+      });
+    }
 
-  const numeroUsuario = String(id)
-    .split("@")[0]
-    .replace(/\D/g, "");
+    // Limpiar ID
+    idDestino =
+      String(idDestino)
+        .replace(/[^0-9:]/g, "");
 
-  // Evitar transferirse a sí mismo
-  if (numeroDestino === numeroUsuario) {
+    if (!idDestino.includes(":")) {
+      idDestino =
+        idDestino.replace(
+          /\D/g,
+          ""
+        ) + "@s.whatsapp.net";
+    }
 
-    return sock.sendMessage(chat, {
-      text: "❌ No puedes transferirte dinero a ti mismo."
-    });
+    // ID del usuario que envía
+    const numeroUsuario =
+      String(id)
+        .split("@")[0]
+        .replace(/\D/g, "");
 
-  }
+    const numeroDestino =
+      String(idDestino)
+        .split("@")[0]
+        .replace(/\D/g, "");
 
-  const idDestino =
-    numeroDestino + "@s.whatsapp.net";
+    // Evitar transferirse a sí mismo
+    if (
+      numeroDestino ===
+      numeroUsuario
+    ) {
 
-  const destinatario =
-    obtenerUsuario(db, idDestino);
+      return sock.sendMessage(chat, {
 
-  // Verificar saldo
-  if (user.dinero < cantidad) {
+        text:
+          "❌ No puedes transferirte dinero a ti mismo."
+      });
 
-    return sock.sendMessage(chat, {
-      text:
+    }
+
+    // Verificar saldo
+    if (
+      user.dinero <
+      cantidad
+    ) {
+
+      return sock.sendMessage(chat, {
+
+        text:
 `❌ DINERO INSUFICIENTE
 
 💰 Tu saldo:
@@ -839,18 +869,29 @@ ${user.dinero}
 
 💸 Intentaste enviar:
 ${cantidad}`
-    });
 
-  }
+      });
+    }
 
-  // Transferencia
-  user.dinero -= cantidad;
-  destinatario.dinero += cantidad;
+    // Crear destinatario
+    const destinatario =
+      obtenerUsuario(
+        db,
+        idDestino
+      );
 
-  guardarUsuarios(db);
+    // Transferir
+    user.dinero -=
+      cantidad;
 
-  return sock.sendMessage(chat, {
-    text:
+    destinatario.dinero +=
+      cantidad;
+
+    guardarUsuarios(db);
+
+    return sock.sendMessage(chat, {
+
+      text:
 `💸 TRANSFERENCIA REALIZADA
 
 📤 Enviaste:
@@ -864,17 +905,15 @@ ${user.dinero}
 
 ✅ Transferencia completada.`,
 
-    mentions: [
-      idDestino
-    ]
-  });
-
-}
-
-🎒 Añadido al inventario.`
+      mentions: [
+        idDestino
+      ]
 
     });
   }
 
 
-  
+  return false;
+}
+
+module.exports = economia;
