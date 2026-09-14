@@ -7,9 +7,9 @@ const {
 const pino = require("pino");
 const http = require("http");
 
-// ===============================
+// ==============================
 // COMANDOS
-// ===============================
+// ==============================
 
 const inicio = require("./commands/inicio");
 const usuario = require("./commands/usuario");
@@ -17,49 +17,62 @@ const economia = require("./commands/economia");
 const juegos = require("./commands/juegos");
 const grupos = require("./commands/grupos");
 
-// ===============================
+// ==============================
 // CONFIGURACIÓN
-// ===============================
+// ==============================
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 const NUMERO = process.env.PHONE_NUMBER;
 
-let reiniciando = false;
+let bot;
+let iniciando = false;
+let conectado = false;
+let codigoSolicitado = false;
 
-// ===============================
+// ==============================
 // SERVIDOR PARA RENDER
-// ===============================
+// ==============================
 
 const server = http.createServer((req, res) => {
+
   res.writeHead(200, {
     "Content-Type": "text/plain"
   });
 
-  res.end("🤖 TitanBot v2.5 funcionando");
+  res.end("🤖 TitanBot v2.5 ONLINE");
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🌐 Servidor iniciado en puerto ${PORT}`);
+
+  console.log(
+    `🌐 Servidor iniciado en puerto ${PORT}`
+  );
 });
 
-// ===============================
-// INICIAR BOT
-// ===============================
+// ==============================
+// INICIAR TITANBOT
+// ==============================
 
 async function iniciarBot() {
 
-  if (reiniciando) return;
+  if (iniciando) return;
+
+  iniciando = true;
 
   try {
 
     console.log("");
-    console.log("🤖 Iniciando TitanBot v2.5...");
-    console.log("");
+    console.log(
+      "🤖 Iniciando TitanBot v2.5..."
+    );
 
-    const { state, saveCreds } =
-      await useMultiFileAuthState("./session");
+    const {
+      state,
+      saveCreds
+    } = await useMultiFileAuthState("./session");
 
-    const sock = makeWASocket({
+    bot = makeWASocket({
+
       auth: state,
 
       logger: pino({
@@ -77,16 +90,16 @@ async function iniciarBot() {
       ]
     });
 
-    sock.ev.on(
+    bot.ev.on(
       "creds.update",
       saveCreds
     );
 
-    // ===============================
-    // CONEXIÓN
-    // ===============================
+    // ==========================
+    // ESTADO DE CONEXIÓN
+    // ==========================
 
-    sock.ev.on(
+    bot.ev.on(
       "connection.update",
       async (update) => {
 
@@ -104,32 +117,36 @@ async function iniciarBot() {
 
         if (connection === "open") {
 
-          reiniciando = false;
+          conectado = true;
+          iniciando = false;
 
           console.log("");
           console.log(
-            "╔════════════════════════════╗"
+            "╔══════════════════════════╗"
           );
           console.log(
-            "║     🤖 TITANBOT V2.5      ║"
+            "║   🤖 TITANBOT V2.5      ║"
           );
           console.log(
-            "║      🟢 CONECTADO          ║"
+            "║    🟢 CONECTADO         ║"
           );
           console.log(
-            "╚════════════════════════════╝"
+            "╚══════════════════════════╝"
           );
           console.log("");
         }
 
         if (connection === "close") {
 
+          conectado = false;
+          iniciando = false;
+
           const codigo =
             lastDisconnect?.error?.output?.statusCode;
 
           console.log("");
           console.log(
-            "⚠️ Conexión de WhatsApp cerrada."
+            "⚠️ WhatsApp cerró la conexión."
           );
 
           console.log(
@@ -137,48 +154,64 @@ async function iniciarBot() {
             codigo || "desconocido"
           );
 
+          // Si ya estaba vinculado y WhatsApp
+          // cerró la conexión, esperamos antes
+          // de volver a intentar.
+
           if (
             codigo === DisconnectReason.loggedOut
           ) {
 
             console.log(
-              "❌ WhatsApp cerró la sesión."
+              "❌ La sesión fue cerrada."
             );
 
             return;
           }
 
-          if (!reiniciando) {
-
-            reiniciando = true;
+          if (state.creds.registered) {
 
             console.log(
-              "🔄 Reiniciando conexión en 10 segundos..."
+              "🔄 Se intentará reconectar en 30 segundos..."
             );
 
             setTimeout(() => {
 
-              reiniciando = false;
-
               iniciarBot();
 
-            }, 10000);
+            }, 30000);
+
+          } else {
+
+            console.log("");
+            console.log(
+              "⏳ La cuenta todavía no está vinculada."
+            );
+            console.log(
+              "No se realizará un bucle rápido de reconexión."
+            );
+            console.log("");
           }
         }
       }
     );
 
-    // ===============================
+    // ==========================
     // CÓDIGO DE VINCULACIÓN
-    // ===============================
+    // ==========================
 
-    if (!state.creds.registered) {
+    if (
+      !state.creds.registered &&
+      !codigoSolicitado
+    ) {
+
+      codigoSolicitado = true;
 
       if (!NUMERO) {
 
         console.log("");
         console.log(
-          "❌ Falta la variable PHONE_NUMBER."
+          "❌ Falta PHONE_NUMBER en Render."
         );
         console.log("");
 
@@ -187,15 +220,20 @@ async function iniciarBot() {
 
       try {
 
-        // Esperar a que Baileys establezca
-        // la conexión inicial.
+        // Esperamos a que la conexión
+        // inicial esté preparada.
 
         await new Promise(resolve => {
-          setTimeout(resolve, 5000);
+          setTimeout(resolve, 3000);
         });
 
+        console.log("");
+        console.log(
+          "🔗 Generando código de vinculación..."
+        );
+
         const codigo =
-          await sock.requestPairingCode(
+          await bot.requestPairingCode(
             NUMERO
           );
 
@@ -218,17 +256,27 @@ async function iniciarBot() {
         );
         console.log("");
         console.log(
-          "   " + codigo
+          "       " + codigo
         );
         console.log("");
         console.log(
-          "WhatsApp → Dispositivos vinculados"
+          "AHORA EN WHATSAPP:"
         );
         console.log(
-          "→ Vincular dispositivo"
+          "1. Dispositivos vinculados"
         );
         console.log(
-          "→ Vincular con número de teléfono"
+          "2. Vincular dispositivo"
+        );
+        console.log(
+          "3. Vincular con número de teléfono"
+        );
+        console.log(
+          "4. Introduce el código mostrado arriba"
+        );
+        console.log("");
+        console.log(
+          "⏳ Esperando la vinculación..."
         );
         console.log("");
 
@@ -236,22 +284,20 @@ async function iniciarBot() {
 
         console.log("");
         console.log(
-          "❌ No se pudo generar el código."
+          "❌ ERROR AL GENERAR EL CÓDIGO"
         );
-
         console.log(
           error.message
         );
-
         console.log("");
       }
     }
 
-    // ===============================
+    // ==========================
     // MENSAJES
-    // ===============================
+    // ==========================
 
-    sock.ev.on(
+    bot.ev.on(
       "messages.upsert",
       async ({ messages }) => {
 
@@ -275,9 +321,7 @@ async function iniciarBot() {
             mensaje.message.extendedTextMessage?.text ||
             "";
 
-          if (!texto.startsWith(".")) {
-            return;
-          }
+          if (!texto.startsWith(".")) return;
 
           const partes =
             texto
@@ -300,16 +344,16 @@ async function iniciarBot() {
 
           let isAdmin = false;
 
-          // ===============================
-          // ADMINISTRADOR
-          // ===============================
+          // ==========================
+          // ADMIN DEL GRUPO
+          // ==========================
 
           if (isGroup) {
 
             try {
 
               const metadata =
-                await sock.groupMetadata(chat);
+                await bot.groupMetadata(chat);
 
               const participante =
                 metadata.participants.find(
@@ -328,44 +372,35 @@ async function iniciarBot() {
 
           let respondio = false;
 
-          // ===============================
           // INICIO
-          // ===============================
-
           if (!respondio) {
 
             respondio =
               await inicio(
-                sock,
+                bot,
                 chat,
                 comando
               );
           }
 
-          // ===============================
           // USUARIO
-          // ===============================
-
           if (!respondio) {
 
             respondio =
               await usuario.usuario(
-                sock,
+                bot,
                 chat,
                 comando,
                 id
               );
           }
 
-          // ===============================
           // ECONOMÍA
-          // ===============================
-
           if (!respondio) {
 
             respondio =
               await economia(
-                sock,
+                bot,
                 chat,
                 comando,
                 args,
@@ -373,15 +408,12 @@ async function iniciarBot() {
               );
           }
 
-          // ===============================
           // JUEGOS
-          // ===============================
-
           if (!respondio) {
 
             respondio =
               await juegos(
-                sock,
+                bot,
                 chat,
                 comando,
                 args,
@@ -389,15 +421,12 @@ async function iniciarBot() {
               );
           }
 
-          // ===============================
           // GRUPOS
-          // ===============================
-
           if (!respondio) {
 
             respondio =
               await grupos(
-                sock,
+                bot,
                 chat,
                 comando,
                 args,
@@ -422,21 +451,21 @@ async function iniciarBot() {
 
   } catch (error) {
 
+    iniciando = false;
+
     console.log("");
     console.log(
       "❌ Error iniciando TitanBot:"
     );
-
     console.log(
       error.message
     );
-
     console.log("");
   }
 }
 
-// ===============================
-// INICIAR
-// ===============================
+// ==============================
+// ARRANCAR
+// ==============================
 
 iniciarBot();
