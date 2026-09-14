@@ -7,6 +7,10 @@ const {
 const P = require("pino");
 const http = require("http");
 
+// ==========================================
+// ⚙️ CONFIGURACIÓN
+// ==========================================
+
 const PORT = process.env.PORT || 3000;
 const PAIRING_NUMBER = process.env.PAIRING_NUMBER || "";
 
@@ -16,11 +20,10 @@ let solicitandoCodigo = false;
 let reconectando = false;
 
 // ==========================================
-// 🌐 SERVIDOR WEB
+// 🌐 SERVIDOR WEB PARA RENDER
 // ==========================================
 
 const server = http.createServer((req, res) => {
-
   res.writeHead(200, {
     "Content-Type": "text/html; charset=utf-8"
   });
@@ -28,40 +31,31 @@ const server = http.createServer((req, res) => {
   let contenido = "";
 
   if (conectado) {
-
     contenido = `
-      <h1>🤖 TitanBot</h1>
-      <h2>🟢 TitanBot está conectado</h2>
+      <h1>🟢 TitanBot conectado</h1>
       <p>El bot está conectado correctamente a WhatsApp.</p>
     `;
-
   } else if (codigoVinculacion) {
-
     contenido = `
       <h1>🤖 TitanBot</h1>
+      <h2>🔐 Código de vinculación</h2>
 
-      <h2>🔢 Código de vinculación</h2>
-
-      <p>En tu teléfono:</p>
-
-      <ol>
-        <li>Abre WhatsApp.</li>
-        <li>Ve a <b>Ajustes</b>.</li>
-        <li>Entra en <b>Dispositivos vinculados</b>.</li>
-        <li>Pulsa <b>Vincular un dispositivo</b>.</li>
-        <li>Selecciona <b>Vincular con número de teléfono</b>.</li>
-        <li>Introduce este código:</li>
-      </ol>
-
-      <div class="codigo">
+      <div style="
+        font-size:32px;
+        font-weight:bold;
+        letter-spacing:6px;
+        margin:20px;
+      ">
         ${codigoVinculacion}
       </div>
 
-      <p>⏳ Esta página se actualiza automáticamente.</p>
+      <p>Abre WhatsApp en tu teléfono.</p>
+      <p>Ve a <b>Dispositivos vinculados</b>.</p>
+      <p>Selecciona <b>Vincular un dispositivo</b>.</p>
+      <p>Elige <b>Vincular con número de teléfono</b>.</p>
+      <p>Introduce el código mostrado arriba.</p>
     `;
-
   } else {
-
     contenido = `
       <h1>🤖 TitanBot</h1>
       <h2>⏳ Preparando vinculación...</h2>
@@ -70,374 +64,272 @@ const server = http.createServer((req, res) => {
   }
 
   res.end(`
-<!DOCTYPE html>
-<html lang="es">
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="refresh" content="5">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TitanBot</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+          }
 
-<head>
+          h1 {
+            font-size: 32px;
+          }
 
-<meta charset="UTF-8">
+          h2 {
+            margin-top: 30px;
+          }
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+          p {
+            font-size: 18px;
+            line-height: 1.6;
+          }
+        </style>
+      </head>
 
-<meta http-equiv="refresh" content="5">
-
-<title>TitanBot</title>
-
-<style>
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-
-  font-family: Arial, sans-serif;
-
-  background:
-    linear-gradient(
-      135deg,
-      #0f172a,
-      #111827,
-      #020617
-    );
-
-  color: white;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  padding: 20px;
-}
-
-.container {
-  width: 100%;
-  max-width: 600px;
-
-  background: rgba(31, 41, 55, 0.96);
-
-  border-radius: 25px;
-
-  padding: 35px 25px;
-
-  text-align: center;
-
-  box-shadow:
-    0 20px 50px rgba(0,0,0,0.4);
-}
-
-h1 {
-  font-size: 42px;
-  margin-bottom: 10px;
-}
-
-h2 {
-  margin-top: 25px;
-  font-size: 25px;
-}
-
-p,
-li {
-  font-size: 17px;
-  line-height: 1.6;
-}
-
-ol {
-  text-align: left;
-  max-width: 450px;
-  margin: 20px auto;
-}
-
-.codigo {
-  display: inline-block;
-
-  background: #020617;
-
-  border: 2px solid #334155;
-
-  border-radius: 15px;
-
-  padding: 20px 30px;
-
-  margin: 20px;
-
-  font-size: 36px;
-
-  font-weight: bold;
-
-  letter-spacing: 7px;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="container">
-
-${contenido}
-
-</div>
-
-</body>
-
-</html>
+      <body>
+        ${contenido}
+      </body>
+    </html>
   `);
 });
 
 server.listen(PORT, () => {
-  console.log(`🌐 TitanBot disponible en el puerto ${PORT}`);
+  console.log(`🌐 Servidor iniciado en el puerto ${PORT}`);
 });
 
 // ==========================================
-// 🤖 INICIAR TITANBOT
+// 🤖 INICIAR BOT
 // ==========================================
 
 async function iniciarBot() {
-
   try {
-
-    const {
-      state,
-      saveCreds
-    } = await useMultiFileAuthState("auth_info");
+    const { state, saveCreds } =
+      await useMultiFileAuthState("auth_info");
 
     const sock = makeWASocket({
-
       auth: state,
-
-      logger: P({
-        level: "silent"
-      }),
-
+      logger: P({ level: "silent" }),
       printQRInTerminal: false
-
     });
 
-    sock.ev.on(
-      "creds.update",
-      saveCreds
-    );
+    sock.ev.on("creds.update", saveCreds);
 
     // ======================================
-    // 🔌 ACTUALIZACIÓN DE CONEXIÓN
+    // 🔌 CONEXIÓN
     // ======================================
 
-    sock.ev.on(
-      "connection.update",
-      async (update) => {
+    sock.ev.on("connection.update", async (update) => {
+      const {
+        connection,
+        lastDisconnect
+      } = update;
 
-        const {
-          connection,
-          lastDisconnect
-        } = update;
+      // --------------------------------------
+      // 🟡 CONECTANDO
+      // --------------------------------------
 
-        // ==================================
-        // 🟡 CONECTANDO
-        // ==================================
+      if (connection === "connecting") {
+        console.log("🟡 Conectando TitanBot a WhatsApp...");
 
-        if (connection === "connecting") {
+        if (
+          !state.creds.registered &&
+          PAIRING_NUMBER &&
+          !solicitandoCodigo
+        ) {
+          solicitandoCodigo = true;
 
-          console.log(
-            "🟡 Conectando TitanBot a WhatsApp..."
-          );
-
-          // Solo pedir código si todavía
-          // no está registrado
-
-          if (
-            !state.creds.registered &&
-            PAIRING_NUMBER &&
-            !solicitandoCodigo
-          ) {
-
-            solicitandoCodigo = true;
-
-            try {
-
-              // Esperamos un poco para darle
-              // tiempo a Baileys de preparar
-              // la conexión.
-
-              await new Promise(
-                resolve =>
-                  setTimeout(resolve, 2500)
-              );
-
-              const numero =
-                PAIRING_NUMBER.replace(
-                  /\D/g,
-                  ""
-                );
-
-              console.log(
-                "🔢 Generando código de vinculación..."
-              );
-
-              codigoVinculacion =
-                await sock.requestPairingCode(
-                  numero
-                );
-
-              console.log(
-                "🔢 Código de vinculación:",
-                codigoVinculacion
-              );
-
-            } catch (error) {
-
-              console.error(
-                "❌ Error generando código de vinculación:"
-              );
-
-              console.error(error);
-
-              codigoVinculacion = null;
-
-              solicitandoCodigo = false;
-            }
-          }
-        }
-
-        // ==================================
-        // 🟢 CONECTADO
-        // ==================================
-
-        if (connection === "open") {
-
-          conectado = true;
-
-          codigoVinculacion = null;
-
-          solicitandoCodigo = false;
-
-          reconectando = false;
-
-          console.log(
-            "✅ TitanBot conectado correctamente."
-          );
-        }
-
-        // ==================================
-        // 🔴 CERRADO
-        // ==================================
-
-        if (connection === "close") {
-
-          conectado = false;
-
-          codigoVinculacion = null;
-
-          solicitandoCodigo = false;
-
-          const codigo =
-            lastDisconnect
-              ?.error
-              ?.output
-              ?.statusCode;
-
-          console.log(
-            "❌ Sesión cerrada."
-          );
-
-          // =================================
-          // 🔄 RECONEXIÓN
-          // =================================
-
-          if (
-            codigo !==
-            DisconnectReason.loggedOut
-          ) {
-
-            if (!reconectando) {
-
-              reconectando = true;
-
-              console.log(
-                "🔄 Reconectando en 3 segundos..."
-              );
-
-              setTimeout(() => {
-
-                reconectando = false;
-
-                iniciarBot();
-
-              }, 3000);
-            }
-
-          } else {
-
-            console.log(
-              "❌ WhatsApp cerró la sesión."
+          try {
+            await new Promise(resolve =>
+              setTimeout(resolve, 3000)
             );
 
+            const numero =
+              PAIRING_NUMBER.replace(/\D/g, "");
+
             console.log(
-              "ℹ️ Será necesario volver a vincular el bot."
+              "🔢 Generando código de vinculación..."
             );
+
+            codigoVinculacion =
+              await sock.requestPairingCode(numero);
+
+            console.log(
+              "🔢 Código de vinculación:",
+              codigoVinculacion
+            );
+
+          } catch (error) {
+            console.error(
+              "❌ Error generando código de vinculación:"
+            );
+
+            console.error(error);
+
+            codigoVinculacion = null;
+            solicitandoCodigo = false;
           }
         }
-
       }
-    );
+
+      // --------------------------------------
+      // 🟢 CONECTADO
+      // --------------------------------------
+
+      if (connection === "open") {
+        conectado = true;
+        codigoVinculacion = null;
+        solicitandoCodigo = false;
+        reconectando = false;
+
+        console.log(
+          "===================================="
+        );
+
+        console.log(
+          "✅ TITANBOT CONECTADO"
+        );
+
+        console.log(
+          "===================================="
+        );
+      }
+
+      // --------------------------------------
+      // 🔴 DESCONECTADO
+      // --------------------------------------
+
+      if (connection === "close") {
+        conectado = false;
+        codigoVinculacion = null;
+        solicitandoCodigo = false;
+
+        const codigo =
+          lastDisconnect?.error?.output?.statusCode;
+
+        console.log("❌ Sesión cerrada.");
+        console.log("Código:", codigo);
+
+        if (
+          codigo !== DisconnectReason.loggedOut &&
+          !reconectando
+        ) {
+          reconectando = true;
+
+          console.log(
+            "🔄 Reconectando en 3 segundos..."
+          );
+
+          setTimeout(() => {
+            reconectando = false;
+            iniciarBot();
+          }, 3000);
+
+        } else if (
+          codigo === DisconnectReason.loggedOut
+        ) {
+          console.log(
+            "❌ WhatsApp cerró la sesión."
+          );
+
+          console.log(
+            "ℹ️ Será necesario volver a vincular el bot."
+          );
+        }
+      }
+    });
 
     // ======================================
     // 💬 MENSAJES
     // ======================================
 
-    sock.ev.on(
-      "messages.upsert",
-      async ({ messages }) => {
+    sock.ev.on("messages.upsert", async ({ messages }) => {
+      try {
+        const msg = messages[0];
 
-        try {
+        if (!msg || !msg.message) {
+          return;
+        }
 
-          const msg = messages[0];
+        if (msg.key.fromMe) {
+          return;
+        }
 
-          if (!msg) return;
+        const remoteJid = msg.key.remoteJid;
 
-          if (!msg.message) return;
+        if (!remoteJid) {
+          return;
+        }
 
-          if (msg.key.fromMe) return;
+        const tipoMensaje =
+          Object.keys(msg.message)[0];
 
-          const texto =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            "";
+        let texto = "";
 
-          const comando =
-            texto
-              .trim()
-              .toLowerCase();
+        if (
+          tipoMensaje === "conversation"
+        ) {
+          texto =
+            msg.message.conversation || "";
 
-          // =================================
-          // 🏓 PING
-          // =================================
+        } else if (
+          tipoMensaje === "extendedTextMessage"
+        ) {
+          texto =
+            msg.message.extendedTextMessage?.text || "";
+        }
 
-          if (comando === ".ping") {
+        if (!texto) {
+          return;
+        }
 
-            await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text:
-                  "🏓 Pong! TitanBot está funcionando."
-              }
-            );
-          }
+        texto = texto.trim();
 
-          // =================================
-          // 📋 MENÚ
-          // =================================
+        if (!texto.startsWith(".")) {
+          return;
+        }
 
-          else if (comando === ".menu") {
+        const partes = texto.split(/\s+/);
 
-            await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text: `╭━━━〔 🤖 TITANBOT 〕━━━╮
+        const comando =
+          partes[0].toLowerCase();
+
+        const argumento =
+          partes.slice(1).join(" ");
+
+        // ==================================
+        // 🏓 PING
+        // ==================================
+
+        if (comando === ".ping") {
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                "🏓 Pong! TitanBot está funcionando."
+            }
+          );
+        }
+
+        // ==================================
+        // 📋 MENU
+        // ==================================
+
+        else if (comando === ".menu") {
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: `╭━━━〔 🤖 TITANBOT 〕━━━╮
 ┃
 ┃ 👋 ¡Hola! Soy TitanBot.
 ┃ 📚 Aquí tienes mis comandos:
@@ -480,519 +372,600 @@ async function iniciarBot() {
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯
         🤖 TitanBot`
-              }
-            );
-          }
+            }
+          );
+        }
 
-          // =================================
-          // 🤖 BOT
-          // =================================
+        // ==================================
+        // 🤖 BOT
+        // ==================================
 
-          else if (comando === ".bot") {
+        else if (comando === ".bot") {
 
-            await sock.sendMessage(
-              msg.key.remoteJid,
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                "🤖 Soy TitanBot, un bot de WhatsApp."
+            }
+          );
+        }
+
+        // ==================================
+        // ℹ️ INFO
+        // ==================================
+
+        else if (comando === ".info") {
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: `🤖 *TITANBOT*
+
+⚙️ Plataforma: Node.js
+📦 Librería: Baileys
+☁️ Servidor: Render
+📱 Plataforma: WhatsApp
+
+🚀 TitanBot está activo.`
+            }
+          );
+        }
+
+        // ==================================
+        // 📊 ESTADO
+        // ==================================
+
+        else if (comando === ".estado") {
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: conectado
+                ? "🟢 TitanBot está conectado."
+                : "🔴 TitanBot está desconectado."
+            }
+          );
+        }
+
+        // ==================================
+        // 🕐 HORA
+        // ==================================
+
+        else if (comando === ".hora") {
+
+          const hora =
+            new Intl.DateTimeFormat(
+              "es-CO",
               {
-                text:
-                  "🤖 Soy TitanBot, un bot de WhatsApp."
+                timeZone: "America/Bogota",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
               }
-            );
-          }
+            ).format(new Date());
 
-          // =================================
-          // ℹ️ INFO
-          // =================================
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: `🕐 Hora de Colombia: ${hora}`
+            }
+          );
+        }
 
-          else if (comando === ".info") {
+        // ==================================
+        // 📅 FECHA
+        // ==================================
 
-            await sock.sendMessage(
-              msg.key.remoteJid,
+        else if (comando === ".fecha") {
+
+          const fecha =
+            new Intl.DateTimeFormat(
+              "es-CO",
               {
-                text: `🤖 *TITANBOT*
-
-⚡ Bot para WhatsApp
-🟢 Estado: funcionando
-💻 Node.js + Baileys
-🚀 Servidor: Render`
+                timeZone: "America/Bogota",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric"
               }
-            );
-          }
+            ).format(new Date());
 
-          // =================================
-          // 📊 ESTADO
-          // =================================
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: `📅 Fecha: ${fecha}`
+            }
+          );
+        }
 
-          else if (comando === ".estado") {
+        // ==================================
+        // 🆔 ID
+        // ==================================
 
-            await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text:
-                  conectado
-                    ? "🟢 TitanBot está conectado."
-                    : "🔴 TitanBot está desconectado."
-              }
-            );
-          }
+        else if (comando === ".id") {
 
-          // =================================
-          // 🕐 HORA
-          // =================================
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                `🆔 ID del chat:\n${remoteJid}`
+            }
+          );
+        }
 
-          else if (comando === ".hora") {
+        // ==================================
+        // 🎲 DADO
+        // ==================================
 
-            await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text:
-                  `🕐 Hora actual: ${new Date().toLocaleTimeString("es-CO")}`
-              }
-            );
-          }
+        else if (comando === ".dado") {
 
-          // =================================
-          // 📅 FECHA
-          // =================================
+          const numero =
+            Math.floor(Math.random() * 6) + 1;
 
-          else if (comando === ".fecha") {
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                `🎲 El dado cayó en: *${numero}*`
+            }
+          );
+        }
 
-            await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text:
-                  `📅 Fecha: ${new Date().toLocaleDateString("es-CO")}`
-              }
-            );
-          }
+        // ==================================
+        // 🪙 MONEDA
+        // ==================================
 
-          // =================================
-          // 🆔 ID
-          // =================================
+        else if (comando === ".moneda") {
 
-          else if (comando === ".id") {
+          const resultado =
+            Math.random() < 0.5
+              ? "Cara"
+              : "Sello";
 
-            await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text:
-                  `🆔 ID del chat:\n\n${msg.key.remoteJid}`
-              }
-            );
-          }
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                `🪙 Salió: *${resultado}*`
+            }
+          );
+        }
 
-          // =================================
-          // 🎲 DADO
-          // =================================
+        // ==================================
+        // 🔮 8 BALL
+        // ==================================
 
-          else if (comando === ".dado") {
+        else if (comando === ".8ball") {
 
-            const numero =
+          const respuestas = [
+            "🔮 Sí, probablemente.",
+            "🔮 No parece buena idea.",
+            "🔮 Puede ser.",
+            "🔮 Definitivamente sí.",
+            "🔮 Definitivamente no.",
+            "🔮 Pregunta nuevamente.",
+            "🔮 Todo apunta a que sí.",
+            "🔮 Es difícil saberlo."
+          ];
+
+          const respuesta =
+            respuestas[
               Math.floor(
-                Math.random() * 6
-              ) + 1;
+                Math.random() *
+                respuestas.length
+              )
+            ];
 
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: respuesta
+            }
+          );
+        }
+
+        // ==================================
+        // 🎯 RETO
+        // ==================================
+
+        else if (comando === ".reto") {
+
+          const retos = [
+            "🎯 Di un dato curioso.",
+            "🎯 Di algo positivo sobre alguien del grupo.",
+            "🎯 Cuenta cuál es tu comida favorita.",
+            "🎯 Comparte una recomendación de película.",
+            "🎯 Di una habilidad que te gustaría aprender."
+          ];
+
+          const reto =
+            retos[
+              Math.floor(
+                Math.random() *
+                retos.length
+              )
+            ];
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: reto
+            }
+          );
+        }
+
+        // ==================================
+        // 😈 VERDAD
+        // ==================================
+
+        else if (comando === ".verdad") {
+
+          const preguntas = [
+            "😈 ¿Cuál es tu comida favorita?",
+            "😈 ¿Qué lugar te gustaría visitar?",
+            "😈 ¿Cuál es tu película favorita?",
+            "😈 ¿Qué habilidad te gustaría aprender?",
+            "😈 ¿Cuál es tu pasatiempo favorito?"
+          ];
+
+          const pregunta =
+            preguntas[
+              Math.floor(
+                Math.random() *
+                preguntas.length
+              )
+            ];
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: pregunta
+            }
+          );
+        }
+
+        // ==================================
+        // 🔠 MAYÚSCULAS
+        // ==================================
+
+        else if (comando === ".mayus") {
+
+          if (!argumento) {
             await sock.sendMessage(
-              msg.key.remoteJid,
+              remoteJid,
               {
                 text:
-                  `🎲 Salió el número: *${numero}*`
+                  "🔠 Escribe un texto después del comando."
               }
             );
+
+            return;
           }
 
-          // =================================
-          // 🪙 MONEDA
-          // =================================
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                argumento.toUpperCase()
+            }
+          );
+        }
 
-          else if (comando === ".moneda") {
+        // ==================================
+        // 🔡 MINÚSCULAS
+        // ==================================
+
+        else if (comando === ".minus") {
+
+          if (!argumento) {
+            await sock.sendMessage(
+              remoteJid,
+              {
+                text:
+                  "🔡 Escribe un texto después del comando."
+              }
+            );
+
+            return;
+          }
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                argumento.toLowerCase()
+            }
+          );
+        }
+
+        // ==================================
+        // 🔢 CONTADOR
+        // ==================================
+
+        else if (comando === ".contador") {
+
+          if (!argumento) {
+            await sock.sendMessage(
+              remoteJid,
+              {
+                text:
+                  "🔢 Escribe un texto después del comando."
+              }
+            );
+
+            return;
+          }
+
+          const cantidad =
+            argumento.length;
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                `🔢 El texto tiene *${cantidad} caracteres*.`
+            }
+          );
+        }
+
+        // ==================================
+        // 🧮 CALCULADORA
+        // ==================================
+
+        else if (comando === ".calcular") {
+
+          if (!argumento) {
+            await sock.sendMessage(
+              remoteJid,
+              {
+                text:
+                  "🧮 Ejemplo: *.calcular 2+2*"
+              }
+            );
+
+            return;
+          }
+
+          if (
+            !/^[0-9+\-*/().\s]+$/.test(
+              argumento
+            )
+          ) {
+            await sock.sendMessage(
+              remoteJid,
+              {
+                text:
+                  "❌ Solo se permiten operaciones matemáticas."
+              }
+            );
+
+            return;
+          }
+
+          try {
 
             const resultado =
-              Math.random() < 0.5
-                ? "🪙 Cara"
-                : "🪙 Sello";
+              Function(
+                `"use strict"; return (${argumento})`
+              )();
 
             await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text: resultado
-              }
-            );
-          }
-
-          // =================================
-          // 🔮 8 BALL
-          // =================================
-
-          else if (comando === ".8ball") {
-
-            const respuestas = [
-
-              "🔮 Sí.",
-
-              "🔮 No.",
-
-              "🔮 Probablemente.",
-
-              "🔮 No estoy seguro.",
-
-              "🔮 Puede ser.",
-
-              "🔮 Definitivamente.",
-
-              "🔮 Mejor pregunta después."
-
-            ];
-
-            const respuesta =
-              respuestas[
-                Math.floor(
-                  Math.random() *
-                  respuestas.length
-                )
-              ];
-
-            await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text: respuesta
-              }
-            );
-          }
-
-          // =================================
-          // 🎯 RETO
-          // =================================
-
-          else if (comando === ".reto") {
-
-            const retos = [
-
-              "🎯 Di algo positivo sobre alguien del grupo.",
-
-              "🎯 Cuenta un dato curioso.",
-
-              "🎯 Di tu comida favorita.",
-
-              "🎯 Haz una pregunta divertida al grupo."
-
-            ];
-
-            const reto =
-              retos[
-                Math.floor(
-                  Math.random() *
-                  retos.length
-                )
-              ];
-
-            await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text: reto
-              }
-            );
-          }
-
-          // =================================
-          // 😈 VERDAD
-          // =================================
-
-          else if (comando === ".verdad") {
-
-            const preguntas = [
-
-              "😈 ¿Cuál es tu comida favorita?",
-
-              "😈 ¿Qué lugar te gustaría visitar?",
-
-              "😈 ¿Cuál es tu película favorita?",
-
-              "😈 ¿Qué habilidad te gustaría aprender?"
-
-            ];
-
-            const pregunta =
-              preguntas[
-                Math.floor(
-                  Math.random() *
-                  preguntas.length
-                )
-              ];
-
-            await sock.sendMessage(
-              msg.key.remoteJid,
-              {
-                text: pregunta
-              }
-            );
-          }
-
-          // =================================
-          // 🔠 MAYÚSCULAS
-          // =================================
-
-          else if (
-            comando.startsWith(".mayus ")
-          ) {
-
-            const texto2 =
-              texto.slice(7);
-
-            await sock.sendMessage(
-              msg.key.remoteJid,
+              remoteJid,
               {
                 text:
-                  texto2.toUpperCase()
+                  `🧮 Resultado: *${resultado}*`
               }
             );
-          }
 
-          // =================================
-          // 🔡 MINÚSCULAS
-          // =================================
-
-          else if (
-            comando.startsWith(".minus ")
-          ) {
-
-            const texto2 =
-              texto.slice(7);
+          } catch {
 
             await sock.sendMessage(
-              msg.key.remoteJid,
+              remoteJid,
               {
                 text:
-                  texto2.toLowerCase()
+                  "❌ No pude calcular esa operación."
               }
             );
           }
+        }
 
-          // =================================
-          // 🔢 CONTADOR
-          // =================================
+        // ==================================
+        // 👥 GRUPO
+        // ==================================
 
-          else if (
-            comando.startsWith(".contador ")
-          ) {
+        else if (comando === ".grupo") {
 
-            const texto2 =
-              texto.slice(10);
+          if (!remoteJid.endsWith("@g.us")) {
 
             await sock.sendMessage(
-              msg.key.remoteJid,
+              remoteJid,
               {
                 text:
-                  `🔢 El texto tiene *${texto2.length}* caracteres.`
+                  "❌ Este comando solo funciona en grupos."
               }
             );
+
+            return;
           }
 
-          // =================================
-          // 🧮 CALCULADORA
-          // =================================
+          const metadata =
+            await sock.groupMetadata(
+              remoteJid
+            );
 
-          else if (
-            comando.startsWith(".calcular ")
-          ) {
-
-            const operacion =
-              texto.slice(10);
-
-            try {
-
-              if (
-                !/^[0-9+\-*/().\s]+$/
-                  .test(operacion)
-              ) {
-
-                throw new Error(
-                  "Operación inválida"
-                );
-              }
-
-              const resultado =
-                Function(
-                  `"use strict"; return (${operacion})`
-                )();
-
-              await sock.sendMessage(
-                msg.key.remoteJid,
-                {
-                  text:
-                    `🧮 Resultado: *${resultado}*`
-                }
-              );
-
-            } catch {
-
-              await sock.sendMessage(
-                msg.key.remoteJid,
-                {
-                  text:
-                    "❌ No pude calcular esa operación."
-                }
-              );
-            }
-          }
-
-          // =================================
-          // 👥 GRUPO
-          // =================================
-
-          else if (comando === ".grupo") {
-
-            try {
-
-              const metadata =
-                await sock.groupMetadata(
-                  msg.key.remoteJid
-                );
-
-              await sock.sendMessage(
-                msg.key.remoteJid,
-                {
-                  text: `👥 *INFORMACIÓN DEL GRUPO*
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                `👥 *INFORMACIÓN DEL GRUPO*
 
 📌 Nombre: ${metadata.subject}
 👤 Miembros: ${metadata.participants.length}`
-                }
-              );
-
-            } catch {
-
-              await sock.sendMessage(
-                msg.key.remoteJid,
-                {
-                  text:
-                    "❌ Este comando solo funciona en grupos."
-                }
-              );
             }
+          );
+        }
+
+        // ==================================
+        // 👤 MIEMBROS
+        // ==================================
+
+        else if (comando === ".miembros") {
+
+          if (!remoteJid.endsWith("@g.us")) {
+
+            await sock.sendMessage(
+              remoteJid,
+              {
+                text:
+                  "❌ Este comando solo funciona en grupos."
+              }
+            );
+
+            return;
           }
 
-          // =================================
-          // 👤 MIEMBROS
-          // =================================
+          const metadata =
+            await sock.groupMetadata(
+              remoteJid
+            );
 
-          else if (comando === ".miembros") {
-
-            try {
-
-              const metadata =
-                await sock.groupMetadata(
-                  msg.key.remoteJid
-                );
-
-              await sock.sendMessage(
-                msg.key.remoteJid,
-                {
-                  text:
-                    `👥 Este grupo tiene *${metadata.participants.length} miembros*.`
-                }
-              );
-
-            } catch {
-
-              await sock.sendMessage(
-                msg.key.remoteJid,
-                {
-                  text:
-                    "❌ Este comando solo funciona en grupos."
-                }
-              );
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                `👤 Este grupo tiene *${metadata.participants.length} miembros*.`
             }
+          );
+        }
+
+        // ==================================
+        // 👑 ADMINS
+        // ==================================
+
+        else if (comando === ".admins") {
+
+          if (!remoteJid.endsWith("@g.us")) {
+
+            await sock.sendMessage(
+              remoteJid,
+              {
+                text:
+                  "❌ Este comando solo funciona en grupos."
+              }
+            );
+
+            return;
           }
 
-          // =================================
-          // 👑 ADMINS
-          // =================================
+          const metadata =
+            await sock.groupMetadata(
+              remoteJid
+            );
 
-          else if (comando === ".admins") {
+          const admins =
+            metadata.participants.filter(
+              participante =>
+                participante.admin
+            );
 
-            try {
+          if (admins.length === 0) {
 
-              const metadata =
-                await sock.groupMetadata(
-                  msg.key.remoteJid
-                );
+            await sock.sendMessage(
+              remoteJid,
+              {
+                text:
+                  "👑 No encontré administradores."
+              }
+            );
 
-              const admins =
-                metadata.participants
-                  .filter(
-                    p => p.admin
-                  )
-                  .map(
-                    p => `@${p.id.split("@")[0]}`
-                  )
-                  .join("\n");
+            return;
+          }
 
-              await sock.sendMessage(
-                msg.key.remoteJid,
-                {
-                  text: `👑 *ADMINISTRADORES*
+          let textoAdmins =
+            "👑 *ADMINISTRADORES DEL GRUPO*\n\n";
 
-${admins || "No encontrados."}`
-                }
-              );
+          for (const admin of admins) {
 
-            } catch {
+            textoAdmins +=
+              `• @${admin.id.split("@")[0]}\n`;
+          }
 
-              await sock.sendMessage(
-                msg.key.remoteJid,
-                {
-                  text:
-                    "❌ Este comando solo funciona en grupos."
-                }
-              );
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: textoAdmins,
+              mentions: admins.map(
+                admin => admin.id
+              )
             }
-          }      // =================================
-      // 📜 REGLAS
-      // =================================
+          );
+        }
 
-      else if (comando === ".reglas") {
+        // ==================================
+        // 📜 REGLAS
+        // ==================================
 
-        await sock.sendMessage(
-          msg.key.remoteJid,
-          {
-            text: `📜 *REGLAS DEL GRUPO*
+        else if (comando === ".reglas") {
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text: `📜 *REGLAS DEL GRUPO*
 
 1️⃣ Respeta a los demás.
 2️⃣ No hagas spam.
 3️⃣ No compartas contenido inapropiado.
 4️⃣ Mantén el orden del grupo.
 5️⃣ Diviértete responsablemente.`
-          }
+            }
+          );
+        }
+
+        // ==================================
+        // ❓ AYUDA
+        // ==================================
+
+        else if (comando === ".ayuda") {
+
+          await sock.sendMessage(
+            remoteJid,
+            {
+              text:
+                "❓ Escribe *.menu* para ver todos los comandos disponibles."
+            }
+          );
+        }
+
+      } catch (error) {
+
+        console.error(
+          "❌ Error procesando mensaje:",
+          error
         );
       }
+    });
 
-      // =================================
-      // ❓ AYUDA
-      // =================================
+  } catch (error) {
 
-      else if (comando === ".ayuda") {
+    console.error(
+      "❌ Error iniciando TitanBot:",
+      error
+    );
 
-        await sock.sendMessage(
-          msg.key.remoteJid,
-          {
-            text:
-              "❓ Escribe *.menu* para ver todos los comandos disponibles."
-          }
-        );
-      }
+    if (!reconectando) {
 
-    } catch (error) {
+      reconectando = true;
 
-      console.error(
-        "❌ Error procesando mensaje:",
-        error
-      );
+      setTimeout(() => {
+        reconectando = false;
+        iniciarBot();
+      }, 5000);
     }
-
   }
-);
+}
 
 // ==========================================
-// 🚀 INICIAR
+// 🚀 INICIAR TITANBOT
 // ==========================================
 
 iniciarBot();
