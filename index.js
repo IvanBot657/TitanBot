@@ -10,680 +10,404 @@ const QRCode = require("qrcode");
 
 const config = require("./config");
 
-// ===============================
-// COMANDOS
-// ===============================
-
 const inicio = require("./commands/inicio");
-const usuarioMod = require("./commands/usuario");
+const usuario = require("./commands/usuario");
 const economia = require("./commands/economia");
 const juegos = require("./commands/juegos");
-const grupos = require("./commands/grupos");
 const anime = require("./commands/anime");
+const grupos = require("./commands/grupos");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
 
-// ===============================
-// VARIABLES
-// ===============================
+const PORT = process.env.PORT || 10000;
 
 let qrActual = null;
 let codigoVinculacion = null;
-
 let sockActual = null;
 let authStateActual = null;
 
-let estado = "Esperando conexión...";
+let estado = "🟡 Iniciando...";
 let iniciando = false;
 
-// ===============================
+
+// =====================================================
 // SERVIDOR WEB
-// ===============================
+// =====================================================
 
-const PORT = process.env.PORT || 10000;
+const server = http.createServer(async (req, res) => {
 
-const servidor = http.createServer(async (req, res) => {
-
-  // =============================
+  // =========================
   // PÁGINA PRINCIPAL
-  // =============================
+  // =========================
 
-  if (req.url === "/" || req.url === "/qr") {
-
-    let qrHTML = `
-      <div class="espera">
-        🟡 Esperando QR...
-      </div>
-    `;
-
-    if (qrActual) {
-      try {
-
-        const imagenQR = await QRCode.toDataURL(qrActual);
-
-        qrHTML = `
-          <img
-            src="${imagenQR}"
-            class="qr"
-            alt="QR TitanBot"
-          >
-        `;
-
-      } catch (error) {
-
-        qrHTML = `
-          <div class="error">
-            ❌ No se pudo generar el QR
-          </div>
-        `;
-      }
-    }
-
-    const codigoHTML = codigoVinculacion
-      ? `
-        <div class="codigo">
-          ${codigoVinculacion}
-        </div>
-      `
-      : `
-        <div class="sin-codigo">
-          Esperando generación del código...
-        </div>
-      `;
+  if (req.url === "/") {
 
     res.writeHead(200, {
       "Content-Type": "text/html; charset=utf-8"
     });
 
-    return res.end(`
+    res.end(`
 <!DOCTYPE html>
-
 <html lang="es">
-
 <head>
-
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
->
-
-<title>TitanBot v2.5.0</title>
+<title>${config.nombre}</title>
 
 <style>
 
-* {
-  box-sizing: border-box;
-}
-
 body {
-
   margin: 0;
-
-  min-height: 100vh;
-
-  display: flex;
-
-  justify-content: center;
-
-  align-items: center;
-
-  background:
-    linear-gradient(
-      135deg,
-      #050505,
-      #101010,
-      #181818
-    );
-
+  padding: 20px;
+  background: #111;
   color: white;
-
   font-family: Arial, sans-serif;
-
+  text-align: center;
 }
 
 .container {
-
-  width: 95%;
-
   max-width: 500px;
-
-  padding: 25px;
-
-  text-align: center;
-
-  background: #111;
-
-  border-radius: 20px;
-
-  box-shadow:
-    0 0 30px rgba(0,0,0,.6);
-
+  margin: auto;
 }
 
 h1 {
-
   margin-bottom: 5px;
-
-}
-
-.version {
-
-  color: #aaa;
-
-  margin-bottom: 20px;
-
 }
 
 .estado {
-
-  margin-bottom: 25px;
-
-  padding: 12px;
-
-  border-radius: 10px;
-
-  background: #1b1b1b;
-
-}
-
-.seccion {
-
-  margin-top: 25px;
-
-  padding-top: 20px;
-
-  border-top: 1px solid #333;
-
-}
-
-.qr {
-
-  width: 280px;
-
-  max-width: 100%;
-
-  background: white;
-
+  margin: 15px;
   padding: 10px;
-
-  border-radius: 12px;
-
+  border-radius: 10px;
+  background: #222;
 }
 
-.espera,
-.sin-codigo {
-
-  color: #aaa;
-
-  padding: 20px;
-
+img {
+  width: 280px;
+  max-width: 90%;
+  margin-top: 15px;
 }
 
 input {
-
-  width: 100%;
-
-  padding: 14px;
-
+  width: 90%;
+  padding: 12px;
   margin-top: 10px;
-
+  border-radius: 8px;
   border: none;
-
-  border-radius: 10px;
-
   font-size: 16px;
-
-  outline: none;
-
 }
 
 button {
-
-  width: 100%;
-
-  padding: 14px;
-
-  margin-top: 12px;
-
+  margin-top: 10px;
+  padding: 12px 20px;
   border: none;
-
-  border-radius: 10px;
-
-  background: #25d366;
-
-  color: white;
-
+  border-radius: 8px;
   font-size: 16px;
-
-  font-weight: bold;
-
   cursor: pointer;
-
-}
-
-button:hover {
-
-  background: #1ebe5d;
-
 }
 
 .codigo {
-
   margin-top: 15px;
-
-  padding: 18px;
-
+  padding: 15px;
   background: #222;
-
   border-radius: 10px;
-
   font-size: 24px;
-
   font-weight: bold;
-
   letter-spacing: 4px;
-
-}
-
-.error {
-
-  color: #ff5555;
-
-  padding: 20px;
-
-}
-
-.info {
-
-  color: #aaa;
-
-  font-size: 13px;
-
-  margin-top: 10px;
-
 }
 
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-  <h1>🤖 TITANBOT</h1>
+<h1>🤖 ${config.nombre}</h1>
 
-  <div class="version">
-    V2.5.0
-  </div>
+<p>📦 Versión ${config.version}</p>
 
-  <div class="estado">
+<div class="estado" id="estado">
+${estado}
+</div>
 
-    🟢 Estado:
+<h2>📱 Conectar por QR</h2>
 
-    <strong>
-      ${estado}
-    </strong>
+<img id="qr" src="" alt="QR">
 
-  </div>
+<hr>
 
+<h2>🔢 Conectar con número</h2>
 
-  <div class="seccion">
+<p>Escribe tu número con código de país.</p>
 
-    <h2>📱 CONECTAR CON QR</h2>
+<p>Ejemplo: 573001234567</p>
 
-    ${qrHTML}
+<input
+id="numero"
+type="text"
+placeholder="573001234567"
+>
 
-  </div>
+<br>
 
+<button onclick="vincular()">
+🔗 Obtener código
+</button>
 
-  <div class="seccion">
-
-    <h2>🔢 CÓDIGO DE VINCULACIÓN</h2>
-
-    <form action="/pairing" method="GET">
-
-      <input
-        type="text"
-        name="numero"
-        placeholder="573001234567"
-        maxlength="15"
-        required
-      >
-
-      <button type="submit">
-        🔢 GENERAR CÓDIGO
-      </button>
-
-    </form>
-
-    <div class="info">
-      Escribe el número con código de país,
-      sin +, espacios ni guiones.
-    </div>
-
-    ${codigoHTML}
-
-  </div>
+<div id="codigo"></div>
 
 </div>
 
-</body>
+<script>
 
+async function actualizar() {
+
+  try {
+
+    const respuesta =
+      await fetch("/qr-data");
+
+    const data =
+      await respuesta.json();
+
+    document.getElementById("estado").innerText =
+      data.estado || "🟡 Esperando...";
+
+    if (data.qr) {
+
+      document.getElementById("qr").src =
+        data.qr;
+
+    } else {
+
+      document.getElementById("qr").src =
+        "";
+
+    }
+
+    if (data.codigo) {
+
+      document.getElementById("codigo").innerHTML =
+        '<div class="codigo">' +
+        data.codigo +
+        '</div>';
+
+    }
+
+  } catch (error) {
+
+    console.log(error);
+
+  }
+
+}
+
+async function vincular() {
+
+  const numero =
+    document.getElementById("numero").value.trim();
+
+  if (!numero) {
+
+    alert("Escribe tu número.");
+
+    return;
+  }
+
+  document.getElementById("codigo").innerHTML =
+    "⏳ Generando código...";
+
+  try {
+
+    const respuesta =
+      await fetch(
+        "/pairing?numero=" +
+        encodeURIComponent(numero)
+      );
+
+    const data =
+      await respuesta.json();
+
+    if (data.codigo) {
+
+      document.getElementById("codigo").innerHTML =
+        '<div class="codigo">' +
+        data.codigo +
+        '</div>';
+
+    } else {
+
+      document.getElementById("codigo").innerHTML =
+        "❌ " + (data.error || "No se pudo generar.");
+
+    }
+
+  } catch (error) {
+
+    document.getElementById("codigo").innerHTML =
+      "❌ Error de conexión.";
+
+  }
+
+}
+
+actualizar();
+
+setInterval(actualizar, 3000);
+
+</script>
+
+</body>
 </html>
-    `);
+`);
+
+    return;
   }
 
 
-  // =============================
-  // DATOS DEL QR
-  // =============================
+  // =========================
+  // QR DATA
+  // =========================
 
   if (req.url === "/qr-data") {
 
     res.writeHead(200, {
-      "Content-Type": "application/json; charset=utf-8"
+      "Content-Type": "application/json"
     });
 
-    return res.end(
+    res.end(
       JSON.stringify({
         estado,
         qr: qrActual,
         codigo: codigoVinculacion
       })
     );
+
+    return;
   }
 
 
-  // =============================
-  // CÓDIGO DE VINCULACIÓN
-  // =============================
+  // =========================
+  // PAIRING CODE
+  // =========================
 
   if (req.url.startsWith("/pairing")) {
 
+    res.writeHead(200, {
+      "Content-Type": "application/json"
+    });
+
     try {
 
-      const url = new URL(
-        req.url,
-        `http://localhost:${PORT}`
-      );
+      const url =
+        new URL(
+          req.url,
+          `http://localhost:${PORT}`
+        );
 
-      const numeroOriginal =
+      let numero =
         url.searchParams.get("numero");
 
-      if (!numeroOriginal) {
+      if (!numero) {
 
-        res.writeHead(400, {
-          "Content-Type": "text/html; charset=utf-8"
-        });
+        res.end(
+          JSON.stringify({
+            error: "Número no proporcionado."
+          })
+        );
 
-        return res.end(`
-          <h2>❌ Falta el número</h2>
-          <p>Ejemplo: 573001234567</p>
-          <a href="/qr">⬅️ Volver</a>
-        `);
+        return;
       }
 
-      const numero =
-        numeroOriginal
-          .replace(/\D/g, "");
+      numero =
+        numero.replace(/\D/g, "");
 
-      if (
-        numero.length < 10 ||
-        numero.length > 15
-      ) {
+      if (numero.length < 10) {
 
-        res.writeHead(400, {
-          "Content-Type": "text/html; charset=utf-8"
-        });
+        res.end(
+          JSON.stringify({
+            error: "Número inválido."
+          })
+        );
 
-        return res.end(`
-          <h2>❌ Número inválido</h2>
-
-          <p>
-            Usa el número con código de país.
-          </p>
-
-          <p>
-            Ejemplo: 573001234567
-          </p>
-
-          <a href="/qr">
-            ⬅️ Volver
-          </a>
-        `);
+        return;
       }
-
 
       if (!sockActual || !authStateActual) {
 
-        res.writeHead(503, {
-          "Content-Type": "text/html; charset=utf-8"
-        });
+        res.end(
+          JSON.stringify({
+            error: "El bot todavía está iniciando."
+          })
+        );
 
-        return res.end(`
-          <h2>🟡 TitanBot todavía está iniciando</h2>
-
-          <p>
-            Espera unos segundos y vuelve a intentarlo.
-          </p>
-
-          <a href="/qr">
-            🔄 Volver
-          </a>
-        `);
+        return;
       }
 
+      if (authStateActual.creds.registered) {
 
-      // ===========================
-      // YA ESTÁ REGISTRADO
-      // ===========================
+        res.end(
+          JSON.stringify({
+            error:
+              "Este bot ya está vinculado."
+          })
+        );
 
-      if (
-        authStateActual.creds &&
-        authStateActual.creds.registered
-      ) {
-
-        res.writeHead(200, {
-          "Content-Type": "text/html; charset=utf-8"
-        });
-
-        return res.end(`
-          <h2>🟢 TitanBot ya está conectado</h2>
-
-          <p>
-            Esta sesión ya está vinculada.
-          </p>
-
-          <a href="/qr">
-            ⬅️ Volver
-          </a>
-        `);
+        return;
       }
-
-
-      // ===========================
-      // GENERAR CÓDIGO
-      // ===========================
 
       codigoVinculacion =
-        await sockActual.requestPairingCode(numero);
+        await sockActual.requestPairingCode(
+          numero
+        );
 
       estado =
-        "Esperando vinculación por código";
+        "🔢 Código de vinculación generado";
 
-
-      res.writeHead(200, {
-        "Content-Type": "text/html; charset=utf-8"
-      });
-
-      return res.end(`
-<!DOCTYPE html>
-
-<html lang="es">
-
-<head>
-
-<meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0"
->
-
-<title>Código TitanBot</title>
-
-<style>
-
-body {
-
-  margin: 0;
-
-  min-height: 100vh;
-
-  display: flex;
-
-  justify-content: center;
-
-  align-items: center;
-
-  background: #101010;
-
-  color: white;
-
-  font-family: Arial, sans-serif;
-
-  text-align: center;
-
-}
-
-.box {
-
-  width: 90%;
-
-  max-width: 450px;
-
-  padding: 30px;
-
-  background: #181818;
-
-  border-radius: 20px;
-
-}
-
-.codigo {
-
-  margin: 25px 0;
-
-  padding: 20px;
-
-  background: #222;
-
-  border-radius: 12px;
-
-  font-size: 30px;
-
-  font-weight: bold;
-
-  letter-spacing: 5px;
-
-}
-
-a {
-
-  color: #25d366;
-
-  text-decoration: none;
-
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="box">
-
-  <h1>🔢 Código de vinculación</h1>
-
-  <p>
-    Abre WhatsApp en tu teléfono.
-  </p>
-
-  <p>
-    Ve a Dispositivos vinculados →
-    Vincular dispositivo.
-  </p>
-
-  <p>
-    Selecciona la opción para vincular
-    con número de teléfono.
-  </p>
-
-  <div class="codigo">
-    ${codigoVinculacion}
-  </div>
-
-  <p>
-    📱 Número:
-    ${numero}
-  </p>
-
-  <br>
-
-  <a href="/qr">
-    ⬅️ Volver a TitanBot
-  </a>
-
-</div>
-
-</body>
-
-</html>
-      `);
+      res.end(
+        JSON.stringify({
+          codigo: codigoVinculacion
+        })
+      );
 
     } catch (error) {
 
       console.log(
-        "❌ Error generando código:",
+        "Error pairing:",
         error
       );
 
-      res.writeHead(500, {
-        "Content-Type": "text/html; charset=utf-8"
-      });
-
-      return res.end(`
-        <h2>❌ No se pudo generar el código</h2>
-
-        <p>
-          ${error.message}
-        </p>
-
-        <a href="/qr">
-          ⬅️ Volver
-        </a>
-      `);
+      res.end(
+        JSON.stringify({
+          error:
+            "No se pudo generar el código."
+        })
+      );
     }
+
+    return;
   }
 
+
+  res.writeHead(404);
+
+  res.end("404");
 });
 
-servidor.listen(PORT, () => {
+server.listen(PORT, () => {
 
   console.log(
-    `🌐 Servidor web iniciado en puerto ${PORT}`
+    `🌐 Servidor iniciado en puerto ${PORT}`
   );
 
 });
 
-// ===============================
-// INICIAR BOT
-// ===============================
+
+// =====================================================
+// BOT
+// =====================================================
 
 async function iniciarBot() {
 
@@ -698,31 +422,36 @@ async function iniciarBot() {
     const {
       state,
       saveCreds
-    } = await useMultiFileAuthState("./session");
+    } =
+      await useMultiFileAuthState(
+        "./session"
+      );
 
-    authStateActual = state;
-
+    authStateActual = {
+      creds: state.creds,
+      keys: state.keys
+    };
 
     const sock =
       makeWASocket({
 
         auth: state,
 
-        logger: P({
-          level: "silent"
-        }),
+        logger:
+          P({
+            level: "silent"
+          }),
 
         printQRInTerminal: false
 
       });
 
-
     sockActual = sock;
 
 
-    // =============================
+    // =================================================
     // GUARDAR SESIÓN
-    // =============================
+    // =================================================
 
     sock.ev.on(
       "creds.update",
@@ -730,72 +459,62 @@ async function iniciarBot() {
     );
 
 
-    // =============================
+    // =================================================
     // CONEXIÓN
-    // =============================
+    // =================================================
 
     sock.ev.on(
       "connection.update",
-      async (update) => {
+      async ({
+        connection,
+        lastDisconnect,
+        qr
+      }) => {
 
-        const {
-          connection,
-          lastDisconnect,
-          qr
-        } = update;
-
-
-        // =========================
-        // NUEVO QR
-        // =========================
+        // -------------------------
+        // QR
+        // -------------------------
 
         if (qr) {
 
-          qrActual = qr;
-
-          codigoVinculacion = null;
+          qrActual =
+            await QRCode.toDataURL(qr);
 
           estado =
-            "Esperando escaneo del QR";
+            "📱 Escanea el código QR";
 
           console.log(
-            "📱 QR disponible en /qr"
+            "📱 Nuevo QR disponible"
           );
         }
 
 
-        // =========================
+        // -------------------------
         // CONECTADO
-        // =========================
+        // -------------------------
 
         if (connection === "open") {
+
+          qrActual = null;
+
+          codigoVinculacion = null;
 
           estado =
             "🟢 TitanBot conectado";
 
-          qrActual = null;
-
-          codigoVinculacion = null;
-
           console.log(
-            "✅ TitanBot conectado correctamente"
+            "🟢 TitanBot conectado correctamente"
           );
 
+          iniciando = false;
         }
 
 
-        // =========================
-        // CERRADO
-        // =========================
+        // -------------------------
+        // DESCONECTADO
+        // -------------------------
 
         if (connection === "close") {
-
-          estado =
-            "🔴 Conexión cerrada";
-
-          qrActual = null;
-
-          codigoVinculacion = null;
 
           const codigo =
             lastDisconnect
@@ -803,42 +522,42 @@ async function iniciarBot() {
               ?.output
               ?.statusCode;
 
-
-          if (
-            codigo ===
-            DisconnectReason.loggedOut
-          ) {
-
-            console.log(
-              "❌ Sesión cerrada. Debes volver a vincular."
-            );
-
-            iniciando = false;
-
-            return;
-          }
-
-
           console.log(
-            "🔄 Reconectando TitanBot..."
+            "🔴 Conexión cerrada:",
+            codigo
           );
 
           iniciando = false;
 
-          setTimeout(() => {
+          if (
+            codigo !==
+            DisconnectReason.loggedOut
+          ) {
 
-            iniciarBot();
+            estado =
+              "🟡 Reconectando...";
 
-          }, 3000);
+            setTimeout(() => {
+
+              iniciarBot();
+
+            }, 3000);
+
+          } else {
+
+            estado =
+              "🔴 Sesión cerrada";
+
+          }
         }
 
       }
     );
 
 
-    // =============================
+    // =================================================
     // MENSAJES
-    // =============================
+    // =================================================
 
     sock.ev.on(
       "messages.upsert",
@@ -848,37 +567,56 @@ async function iniciarBot() {
 
         try {
 
-          const mensaje =
+          const msg =
             messages[0];
 
-          if (!mensaje.message) {
+          if (!msg) {
             return;
           }
 
+          if (!msg.message) {
+            return;
+          }
 
           if (
-            mensaje.key &&
-            mensaje.key.fromMe
+            msg.key &&
+            msg.key.fromMe
           ) {
             return;
           }
 
 
-          const chat =
-            mensaje.key.remoteJid;
+          // ============================================
+          // CHAT
+          // ============================================
 
+          const chat =
+            msg.key.remoteJid;
+
+          if (!chat) {
+            return;
+          }
+
+
+          // ============================================
+          // TEXTO
+          // ============================================
 
           const texto =
-            mensaje.message.conversation ||
-            mensaje.message.extendedTextMessage
-              ?.text ||
+            msg.message.conversation ||
+            msg.message.extendedTextMessage?.text ||
+            msg.message.imageMessage?.caption ||
+            msg.message.videoMessage?.caption ||
             "";
-
 
           if (!texto) {
             return;
           }
 
+
+          // ============================================
+          // PREFIJO
+          // ============================================
 
           if (
             !texto.startsWith(
@@ -894,55 +632,49 @@ async function iniciarBot() {
               config.prefijo.length
             ).trim();
 
+          if (!contenido) {
+            return;
+          }
+
 
           const partes =
             contenido.split(/\s+/);
 
           const comando =
-            (partes.shift() || "")
+            partes.shift()
               .toLowerCase();
 
           const args =
             partes;
 
 
+          // ============================================
+          // USUARIO
+          // ============================================
+
           const id =
-            mensaje.key.participant ||
-            chat;
+            msg.key.participant ||
+            msg.key.remoteJid;
 
 
-          // =========================
-          // XP
-          // =========================
+          // ============================================
+          // GRUPO
+          // ============================================
 
-          try {
-
-            usuarioMod.ganarXP(id);
-
-          } catch (error) {
-
-            console.log(
-              "⚠️ Error XP:",
-              error.message
-            );
-          }
-
-
-          // =========================
-          // DATOS DEL GRUPO
-          // =========================
-
-          let esGrupo =
+          const esGrupo =
             chat.endsWith("@g.us");
 
+
           let esAdmin = false;
+
+          let metadata = null;
 
 
           if (esGrupo) {
 
             try {
 
-              const metadata =
+              metadata =
                 await sock.groupMetadata(
                   chat
                 );
@@ -953,215 +685,262 @@ async function iniciarBot() {
                     p.id === id
                 );
 
-
-              if (
-                participante &&
-                (
-                  participante.admin ===
-                  "admin" ||
-
-                  participante.admin ===
-                  "superadmin"
-                )
-              ) {
-
-                esAdmin = true;
-              }
+              esAdmin =
+                participante?.admin === "admin" ||
+                participante?.admin === "superadmin";
 
             } catch (error) {
 
               console.log(
-                "⚠️ No se pudo obtener grupo"
+                "Error obteniendo grupo:",
+                error
               );
             }
           }
 
 
-          // =========================
+          // ============================================
+          // XP
+          // ============================================
+
+          try {
+
+            const resultadoXP =
+              usuario.ganarXP(id);
+
+            if (
+              resultadoXP &&
+              resultadoXP.subio
+            ) {
+
+              await sock.sendMessage(
+                chat,
+                {
+                  text:
+`🎉 ¡SUBISTE DE NIVEL!
+
+👤 Usuario:
+@${id.split("@")[0]}
+
+⭐ Nivel:
+${resultadoXP.nivel}
+
+💰 Recompensa:
++250 monedas`,
+                  mentions: [id]
+                }
+              );
+            }
+
+          } catch (error) {
+
+            console.log(
+              "Error XP:",
+              error
+            );
+          }
+
+
+          // ============================================
+          // COMANDOS
+          // ============================================
+
+          let ejecutado = false;
+
+
           // INICIO
-          // =========================
+          if (!ejecutado) {
 
-          let resultado =
-            await inicio(
-              sock,
-              chat,
-              comando
-            );
+            const resultado =
+              await inicio(
+                sock,
+                chat,
+                comando,
+                args,
+                id,
+                esGrupo,
+                esAdmin
+              );
 
-          if (resultado) {
-            return;
+            if (resultado !== false) {
+              ejecutado = true;
+            }
           }
 
 
-          // =========================
           // USUARIO
-          // =========================
+          if (!ejecutado) {
 
-          resultado =
-            await usuarioMod.usuario(
-              sock,
-              chat,
-              comando,
-              id
-            );
+            const resultado =
+              await usuario(
+                sock,
+                chat,
+                comando,
+                args,
+                id
+              );
 
-          if (resultado) {
-            return;
+            if (resultado !== false) {
+              ejecutado = true;
+            }
           }
 
 
-          // =========================
           // ECONOMÍA
-          // =========================
+          if (!ejecutado) {
 
-          resultado =
-            await economia(
-              sock,
-              chat,
-              comando,
-              args,
-              id
-            );
+            const resultado =
+              await economia(
+                sock,
+                chat,
+                comando,
+                args,
+                id
+              );
 
-          if (resultado) {
-            return;
+            if (resultado !== false) {
+              ejecutado = true;
+            }
           }
 
 
-          // =========================
           // JUEGOS
-          // =========================
+          if (!ejecutado) {
 
-          resultado =
-            await juegos(
-              sock,
-              chat,
-              comando,
-              args,
-              id
-            );
+            const resultado =
+              await juegos(
+                sock,
+                chat,
+                comando,
+                args,
+                id
+              );
 
-          if (resultado) {
-            return;
+            if (resultado !== false) {
+              ejecutado = true;
+            }
           }
 
 
-          // =========================
           // ANIME
-          // =========================
+          if (!ejecutado) {
 
-          resultado =
-            await anime(
-              sock,
-              chat,
-              comando,
-              args
-            );
+            const resultado =
+              await anime(
+                sock,
+                chat,
+                comando,
+                args
+              );
 
-          if (resultado) {
-            return;
+            if (resultado !== false) {
+              ejecutado = true;
+            }
           }
 
 
-          // =========================
           // GRUPOS
-          // =========================
+          if (!ejecutado) {
 
-          resultado =
-            await grupos(
-              sock,
-              chat,
-              comando,
-              args,
-              id,
-              esGrupo,
-              esAdmin
-            );
+            const resultado =
+              await grupos(
+                sock,
+                chat,
+                comando,
+                args,
+                id,
+                esGrupo,
+                esAdmin
+              );
 
-          if (resultado) {
-            return;
+            if (resultado !== false) {
+              ejecutado = true;
+            }
           }
 
 
-          // =========================
           // HERRAMIENTAS
-          // =========================
+          if (!ejecutado) {
 
-          resultado =
-            await herramientas(
-              sock,
-              chat,
-              comando,
-              args,
-              id
-            );
+            const resultado =
+              await herramientas(
+                sock,
+                chat,
+                comando,
+                args,
+                id
+              );
 
-          if (resultado) {
-            return;
+            if (resultado !== false) {
+              ejecutado = true;
+            }
           }
 
 
-          // =========================
           // AJUSTES
-          // =========================
+          if (!ejecutado) {
 
-          resultado =
-            await ajustes(
-              sock,
-              chat,
-              comando,
-              args,
-              id,
-              esGrupo,
-              esAdmin
-            );
+            const resultado =
+              await ajustes(
+                sock,
+                chat,
+                comando,
+                args,
+                id,
+                esGrupo,
+                esAdmin
+              );
 
-          if (resultado) {
-            return;
+            if (resultado !== false) {
+              ejecutado = true;
+            }
           }
 
 
-          // =========================
           // OWNER
-          // =========================
+          if (!ejecutado) {
 
-          resultado =
-            await owner(
-              sock,
-              chat,
-              comando,
-              args,
-              id
-            );
+            const resultado =
+              await owner(
+                sock,
+                chat,
+                comando,
+                args,
+                id
+              );
 
-          if (resultado) {
-            return;
+            if (resultado !== false) {
+              ejecutado = true;
+            }
           }
 
 
-          // =========================
-          // DESCONOCIDO
-          // =========================
+          // ============================================
+          // COMANDO DESCONOCIDO
+          // ============================================
 
-          await sock.sendMessage(
-            chat,
-            {
-              text:
+          if (!ejecutado) {
+
+            await sock.sendMessage(
+              chat,
+              {
+                text:
 `❌ Comando no encontrado.
 
-Escribe:
-${config.prefijo}menu
+Usa:
 
-para ver los comandos.`
-            }
-          );
+.menu
 
+para ver todos los comandos disponibles.`
+              }
+            );
+          }
 
         } catch (error) {
 
           console.log(
             "❌ Error procesando mensaje:",
-            error.message
+            error
           );
 
         }
@@ -1170,28 +949,130 @@ para ver los comandos.`
     );
 
 
-  } catch (error) {
+    // =================================================
+    // BIENVENIDA / DESPEDIDA
+    // =================================================
 
-    iniciando = false;
+    sock.ev.on(
+      "group-participants.update",
+      async ({
+        id: grupoId,
+        participants,
+        action
+      }) => {
+
+        try {
+
+          const gruposDB =
+            require("./database/groups.json");
+
+          const configuracion =
+            gruposDB[grupoId];
+
+          if (!configuracion) {
+            return;
+          }
+
+
+          // =========================
+          // BIENVENIDA
+          // =========================
+
+          if (
+            action === "add" &&
+            configuracion.bienvenida
+          ) {
+
+            for (
+              const participante
+              of participants
+            ) {
+
+              await sock.sendMessage(
+                grupoId,
+                {
+                  text:
+`🎉 ¡BIENVENIDO/A!
+
+👋 Hola @${participante.split("@")[0]}
+
+🤖 Bienvenido/a a este grupo.
+¡Esperamos que la pases muy bien!`,
+                  mentions: [
+                    participante
+                  ]
+                }
+              );
+            }
+          }
+
+
+          // =========================
+          // DESPEDIDA
+          // =========================
+
+          if (
+            action === "remove" &&
+            configuracion.despedida
+          ) {
+
+            for (
+              const participante
+              of participants
+            ) {
+
+              await sock.sendMessage(
+                grupoId,
+                {
+                  text:
+`👋 ¡Hasta luego!
+
+@${participante.split("@")[0]} ha salido del grupo.
+
+🤖 TitanBot`,
+                  mentions: [
+                    participante
+                  ]
+                }
+              );
+            }
+          }
+
+        } catch (error) {
+
+          console.log(
+            "Error bienvenida/despedida:",
+            error
+          );
+
+        }
+
+      }
+    );
+
+  } catch (error) {
 
     console.log(
       "❌ Error iniciando TitanBot:",
       error
     );
 
+    iniciando = false;
+
+    estado =
+      "🔴 Error iniciando el bot";
 
     setTimeout(() => {
 
       iniciarBot();
 
     }, 5000);
-
   }
-
 }
 
-// ===============================
+
+// =====================================================
 // INICIAR
-// ===============================
+// =====================================================
 
 iniciarBot();
