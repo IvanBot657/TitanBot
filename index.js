@@ -1,7 +1,8 @@
 // TITANBOT - index.js
 // Baileys 7.0.0-rc14
-// Bot base para Render - vinculación por número, menú, perfiles,
+// Bot base para Render - vinculación por número (Pairing Code), menú, perfiles,
 // grupos, economía, XP, juegos y más de 200 comandos.
+// TITANBOT 4.6.0 — v2.8
 
 const {
   default: makeWASocket,
@@ -20,6 +21,7 @@ const QRCode = require("qrcode");
 
 const PREFIX = ".";
 const PORT = process.env.PORT || 10000;
+const PAIRING_NUMBER = String(process.env.PAIRING_NUMBER || "").replace(/\D/g, "");
 const BOT_NAME = "TITANBOT";
 const FRASE = "⚡ El futuro empieza ahora.";
 
@@ -45,6 +47,7 @@ if (fs.existsSync(DATA_FILE)) {
 
 let sock = null;
 let currentQR = null;
+let pairingCode = null;
 let botConnection = "starting";
 const profileSteps = {};
 
@@ -1139,74 +1142,66 @@ async function handleAnime(cmd, m, id, args = []) {
 ✨ Usa *.s hombre* o *.s mujer* para elegir.
 ⚡ El futuro empieza ahora.`;
 
-  try {
-    // Solo imágenes con clasificación segura.
-    const tag = gender === "Hombre" ? "male" : "female";
-    const apiUrl = `https://api.nekosapi.com/v4/images/random?rating=safe&tags=${encodeURIComponent(tag)}&limit=1`;
-    const response = await fetch(apiUrl);
-    if (!response.ok) throw new Error(`Nekos API HTTP ${response.status}`);
+  const headers = {
+    "User-Agent": "TITANBOT (https://github.com/whiskeysockets/baileys)"
+  };
 
+  // NEKOSBEST tiene categorías separadas y aptas para todo público:
+  // waifu = femenino, husbando = masculino.
+  const primaryCategory = gender === "Hombre" ? "husbando" : "waifu";
+  const primaryUrl = `https://nekos.best/api/v2/${primaryCategory}`;
+
+  async function fetchImageFromApi(apiUrl) {
+    const response = await fetch(apiUrl, { headers });
+    if (!response.ok) throw new Error(`API HTTP ${response.status}`);
     const data = await response.json();
-    const item = Array.isArray(data) ? data[0] : (data.items?.[0] || data.data?.[0] || data);
-    const imageUrl = item?.url || item?.image_url || item?.image?.url;
+    const imageUrl = data?.results?.[0]?.url || data?.url;
     if (!imageUrl) throw new Error("La API no devolvió una imagen");
 
-    const imageResponse = await fetch(imageUrl);
+    const imageResponse = await fetch(imageUrl, { headers });
     if (!imageResponse.ok) throw new Error(`Imagen HTTP ${imageResponse.status}`);
-    const buffer = Buffer.from(await imageResponse.arrayBuffer());
+    return Buffer.from(await imageResponse.arrayBuffer());
+  }
 
-    await sock.sendMessage(jid, {
-      image: buffer,
-      caption
-    });
+  try {
+    const buffer = await fetchImageFromApi(primaryUrl);
+    await sock.sendMessage(jid, { image: buffer, caption });
     return true;
   } catch (error) {
-    console.error("Error en .s:", error.message);
+    console.error(`Error NEKOSBEST .s ${gender}:`, error.message);
+  }
 
-    // Respaldo 1: imagen configurada en Render.
-    const fallback = process.env.ANIME_IMAGE_URL;
+  // Segundo intento: NekosAPI con filtro de género.
+  try {
+    const tag = gender === "Hombre" ? "male" : "female";
+    const apiUrl = `https://api.nekosapi.com/v4/images/random?rating=safe&tags=${encodeURIComponent(tag)}&limit=1`;
+    const buffer = await fetchImageFromApi(apiUrl);
+    await sock.sendMessage(jid, { image: buffer, caption });
+    return true;
+  } catch (error) {
+    console.error(`Respaldo NekosAPI .s ${gender}:`, error.message);
+  }
+
+  // Tercer intento: URL configurada en Render. Solo se recomienda
+  // configurar una imagen que corresponda al género seleccionado.
+  try {
+    const fallback = gender === "Hombre"
+      ? process.env.ANIME_MALE_IMAGE_URL
+      : process.env.ANIME_FEMALE_IMAGE_URL;
     if (fallback) {
-      await sock.sendMessage(jid, {
-        image: { url: fallback },
-        caption
-      });
+      await sock.sendMessage(jid, { image: { url: fallback }, caption });
       return true;
     }
-
-    // Respaldo 2: otra fuente pública de imágenes anime SFW.
-    try {
-      const backupResponse = await fetch("https://api.waifu.pics/sfw/waifu");
-      if (backupResponse.ok) {
-        const backupData = await backupResponse.json();
-        if (backupData?.url) {
-          const backupImage = await fetch(backupData.url);
-          if (backupImage.ok) {
-            const backupBuffer = Buffer.from(await backupImage.arrayBuffer());
-            await sock.sendMessage(jid, { image: backupBuffer, caption });
-            return true;
-          }
-        }
-      }
-    } catch (backupError) {
-      console.error("Respaldo anime falló:", backupError.message);
-    }
-
-    // Respaldo 3: la imagen anime local del perfil del bot.
-    try {
-      const localProfile = path.join(__dirname, "titanbot-profile.png");
-      if (fs.existsSync(localProfile)) {
-        await sock.sendMessage(jid, { image: fs.readFileSync(localProfile), caption });
-        return true;
-      }
-    } catch (localError) {
-      console.error("Respaldo local anime falló:", localError.message);
-    }
-
-    await sock.sendMessage(jid, {
-      text: `${caption}\n\n❌ No se pudo cargar ninguna imagen. Intenta de nuevo.`
-    });
-    return true;
+  } catch (error) {
+    console.error("Respaldo por URL .s falló:", error.message);
   }
+
+  // No usamos la foto del perfil del bot como respaldo porque podría
+  // ser de un género diferente al indicado en la tarjeta.
+  await sock.sendMessage(jid, {
+    text: `${caption}\n\n⚠️ No pude cargar una imagen ${gender.toLowerCase()} en este momento. Intenta *.s* de nuevo.`
+  });
+  return true;
 }
 
 async function executeCommand(text, m) {
@@ -1444,6 +1439,7 @@ async function startBot() {
 
         if (connection === "open") {
           currentQR = null;
+          pairingCode = null;
           botConnection = "connected";
           console.log("================================");
           console.log("✅ TITANBOT CONECTADO");
@@ -1479,9 +1475,27 @@ async function startBot() {
       }
     });
 
+    // Vinculación mediante Pairing Code. El número se configura en Render
+    // con PAIRING_NUMBER, por ejemplo: 573001234567 (sin + ni espacios).
     if (!state.creds.registered) {
-      console.log("📲 TITANBOT está esperando la vinculación por QR.");
-      console.log("📷 El QR se mostrará directamente en la página web.");
+      if (!PAIRING_NUMBER) {
+        console.log("❌ Falta PAIRING_NUMBER en las variables de entorno.");
+        console.log("📱 Configura PAIRING_NUMBER con tu número en formato internacional, sin +.");
+      } else {
+        try {
+          await sleep(1500);
+          pairingCode = await sock.requestPairingCode(PAIRING_NUMBER);
+          botConnection = "pairing";
+          console.log("================================");
+          console.log("📱 CÓDIGO DE VINCULACIÓN TITANBOT");
+          console.log(`🔐 ${pairingCode}`);
+          console.log("📲 WhatsApp > Dispositivos vinculados > Vincular dispositivo > Vincular con número de teléfono");
+          console.log("================================");
+        } catch (error) {
+          console.error("❌ No se pudo generar el Pairing Code:", error?.message || error);
+          botConnection = "pairing_error";
+        }
+      }
     }
   } catch (error) {
     console.error("❌ Error iniciando TitanBot:", error);
@@ -1493,51 +1507,19 @@ http.createServer(async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 
-    // API simple de estado. El QR se genera en el servidor, sin depender de CDN.
-    if (url.pathname === "/api/qr") {
-      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-      res.setHeader("Pragma", "no-cache");
-      res.setHeader("Expires", "0");
-
-      if (botConnection === "connected") {
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ status: "connected", qr: null }));
-        return;
-      }
-
-      if (currentQR) {
-        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ status: "qr", qr: currentQR }));
-        return;
-      }
-
-      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ status: botConnection, qr: null }));
-      return;
-    }
-
-    // Entrega el QR como SVG generado por Node. No necesita JavaScript externo.
-    if (url.pathname === "/qr.svg") {
-      if (!currentQR) {
-        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
-        res.end("QR no disponible");
-        return;
-      }
-
-      const svg = await QRCode.toString(currentQR, {
-        type: "svg",
-        errorCorrectionLevel: "M",
-        margin: 2,
-        width: 360
-      });
-
+    // Estado y Pairing Code para la página web.
+    if (url.pathname === "/api/pairing") {
       res.writeHead(200, {
-        "Content-Type": "image/svg+xml; charset=utf-8",
+        "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
         "Pragma": "no-cache",
         "Expires": "0"
       });
-      res.end(svg);
+      res.end(JSON.stringify({
+        status: botConnection,
+        pairingCode: pairingCode || null,
+        configured: Boolean(PAIRING_NUMBER)
+      }));
       return;
     }
 
@@ -1554,7 +1536,7 @@ http.createServer(async (req, res) => {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Cache-Control" content="no-store">
-<title>TITANBOT - Vinculación QR</title>
+<title>TITANBOT - Pairing Code</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;background:#0b0f12;color:#fff;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;padding:20px}
@@ -1562,8 +1544,8 @@ body{margin:0;min-height:100vh;background:#0b0f12;color:#fff;font-family:Arial,s
 h1{margin:0 0 8px;font-size:28px}
 p{color:#aeb7bf;line-height:1.45}
 .status{font-weight:700;margin:12px 0;font-size:18px}
-.qrbox{width:320px;height:320px;max-width:100%;margin:20px auto;background:#fff;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.qrbox img{width:100%;height:100%;padding:14px;display:block}
+.qrbox{width:320px;max-width:100%;min-height:150px;margin:20px auto;background:#0f1317;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #293139}
+.code{font-size:34px;letter-spacing:5px;font-weight:800;word-break:break-all;padding:28px 16px}
 .message{color:#222;font-weight:700;padding:20px}
 .ok{font-size:64px}
 .steps{text-align:left;background:#0f1317;border-radius:14px;padding:14px 18px;color:#d9e0e5}
@@ -1575,63 +1557,59 @@ button{border:0;border-radius:12px;padding:12px 18px;background:#fff;color:#111;
 <body>
 <div class="card">
 <h1>🤖 TITANBOT</h1>
-<p>Vinculación por código QR</p>
-<div id="status" class="status">⏳ Esperando QR...</div>
-<div id="qrbox" class="qrbox"><div class="message">⏳ Esperando que WhatsApp genere el QR...</div></div>
-<button onclick="updateQR(true)">🔄 Actualizar QR</button>
+<p>Vinculación por número de teléfono</p>
+<div id="status" class="status">⏳ Generando código...</div>
+<div id="qrbox" class="qrbox"><div id="code" class="code">••••••••</div></div>
+<button onclick="updatePairing(true)">🔄 Actualizar estado</button>
 <ol class="steps">
 <li>Abre WhatsApp en tu teléfono.</li>
 <li>Ve a <b>Dispositivos vinculados</b>.</li>
 <li>Pulsa <b>Vincular dispositivo</b>.</li>
-<li>Escanea el QR que aparece arriba.</li>
+<li>Elige <b>Vincular con número de teléfono</b>.</li>
+<li>Escribe el código que aparece arriba.</li>
 </ol>
-<p class="small">El QR cambia automáticamente cuando WhatsApp genera uno nuevo.</p>
+<p class="small">El número se configura en Render con la variable PAIRING_NUMBER.</p>
 </div>
 <script>
 const statusEl=document.getElementById('status');
 const box=document.getElementById('qrbox');
-let lastQR='';
-let lastState='';
+const codeEl=document.getElementById('code');
 
-async function updateQR(force=false){
+async function updatePairing(){
   try{
-    const r=await fetch('/api/qr?ts='+Date.now(),{cache:'no-store'});
+    const r=await fetch('/api/pairing?ts='+Date.now(),{cache:'no-store'});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const data=await r.json();
 
     if(data.status==='connected'){
-      if(lastState!=='connected'){
-        box.innerHTML='<div class="ok">✅</div>';
-      }
       statusEl.textContent='✅ TITANBOT CONECTADO';
-      lastState='connected';
+      codeEl.textContent='✓ LISTO';
       return;
     }
 
-    if(data.qr){
-      if(force || data.qr!==lastQR){
-        lastQR=data.qr;
-        lastState='qr';
-        box.innerHTML='<img alt="QR de vinculación de TITANBOT" src="/qr.svg?ts='+Date.now()+'">';
-      }
-      statusEl.textContent='📷 Escanea el QR con WhatsApp';
+    if(data.pairingCode){
+      statusEl.textContent='🔐 CÓDIGO DE VINCULACIÓN';
+      codeEl.textContent=data.pairingCode;
       return;
     }
 
-    lastState=data.status || 'waiting';
-    statusEl.textContent=data.status==='connecting'?'🔄 Conectando...':'⏳ Generando QR...';
-    if(force || !lastQR){
-      box.innerHTML='<div class="message">⏳ Esperando que WhatsApp genere el QR...</div>';
+    if(!data.configured){
+      statusEl.textContent='⚠️ FALTA PAIRING_NUMBER';
+      codeEl.textContent='CONFIGURA EL NÚMERO';
+      return;
     }
+
+    statusEl.textContent=data.status==='pairing_error'?'❌ ERROR GENERANDO CÓDIGO':'⏳ GENERANDO CÓDIGO...';
+    codeEl.textContent='••••••••';
   }catch(e){
-    statusEl.textContent='⚠️ Error consultando el QR';
-    box.innerHTML='<div class="message">No se pudo obtener el QR. Pulsa <b>Actualizar QR</b>.</div>';
+    statusEl.textContent='⚠️ Error consultando el estado';
+    codeEl.textContent='SIN CONEXIÓN';
     console.error(e);
   }
 }
 
-updateQR(true);
-setInterval(updateQR,1500);
+updatePairing();
+setInterval(updatePairing,1500);
 </script>
 </body>
 </html>`);
@@ -1649,15 +1627,15 @@ setInterval(updateQR,1500);
   }
 }).listen(PORT, () => {
   console.log(`🌐 TitanBot disponible en el puerto ${PORT}`);
-  console.log(`📷 QR web: abre la URL principal para vincular TITANBOT.`);
+  console.log(`📱 Pairing Code: abre la URL principal para ver el estado.`);
 });
 
 console.log("================================");
 console.log(`🤖 ${BOT_NAME}`);
 console.log(`⚡ ${FRASE}`);
-console.log("📱 Vinculación: QR");
-console.log("🟢 QR: ACTIVADO");
-console.log("🚫 Código por número: DESACTIVADO");
+console.log("📱 Vinculación: número de teléfono");
+console.log("🟢 Pairing Code: ACTIVADO");
+console.log("🚫 QR: DESACTIVADO");
 console.log("================================");
 
 startBot();
