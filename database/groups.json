@@ -1,1 +1,305 @@
-{}
+const fs = require("fs");
+
+const DB = "./database/groups.json";
+
+function cargarGrupos() {
+  if (!fs.existsSync(DB)) {
+    fs.writeFileSync(DB, "{}");
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(DB, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function guardarGrupos(db) {
+  fs.writeFileSync(DB, JSON.stringify(db, null, 2));
+}
+
+function obtenerGrupo(db, chat) {
+  if (!db[chat]) {
+    db[chat] = {
+      bienvenida: false,
+      despedida: false,
+      reglas: "No hay reglas configuradas."
+    };
+  }
+
+  if (typeof db[chat].bienvenida !== "boolean") {
+    db[chat].bienvenida = false;
+  }
+
+  if (typeof db[chat].despedida !== "boolean") {
+    db[chat].despedida = false;
+  }
+
+  if (typeof db[chat].reglas !== "string") {
+    db[chat].reglas = "No hay reglas configuradas.";
+  }
+
+  return db[chat];
+}
+
+async function grupos(
+  sock,
+  chat,
+  comando,
+  args,
+  id,
+  esGrupo,
+  esAdmin
+) {
+
+  if (
+    comando === "grupo" ||
+    comando === "grupomenu"
+  ) {
+
+    if (!esGrupo) {
+      return sock.sendMessage(chat, {
+        text: "❌ Este comando solo funciona en grupos."
+      });
+    }
+
+    return sock.sendMessage(chat, {
+      text:
+`👥 TITANBOT — GRUPOS
+
+📋 COMANDOS
+
+👑 .admins
+Ver administradores.
+
+📢 .tagall
+Mencionar a todos.
+
+👥 .miembros
+Ver cantidad de miembros.
+
+🆔 .idgrupo
+Ver ID del grupo.
+
+📜 .reglas
+Ver las reglas.
+
+📝 .reglas texto
+Cambiar las reglas.
+
+⚙️ .ajustes
+Configuración del grupo.
+
+━━━━━━━━━━━━━━━━━━
+
+🤖 TitanBot v2.5.0`
+    });
+  }
+
+
+  if (!esGrupo) {
+    return false;
+  }
+
+
+  // ========================================
+  // METADATA
+  // ========================================
+
+  let metadata;
+
+  try {
+    metadata = await sock.groupMetadata(chat);
+  } catch {
+    return sock.sendMessage(chat, {
+      text: "❌ No pude obtener la información del grupo."
+    });
+  }
+
+  const participantes =
+    metadata.participants || [];
+
+
+  // ========================================
+  // ADMINS
+  // ========================================
+
+  if (comando === "admins") {
+
+    const admins =
+      participantes.filter(
+        p =>
+          p.admin === "admin" ||
+          p.admin === "superadmin"
+      );
+
+    if (admins.length === 0) {
+      return sock.sendMessage(chat, {
+        text: "❌ No encontré administradores."
+      });
+    }
+
+    const lista = admins
+      .map(
+        (p, i) =>
+          `${i + 1}. @${p.id.split("@")[0]}`
+      )
+      .join("\n");
+
+    const mentions =
+      admins.map(p => p.id);
+
+    return sock.sendMessage(chat, {
+      text:
+`👑 ADMINISTRADORES
+
+${lista}
+
+━━━━━━━━━━━━━━━━━━
+👥 Total: ${admins.length}`,
+      mentions
+    });
+  }
+
+
+  // ========================================
+  // TAGALL
+  // ========================================
+
+  if (comando === "tagall") {
+
+    if (!esAdmin) {
+      return sock.sendMessage(chat, {
+        text:
+`❌ SOLO ADMINISTRADORES
+
+Este comando solo puede
+ser utilizado por un administrador.`
+      });
+    }
+
+    const texto =
+      args.length > 0
+        ? args.join(" ")
+        : "📢 Atención a todos.";
+
+    const mentions =
+      participantes.map(p => p.id);
+
+    const lista =
+      participantes
+        .map(
+          p => `@${p.id.split("@")[0]}`
+        )
+        .join(" ");
+
+    return sock.sendMessage(chat, {
+      text:
+`📢 ${texto}
+
+${lista}`,
+      mentions
+    });
+  }
+
+
+  // ========================================
+  // MIEMBROS
+  // ========================================
+
+  if (comando === "miembros") {
+
+    return sock.sendMessage(chat, {
+      text:
+`👥 MIEMBROS
+
+📛 Grupo:
+${metadata.subject}
+
+👤 Cantidad:
+${participantes.length}
+
+👑 Administradores:
+${participantes.filter(
+  p =>
+    p.admin === "admin" ||
+    p.admin === "superadmin"
+).length}`
+    });
+  }
+
+
+  // ========================================
+  // ID GRUPO
+  // ========================================
+
+  if (comando === "idgrupo") {
+
+    return sock.sendMessage(chat, {
+      text:
+`🆔 ID DEL GRUPO
+
+${chat}`
+    });
+  }
+
+
+  // ========================================
+  // REGLAS
+  // ========================================
+
+  if (comando === "reglas") {
+
+    const db = cargarGrupos();
+    const grupo = obtenerGrupo(db, chat);
+
+    // VER REGLAS
+    if (args.length === 0) {
+
+      guardarGrupos(db);
+
+      return sock.sendMessage(chat, {
+        text:
+`📜 REGLAS DEL GRUPO
+
+${grupo.reglas}
+
+━━━━━━━━━━━━━━━━━━
+
+👥 ${metadata.subject}
+🤖 TitanBot v2.5.0`
+      });
+    }
+
+
+    // CAMBIAR REGLAS
+    if (!esAdmin) {
+      return sock.sendMessage(chat, {
+        text:
+`❌ SOLO ADMINISTRADORES
+
+Solo un administrador puede
+cambiar las reglas.`
+      });
+    }
+
+    grupo.reglas =
+      args.join(" ");
+
+    guardarGrupos(db);
+
+    return sock.sendMessage(chat, {
+      text:
+`✅ REGLAS ACTUALIZADAS
+
+📜 Nuevas reglas:
+
+${grupo.reglas}`
+    });
+  }
+
+
+  return false;
+}
+
+module.exports = grupos;
