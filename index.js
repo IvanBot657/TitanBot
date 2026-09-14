@@ -1124,115 +1124,106 @@ ${resultadoXP.nivel}
 
             }
 
- // =========================================
-// DESCONOCIDO
-// =========================================
 
-if (!ejecutado) {
+            // =========================================
+            // DESCONOCIDO
+            // =========================================
 
-  await sock.sendMessage(
-    chat,
-    {
-      text:
-`❌ COMANDO NO ENCONTRADO
+            if (!ejecutado) {
 
-El comando:
+              await sock.sendMessage(
+                chat,
+                {
+                  text:
+`❌ Comando no encontrado.
 
-.${comando}
-
-no existe.
-
-📋 Usa:
+Usa:
 
 .menu
 
-para ver todos los comandos disponibles.
+para ver todos los comandos disponibles.`
+                }
+              );
 
-🤖 TitanBot v${config.version}`
-    }
-  );
-
-}
-
-} // fin del for
-
-} catch (error) {
-
-  console.log(
-    "❌ Error procesando mensaje:",
-    error
-  );
-
-}
-
-      }
-    );
-
-
-// =================================================
-// BIENVENIDA / DESPEDIDA
-// =================================================
-
-sock.ev.on(
-  "group-participants.update",
-  async ({
-    id: grupoId,
-    participants,
-    action
-  }) => {
-
-    try {
-
-      // Registrar automáticamente el grupo
-      registrarGrupo(grupoId);
-
-      const gruposDB =
-        cargarGrupos();
-
-      const configuracion =
-        gruposDB[grupoId];
-
-      if (!configuracion) {
-        return;
-      }
-
-
-      // =========================
-      // BIENVENIDA
-      // =========================
-
-      if (
-        action === "add" &&
-        configuracion.bienvenida
-      ) {
-
-        for (
-          const participante
-          of participants
-        ) {
-
-          await sock.sendMessage(
-            grupoId,
-            {
-              text:
-`🎉 ¡BIENVENIDO/A!
-
-👋 Hola @${participante.split("@")[0]}
-
-🤖 Bienvenido/a a este grupo.
-¡Esperamos que la pases muy bien!
-
-📋 Usa .menu para ver los comandos.`,
-              mentions: [
-                participante
-              ]
             }
+
+          }
+
+        } catch (error) {
+
+          console.log(
+            "❌ Error procesando mensaje:",
+  error
           );
 
         }
 
       }
+    );
+    
+     // =================================================
+    // BIENVENIDA / DESPEDIDA
+    // =================================================
 
+    sock.ev.on(
+      "group-participants.update",
+      async ({
+        id: grupoId,
+        participants,
+        action
+      }) => {
+
+        try {
+
+          // Registrar el grupo automáticamente
+          registrarGrupo(grupoId);
+
+
+          const gruposDB =
+            cargarGrupos();
+
+
+          const configuracion =
+            gruposDB[grupoId];
+
+
+          if (!configuracion) {
+            return;
+          }
+          
+           // =========================
+          // BIENVENIDA
+          // =========================
+
+          if (
+            action === "add" &&
+            configuracion.bienvenida
+          ) {
+
+            for (
+              const participante
+              of participants
+            ) {
+
+              await sock.sendMessage(
+                grupoId,
+                {
+                  text:
+`🎉 ¡BIENVENIDO/A!
+
+👋 Hola @${participante.split("@")[0]}
+
+🤖 Bienvenido/a a este grupo.
+¡Esperamos que la pases muy bien!`,
+                  mentions: [
+                    participante
+                  ]
+                }
+              );
+
+            }
+
+          }
 
       // =========================
       // DESPEDIDA
@@ -1270,7 +1261,7 @@ sock.ev.on(
     } catch (error) {
 
       console.log(
-        "❌ Error bienvenida/despedida:",
+        "Error bienvenida/despedida:",
         error
       );
 
@@ -1279,6 +1270,29 @@ sock.ev.on(
   }
 );
 
+  } catch (error) {
+
+    console.log(
+      "❌ Error iniciando TitanBot:",
+      error
+    );
+
+    iniciando = false;
+
+    estado =
+      "🔴 Error iniciando el bot";
+
+    setTimeout(
+      () => {
+        iniciarBot();
+      },
+      5000
+    );
+
+  }
+
+}
+
 
 // =====================================================
 // ERROR GENERAL
@@ -1286,7 +1300,7 @@ sock.ev.on(
 
 process.on(
   "uncaughtException",
-  (error) => {
+  error => {
 
     console.log(
       "❌ Error no controlado:",
@@ -1298,7 +1312,7 @@ process.on(
 
 process.on(
   "unhandledRejection",
-  (error) => {
+  error => {
 
     console.log(
       "❌ Promesa rechazada:",
