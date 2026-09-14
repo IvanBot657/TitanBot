@@ -30,7 +30,7 @@ const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
 
 // ==============================
-// SERVIDOR WEB
+// SERVIDOR
 // ==============================
 
 const PORT = process.env.PORT || 10000;
@@ -40,99 +40,59 @@ let estado = "🔴 Desconectado";
 
 const server = http.createServer(async (req, res) => {
 
+  // ==============================
+  // PÁGINA QR
+  // ==============================
+
   if (req.url === "/qr") {
 
     res.writeHead(200, {
-      "Content-Type": "text/html; charset=utf-8"
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store"
     });
 
-    if (!qrActual) {
-
-      res.end(`
+    res.end(`
 <!DOCTYPE html>
+
 <html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="refresh" content="5">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
 <title>TitanBot QR</title>
 
 <style>
+
 body {
   background: #111;
   color: white;
   font-family: Arial, sans-serif;
   text-align: center;
-  padding: 30px;
+  padding: 25px;
 }
 
 h1 {
   color: #00ff88;
 }
 
-p {
-  font-size: 18px;
-}
-</style>
-
-</head>
-
-<body>
-
-<h1>🤖 TITANBOT V2.5</h1>
-
-<p>Estado: ${estado}</p>
-
-<p>⏳ Esperando código QR...</p>
-
-<p>La página se actualizará automáticamente.</p>
-
-</body>
-</html>
-`);
-
-      return;
-    }
-
-    try {
-
-      const imagen =
-        await QRCode.toDataURL(qrActual);
-
-      res.end(`
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Conectar TitanBot</title>
-
-<style>
-body {
-  background: #111;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  padding: 20px;
-}
-
-h1 {
-  color: #00ff88;
-}
-
-img {
+#qr {
   width: 320px;
   max-width: 90%;
   background: white;
   padding: 10px;
   border-radius: 15px;
+  display: none;
 }
 
-p {
-  font-size: 18px;
+#estado {
+  font-size: 20px;
+  margin: 20px;
 }
+
 </style>
 
 </head>
@@ -141,27 +101,130 @@ p {
 
 <h1>🤖 TITANBOT V2.5</h1>
 
-<p>📱 Escanea este QR con WhatsApp</p>
+<div id="estado">
+🟡 Conectando...
+</div>
 
-<img src="${imagen}">
+<img id="qr">
 
-<p>Estado: ${estado}</p>
+<p id="mensaje">
+⏳ Esperando código QR...
+</p>
 
-</body>
-</html>
-`);
+<script>
 
-    } catch (error) {
+async function actualizar() {
 
-      res.end(`
-        <h1>❌ Error generando QR</h1>
-        <p>${error.message}</p>
-      `);
+  try {
+
+    const respuesta =
+      await fetch("/qr-data?t=" + Date.now());
+
+    const datos =
+      await respuesta.json();
+
+    document.getElementById("estado").textContent =
+      datos.estado;
+
+    const imagen =
+      document.getElementById("qr");
+
+    const mensaje =
+      document.getElementById("mensaje");
+
+    if (datos.qr) {
+
+      imagen.src = datos.qr;
+      imagen.style.display = "inline-block";
+
+      mensaje.textContent =
+        "📱 Escanea este QR con WhatsApp";
+
+    } else {
+
+      imagen.style.display = "none";
+
+      if (datos.estado.includes("Conectado")) {
+
+        mensaje.textContent =
+          "✅ TitanBot está conectado";
+
+      } else {
+
+        mensaje.textContent =
+          "⏳ Esperando código QR...";
+
+      }
 
     }
 
+  } catch (error) {
+
+    document.getElementById("mensaje").textContent =
+      "⚠️ No se pudo consultar el servidor.";
+
+  }
+
+}
+
+actualizar();
+
+setInterval(actualizar, 2000);
+
+</script>
+
+</body>
+
+</html>
+`);
+
     return;
   }
+
+  // ==============================
+  // DATOS DEL QR
+  // ==============================
+
+  if (req.url.startsWith("/qr-data")) {
+
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store"
+    });
+
+    let qrImagen = null;
+
+    if (qrActual) {
+
+      try {
+
+        qrImagen =
+          await QRCode.toDataURL(qrActual);
+
+      } catch (error) {
+
+        console.log(
+          "❌ Error generando imagen QR:",
+          error.message
+        );
+
+      }
+
+    }
+
+    res.end(
+      JSON.stringify({
+        estado,
+        qr: qrImagen
+      })
+    );
+
+    return;
+  }
+
+  // ==============================
+  // PÁGINA PRINCIPAL
+  // ==============================
 
   res.writeHead(200, {
     "Content-Type": "text/plain; charset=utf-8"
@@ -257,7 +320,7 @@ async function iniciarBot() {
       if (connection === "connecting") {
 
         estado =
-          "🟡 Conectando...";
+          "🟡 Conectando TitanBot...";
 
         console.log(
           "🔄 Conectando TitanBot..."
@@ -272,7 +335,7 @@ async function iniciarBot() {
         qrActual = null;
 
         estado =
-          "🟢 Conectado";
+          "🟢 TitanBot conectado";
 
         console.log(
           `✅ ${config.nombre} conectado correctamente`
@@ -285,7 +348,7 @@ async function iniciarBot() {
       if (connection === "close") {
 
         estado =
-          "🔴 Desconectado";
+          "🔴 TitanBot desconectado";
 
         const codigo =
           lastDisconnect?.error?.output?.statusCode;
@@ -356,7 +419,7 @@ async function iniciarBot() {
         }
 
         // ==============================
-        // OBTENER TEXTO
+        // TEXTO
         // ==============================
 
         const texto =
@@ -374,7 +437,7 @@ async function iniciarBot() {
           texto.trim();
 
         // ==============================
-        // COMPROBAR PREFIJO
+        // PREFIJO
         // ==============================
 
         if (
@@ -382,13 +445,11 @@ async function iniciarBot() {
             config.prefijo
           )
         ) {
-
           return;
-
         }
 
         // ==============================
-        // COMANDO Y ARGUMENTOS
+        // COMANDO
         // ==============================
 
         const partes =
@@ -409,7 +470,7 @@ async function iniciarBot() {
         }
 
         // ==============================
-        // ID DEL USUARIO
+        // ID USUARIO
         // ==============================
 
         const id =
@@ -452,7 +513,7 @@ async function iniciarBot() {
         }
 
         // ==============================
-        // GANAR XP
+        // XP
         // ==============================
 
         try {
@@ -498,18 +559,15 @@ ${resultadoXP.nivel}
 
         try {
 
-          const ejecutado =
+          if (
             await inicio(
               sock,
               chat,
               comando,
               args,
               id
-            );
-
-          if (ejecutado) {
-            return;
-          }
+            )
+          ) return;
 
         } catch (error) {
 
@@ -526,18 +584,15 @@ ${resultadoXP.nivel}
 
         try {
 
-          const ejecutado =
+          if (
             await usuario(
               sock,
               chat,
               comando,
               args,
               id
-            );
-
-          if (ejecutado) {
-            return;
-          }
+            )
+          ) return;
 
         } catch (error) {
 
@@ -554,18 +609,15 @@ ${resultadoXP.nivel}
 
         try {
 
-          const ejecutado =
+          if (
             await economia(
               sock,
               chat,
               comando,
               args,
               id
-            );
-
-          if (ejecutado) {
-            return;
-          }
+            )
+          ) return;
 
         } catch (error) {
 
@@ -582,17 +634,14 @@ ${resultadoXP.nivel}
 
         try {
 
-          const ejecutado =
+          if (
             await juegos(
               sock,
               chat,
               comando,
               args
-            );
-
-          if (ejecutado) {
-            return;
-          }
+            )
+          ) return;
 
         } catch (error) {
 
@@ -609,7 +658,7 @@ ${resultadoXP.nivel}
 
         try {
 
-          const ejecutado =
+          if (
             await grupos(
               sock,
               chat,
@@ -618,11 +667,8 @@ ${resultadoXP.nivel}
               id,
               isGroup,
               isAdmin
-            );
-
-          if (ejecutado) {
-            return;
-          }
+            )
+          ) return;
 
         } catch (error) {
 
@@ -639,17 +685,14 @@ ${resultadoXP.nivel}
 
         try {
 
-          const ejecutado =
+          if (
             await anime(
               sock,
               chat,
               comando,
               args
-            );
-
-          if (ejecutado) {
-            return;
-          }
+            )
+          ) return;
 
         } catch (error) {
 
@@ -666,17 +709,14 @@ ${resultadoXP.nivel}
 
         try {
 
-          const ejecutado =
+          if (
             await herramientas(
               sock,
               chat,
               comando,
               args
-            );
-
-          if (ejecutado) {
-            return;
-          }
+            )
+          ) return;
 
         } catch (error) {
 
@@ -693,7 +733,7 @@ ${resultadoXP.nivel}
 
         try {
 
-          const ejecutado =
+          if (
             await ajustes(
               sock,
               chat,
@@ -702,11 +742,8 @@ ${resultadoXP.nivel}
               id,
               isGroup,
               isAdmin
-            );
-
-          if (ejecutado) {
-            return;
-          }
+            )
+          ) return;
 
         } catch (error) {
 
@@ -723,18 +760,15 @@ ${resultadoXP.nivel}
 
         try {
 
-          const ejecutado =
+          if (
             await owner(
               sock,
               chat,
               comando,
               args,
               id
-            );
-
-          if (ejecutado) {
-            return;
-          }
+            )
+          ) return;
 
         } catch (error) {
 
