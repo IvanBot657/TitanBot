@@ -599,21 +599,42 @@ ${user.banco}`
       return sock.sendMessage(chat, {
 
         text:
-          "🎒 Tu inventario está vacío."
+`🎒 INVENTARIO
+
+Tu inventario está vacío.`
+
       });
     }
+
+    const cantidades = {};
+
+    for (const item of inventario) {
+
+      if (!cantidades[item]) {
+        cantidades[item] = 0;
+      }
+
+      cantidades[item]++;
+    }
+
+    const lista =
+      Object.entries(cantidades)
+        .map(([item, cantidad]) => {
+
+          return `${item} ×${cantidad}`;
+
+        })
+        .join("\n");
 
     return sock.sendMessage(chat, {
 
       text:
-`🎒 INVENTARIO
+`🎒 INVENTARIO TITANBOT
 
-${inventario
-  .map(
-    (item, i) =>
-      `${i + 1}. ${item}`
-  )
-  .join("\n")}`
+${lista}
+
+📦 Total de objetos:
+${inventario.length}`
 
     });
   }
@@ -631,18 +652,20 @@ ${inventario
 `🛒 TIENDA TITANBOT
 
 1️⃣ 🍎 Manzana
-Precio: 100
+💰 Precio: 100
 
 2️⃣ 💎 Diamante
-Precio: 1000
+💰 Precio: 1000
 
 3️⃣ 🎁 Caja misteriosa
-Precio: 500
+💰 Precio: 500
 
 4️⃣ 🛡️ Escudo
-Precio: 1500
+💰 Precio: 1500
 
-Usa:
+━━━━━━━━━━━━━━━━━━
+
+🛍️ COMPRAR
 
 .comprar número
 
@@ -695,7 +718,12 @@ Ejemplo:
       return sock.sendMessage(chat, {
 
         text:
-          "❌ Producto no encontrado.\n\nUsa .tienda"
+`❌ PRODUCTO NO ENCONTRADO
+
+Usa:
+
+.tienda`
+
       });
     }
 
@@ -707,7 +735,14 @@ Ejemplo:
       return sock.sendMessage(chat, {
 
         text:
-          "❌ No tienes suficiente dinero."
+`❌ DINERO INSUFICIENTE
+
+💰 Tienes:
+${user.dinero}
+
+💵 Necesitas:
+${producto.precio}`
+
       });
     }
 
@@ -733,7 +768,7 @@ ${producto.precio}
 💵 Dinero restante:
 ${user.dinero}
 
-🎒 Añadido al inventario.`
+🎒 Objeto añadido al inventario.`
 
     });
   }
@@ -747,22 +782,23 @@ ${user.dinero}
 
     let idDestino = null;
 
-    // Buscar personas mencionadas
     const mencionados =
       msg?.message
         ?.extendedTextMessage
         ?.contextInfo
         ?.mentionedJid || [];
 
-    // Si mencionó a alguien
-    if (mencionados.length > 0) {
+    // Transferencia por mención
+    if (
+      mencionados.length > 0
+    ) {
 
       idDestino =
         mencionados[0];
 
     } else {
 
-      // Si escribió número
+      // Transferencia por número
       const numeroDestino =
         String(args[0] || "")
           .replace(/\D/g, "");
@@ -775,18 +811,9 @@ ${user.dinero}
       }
     }
 
-    // Cantidad
-    let cantidad;
+    const cantidad =
+      Number(args[1]);
 
-    if (mencionados.length > 0) {
-      cantidad =
-        Number(args[1]);
-    } else {
-      cantidad =
-        Number(args[1]);
-    }
-
-    // Validar
     if (
       !idDestino ||
       !Number.isInteger(cantidad) ||
@@ -815,20 +842,18 @@ Ejemplos:
       });
     }
 
-    // Limpiar ID
     idDestino =
       String(idDestino)
-        .replace(/[^0-9:]/g, "");
+        .split(":")[0];
 
-    if (!idDestino.includes(":")) {
-      idDestino =
-        idDestino.replace(
-          /\D/g,
-          ""
-        ) + "@s.whatsapp.net";
+    if (
+      !idDestino.includes("@")
+    ) {
+
+      idDestino +=
+        "@s.whatsapp.net";
     }
 
-    // ID del usuario que envía
     const numeroUsuario =
       String(id)
         .split("@")[0]
@@ -839,7 +864,6 @@ Ejemplos:
         .split("@")[0]
         .replace(/\D/g, "");
 
-    // Evitar transferirse a sí mismo
     if (
       numeroDestino ===
       numeroUsuario
@@ -850,10 +874,8 @@ Ejemplos:
         text:
           "❌ No puedes transferirte dinero a ti mismo."
       });
-
     }
 
-    // Verificar saldo
     if (
       user.dinero <
       cantidad
@@ -873,14 +895,12 @@ ${cantidad}`
       });
     }
 
-    // Crear destinatario
     const destinatario =
       obtenerUsuario(
         db,
         idDestino
       );
 
-    // Transferir
     user.dinero -=
       cantidad;
 
@@ -915,5 +935,6 @@ ${user.dinero}
 
   return false;
 }
+
 
 module.exports = economia;
