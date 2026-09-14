@@ -1,17 +1,17 @@
 {
   "name": "titanbot",
-  "version": "4.6.0",
-  "description": "TITANBOT 4.6.0 — v2.8 | WhatsApp bot con Pairing Code, comandos y anime SFW",
+  "version": "2.9.0",
+  "description": "TITANBOT - Baileys bot para Render con vinculación por número, anime y música por enlaces directos",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
-  },
-  "dependencies": {
-    "@whiskeysockets/baileys": "7.0.0-rc14",
-    "pino": "^9.7.0",
-    "qrcode": "^1.5.4"
+    "start": "node index.js",
+    "check": "node --check index.js"
   },
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "7.0.0-rc.14",
+    "pino": "^9.0.0"
   }
 }

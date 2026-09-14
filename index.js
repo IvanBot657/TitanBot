@@ -1,30 +1,27 @@
 // TITANBOT - index.js
 // Baileys 7.0.0-rc14
-// Bot base para Render - vinculación por número (Pairing Code), menú, perfiles,
+// Bot base para Render - vinculación por número, menú, perfiles,
 // grupos, economía, XP, juegos y más de 200 comandos.
-// TITANBOT 4.6.0 — v2.8
 
 const {
   default: makeWASocket,
   useMultiFileAuthState,
   DisconnectReason,
   fetchLatestBaileysVersion,
-  fetchLatestWaWebVersion,
   Browsers
 } = require("@whiskeysockets/baileys");
 
 const pino = require("pino");
 const fs = require("fs");
 const path = require("path");
-const TITANBOT_PROFILE_IMAGE = path.join(__dirname, "titanbot-profile.png");
 const http = require("http");
-const QRCode = require("qrcode");
 
 const PREFIX = ".";
 const PORT = process.env.PORT || 10000;
-const PAIRING_NUMBER = String(process.env.PAIRING_NUMBER || "").replace(/\D/g, "");
 const BOT_NAME = "TITANBOT";
 const FRASE = "⚡ El futuro empieza ahora.";
+const PAIRING_NUMBER = process.env.NUMBER || process.env.PAIRING_NUMBER || "";
+const PAIRING_METHOD = "number";
 
 const DATA_DIR = path.join(__dirname, "titan_data");
 const DATA_FILE = path.join(DATA_DIR, "data.json");
@@ -47,10 +44,13 @@ if (fs.existsSync(DATA_FILE)) {
 }
 
 let sock = null;
-let currentQR = null;
-let pairingCode = null;
-let botConnection = "starting";
 const profileSteps = {};
+const pendingAnime = {};
+
+const ANIME_CHARACTERS = [
+  "Akira", "Yuki", "Ren", "Hana", "Sora", "Mika", "Kai", "Aiko",
+  "Rin", "Kaito", "Nami", "Haruki", "Emi", "Shiro", "Rei", "Mio"
+];
 
 function saveData() {
   try {
@@ -141,18 +141,6 @@ async function sendText(jid, text, options = {}) {
   return sock.sendMessage(jid, { text, ...options });
 }
 
-async function sendCommandText(jid, command, text, options = {}) {
-  const title = String(command || "BOT").toUpperCase();
-  const decorated = `╭━━━〔 ⚡ TITANBOT 〕━━━╮
-┃ ✦ *${PREFIX}${command}*  •  ${title}
-╰━━━━━━━━━━━━━━━━━━━━╯
-
-${text}
-
-╰─〔 🤖 TITANBOT • ONLINE 〕─╯`;
-  return sendText(jid, decorated, options);
-}
-
 function isGroup(m) {
   return String(m.key?.remoteJid || "").endsWith("@g.us");
 }
@@ -191,85 +179,85 @@ async function botIsAdmin(jid) {
   return !!p && (p.admin === "admin" || p.admin === "superadmin");
 }
 
-function commandCategory(command) {
-  const c = String(command).toLowerCase();
-  const groups = [
-    ['👥 GRUPOS', /^(anti|welcome|goodbye|admin|admins|grupo|infogrupo|tagall|hidetag|linkgrupo|promote|demote|kick|mencion|miembros|moderacion|norma|normas|regla|reglas|respeto|invitar|silencio|aviso)/],
-    ['🎮 JUEGOS', /^(dado|moneda|ppt|numero|quiz|reto|verdad|pregunta|juego|juegos|eleccion|decision|random|azar|elige|8ball|suerte|robar|boss|aventura)/],
-    ['👤 PERFIL', /^(id|perfil|completarperfil|foto|frase|frasefavorita|edad|cumple|micuenta|miid|confianza)/],
-    ['🎌 ANIME', /^(s$|anime|waifu|quote|manga|pixel|fantasia|heroe|villano|magia)/],
-    ['💰 ECONOMÍA', /^(saldo|diario|trabajar|trabajo|dinero|economia|coins|monedas|money|pagar|comprar|shop|tienda|inventario|item|topmonedas)/],
-    ['⭐ NIVEL & XP', /^(xp|nivel|level|levelup|rank|ranking|rankingxp|rango|topxp|racha|logro|logros|progreso|estadisticas|stats|top)/],
-    ['🛠️ UTILIDADES', /^(ping|pong|hora|fecha|fecha2|fechaactual|calc|calculadora|say|qr|mayus|minus|invertir|contar|numeroazar|clima|temperatura|codigo|texto|emoji|randomemoji|archivo|array|async|await|funcion|variable|if|loop|math|objeto|json|javascript|js|html|css|node|nodejs|api|test|check|debug|error|fix|numero2)/],
-    ['🤖 BOT', /^(about|acerca|actividad|activo|actualizado|actualizar|autor|bot|bot[1-5]|botinfo|conectado|conexion|creador|categoria|comandos|comandos2|menu|menu[1-5]|help|ayuda|ayuda[1-5]|info|informacion|inicio|principal|online|online2|sistema|status|estado|estado[1-3]|titan|titanbot|version|version2|versionbot|vincular|whatsapp|baileys|backup|deploy|server|servidor|render|render2|repo|github|git|npm|web|puerto|logs|log|manual|norma|rules|seguridad|privacidad)/],
-    ['✨ DIVERSIÓN', /^(hola|hola2|holaa|holi|hi|hey|hey2|hello|buenas|buenas2|buenosdias|buenasdiasbot|buenastardes|buenasnoches|buenasnochesbot|adios|chao|goodbye|hasta|gracias|gracias1|gracias2|graciasbot|denada|ok|jaja|lol|xd|risas|broma|chiste|animo|feliz|triste|miedo|hambre|sed|sueño|musica|musica2|frase|consejo|consejo[1-3]|motivacion|motivacion[1-3]|motivar|paciencia|tip|tip[2-9]|tip10|dato|dato\d+|nube|luna|sol|tierra|aire|agua|fuego|hielo|estrella|galaxia|futuro|futuro2|espacio|libro|pelicula|serie|historia|portal|cyber|robot|ready|listo|gracias|porfavor)/]
-  ];
-  for (const [name, rx] of groups) if (rx.test(c)) return name;
-  return '📚 OTROS';
-}
-
 function commandMenu() {
-  const names = allCommandNames();
-  const grouped = {};
-  for (const name of names) {
-    const category = commandCategory(name);
-    (grouped[category] ||= []).push(name);
-  }
+  return `
+╭━━━〔 🤖 ${BOT_NAME} 〕━━━╮
+┃ ⚡ ${FRASE}
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-  const order = ['👤 PERFIL','🎌 ANIME','💰 ECONOMÍA','⭐ NIVEL & XP','👥 GRUPOS','🎮 JUEGOS','🛠️ UTILIDADES','🤖 BOT','✨ DIVERSIÓN','📚 OTROS'];
-  const sections = order.filter(c => grouped[c]?.length).map(category => {
-    const list = grouped[category];
-    const lines = [];
-    for (const command of list) {
-      lines.push(`│ ✦ ${PREFIX}${command} ✦`);
-    }
-    return `╭─「 ${category} 」\n${lines.join('\n')}\n╰──────────────────────`;
-  }).join('\n\n');
+👤 PERFIL
+• .id
+• .perfil
+• .completarperfil
+• .foto
+• .frase
+• .edad
+• .cumple
 
-  return `╭━━━━━━━━━━━━━━━━━━━━━━╮
-┃ 🤖 *${BOT_NAME}* ⚡
-┃ ${FRASE}
-┃ 📚 *${names.length} COMANDOS*
-╰━━━━━━━━━━━━━━━━━━━━━━╯
+🎴 ANIME
+• .anime
+• .waifu
+• .quote
+• .w → reclamar personaje
 
-${sections}
+💰 ECONOMÍA
+• .saldo
+• .diario
+• .trabajar
+• .robar
+• .pagar
+• .tienda
+• .comprar
+• .inventario
+• .topmonedas
 
-╭━━━━━━━━━━━━━━━━━━━━━━╮
-┃ 🔎 *${PREFIX}help <comando>* → información
-┃ 📋 *${PREFIX}todos* → lista numerada completa
-┃ ⚡ Prefijo: *${PREFIX}*
-╰━━━━━━━━━━━━━━━━━━━━━━╯`;
-}
+⭐ NIVEL
+• .xp
+• .nivel
+• .rank
+• .topxp
+• .logros
+• .racha
 
-function decorateCommandResponse(command, text) {
-  return `╭━━━〔 ⚡ TITANBOT 〕━━━╮\n┃ 🔹 *${PREFIX}${command}*\n╰━━━━━━━━━━━━━━━━━━━━╯\n\n${text}\n\n╰─〔 🤖 TITANBOT • ONLINE 〕─╯`;
-}
+🎵 MÚSICA
+• .musica <enlace directo>
 
-function commandHelp(command) {
-  const c = String(command || '').toLowerCase().trim();
-  const descriptions = {
-    menu: '📋 Abre el menú principal con las categorías del bot.',
-    ping: '🏓 Comprueba que TITANBOT esté conectado y respondiendo.',
-    perfil: '👤 Muestra o gestiona tu perfil.',
-    saldo: '💰 Consulta tus monedas disponibles.',
-    diario: '🎁 Reclama tu recompensa diaria.',
-    trabajar: '💼 Obtén monedas mediante el sistema de economía.',
-    dado: '🎲 Lanza un dado y obtén un resultado aleatorio.',
-    moneda: '🪙 Lanza una moneda.',
-    ppt: '✊ Juega piedra, papel o tijera.',
-    quiz: '🧠 Participa en una pregunta rápida.',
-    tagall: '📢 Menciona a los participantes del grupo.',
-    hidetag: '📣 Envía un mensaje mencionando al grupo sin mostrar las menciones.',
-    admins: '🛡️ Muestra los administradores del grupo.',
-    calc: '🧮 Realiza un cálculo básico.',
-    say: '💬 Hace que el bot repita el texto indicado.',
-    anime: '🎴 Accede a las funciones de anime disponibles.',
-    waifu: '🌸 Genera una respuesta relacionada con anime.',
-    info: '🤖 Muestra información de TITANBOT.',
-    version: '⚙️ Muestra la versión del bot.',
-    estado: '🟢 Muestra el estado actual del bot.'
-  };
-  return descriptions[c] || `📖 Comando: *${PREFIX}${c}*\n💡 Usa *${PREFIX}menu* para ver las categorías disponibles.`;
+👥 GRUPO
+• .antilink
+• .welcome
+• .goodbye
+• .admins
+• .infogrupo
+• .tagall
+• .hidetag
+• .linkgrupo
+• .promote
+• .demote
+• .kick
+
+🎮 JUEGOS
+• .dado
+• .moneda
+• .ppt
+• .numero
+• .quiz
+• .reto
+• .verdad
+• .pregunta
+
+🛠️ UTILIDADES
+• .ping
+• .hora
+• .fecha
+• .calc
+• .say
+• .stickerinfo
+• .menu
+• .help
+
+📚 +200 comandos disponibles.
+Escribe *.todos* para verlos.
+`;
 }
 
 // Más de 200 comandos ligeros y seguros.
@@ -316,7 +304,7 @@ const simpleCommands = {
   dato9: "🧠 Baileys permite interactuar con WhatsApp Web.",
   estado2: "🟢 Todos los sistemas básicos están listos.",
   sistema: "⚙️ Sistemas básicos operativos.",
-  versionbot: "🤖 TITANBOT 4.6.0 — v2.6\n⚡ El futuro empieza ahora.",
+  versionbot: "🤖 TITANBOT v1.0",
   frase: FRASE,
   titan: "⚡ TITANBOT: potencia, orden y creatividad.",
   futuro: "🚀 El futuro se construye creando.",
@@ -337,7 +325,8 @@ const simpleCommands = {
   sueño: "😴 Descansar también es importante.",
   hambre: "🍔 Hora de comer algo.",
   sed: "💧 Recuerda hidratarte.",
-  musica: "🎵 ¡Música activada en espíritu!",
+  musica: null,
+  w: null,
   juego: "🎮 Usa .juegos para ideas.",
   juegos: "🎮 Usa .dado, .moneda, .ppt o .quiz.",
   grupo: "👥 Este bot tiene funciones para grupos.",
@@ -386,31 +375,14 @@ const simpleCommands = {
   infogrupo: null,
   promote: null,
   demote: null,
-  kick: null,
-  qr: null,
-  mayus: null,
-  minus: null,
-  invertir: null,
-  contar: null,
-  numeroazar: null,
-  dado10: null,
-  dado20: null,
-  elige: null,
-  azar: null,
-  "8ball": null,
-  rankingxp: null,
-  stats: null,
-  enfoque: "🎯 Enfócate en una cosa a la vez.",
-  aprende: "📚 Aprender requiere práctica.",
-  crea: "🛠️ Crea, prueba y mejora.",
-  proyecto: "🚀 Un proyecto crece con pequeñas mejoras."
+  kick: null
 };
 
 // Genera alias/funciones para superar 200 comandos sin duplicar lógica.
 const aliases = {
   hi:"hola", hey:"hola", hello:"hola", holi:"hola", holaa:"hola",
   buenastardes:"buenas", buenasdiasbot:"buenosdias", buenasnochesbot:"buenasnoches",
-  ok:"gracias", gracias1:"gracias", gracias2:"gracias", denada:"gracias",
+  ok:"gracias", gracias1:"gracias", gracias2:"gracias", deNada:"gracias",
   about:"info", acerca:"info", informacion:"info", botinfo:"info",
   rules:"reglas", norma:"reglas", normas:"reglas",
   consejo1:"consejo", consejo2:"consejo", consejo3:"consejo",
@@ -447,222 +419,12 @@ const aliases = {
   nivel1:"nivel", nivel2:"nivel", nivel3:"nivel",
   xp1:"xp", xp2:"xp", rango:"rank", ranking:"rank",
   grupo1:"grupo", grupo2:"grupo", grupo3:"grupo",
-  reglas1:"reglas", reglas2:"reglas", respeto1:"respeto", respeto2:"respeto",
-  rankingxp:"topxp", estadisticas2:"stats", nivelactual:"nivel", experiencia:"xp",
-  aleatorio:"azar", bola8:"8ball", dado10x:"dado10", dado20x:"dado20",
-  aleatorio2:"numeroazar", elegir:"elige", upper:"mayus", lower:"minus", reversa:"invertir"
+  reglas1:"reglas", reglas2:"reglas", respeto1:"respeto", respeto2:"respeto"
 };
 
 for (const [a, target] of Object.entries(aliases)) {
   if (!(a in simpleCommands)) simpleCommands[a] = simpleCommands[target];
 }
-
-
-// ===== 200 COMANDOS EXTRA =====
-const extraCommands = {
-  broma: '😂 Aquí va una broma: ¡un bug pidió vacaciones!',
-  chiste: '🤣 ¿Por qué el código fue al médico? Porque tenía demasiados bugs.',
-  lol: '😂 Modo LOL activado.',
-  xd: '😎 XD',
-  jaja: '🤣 JAJAJA',
-  risas: '😂 Risas activadas.',
-  randomemoji: '🎲 😀 😎 🔥 🤖 🌟',
-  emoji: '😎 Usa un emoji para darle estilo a tu mensaje.',
-  dado2: '🎲 Resultado: 1',
-  moneda2: '🪙 Cara o sello: resultado aleatorio.',
-  suerte2: '🍀 Que la suerte te acompañe.',
-  reto2: '🎯 Reto: escribe una meta que quieras cumplir hoy.',
-  pregunta2: '❓ ¿Qué función te gustaría agregar al bot?',
-  verdad2: '🗣️ Verdad: todos los proyectos mejoran con pruebas.',
-  eleccion: '🎯 Elige entre A o B.',
-  decision: '🤔 Toma una decisión y pruébala paso a paso.',
-  saludo: '👋 ¡Saludos desde TITANBOT!',
-  hola2: '👋 ¡Hola otra vez!',
-  hey2: '⚡ ¡Hey!',
-  buenas2: '🔥 ¡Buenas!',
-  gracias2: '💙 ¡Con gusto!',
-  porfavor: '🙏 De nada.',
-  perdon: '🙂 No pasa nada.',
-  bienvenido: '🎉 ¡Bienvenido a TITANBOT!',
-  bienvenida: '🎉 ¡Bienvenida a TITANBOT!',
-  hasta: '👋 ¡Hasta luego!',
-  adios: '👋 ¡Adiós!',
-  chao: '👋 ¡Chao!',
-  estado2: '🟢 Sistemas básicos funcionando.',
-  estado3: '🟢 Bot operativo.',
-  online2: '🟢 TITANBOT está online.',
-  activo: '⚡ TITANBOT activo.',
-  test: '🧪 Prueba correcta.',
-  prueba: '🧪 TITANBOT respondió correctamente.',
-  check: '✅ Todo bien.',
-  ok: '✅ OK.',
-  ready: '🚀 Listo.',
-  listo: '🚀 Listo para recibir comandos.',
-  uptime: '⏱️ Consulta el tiempo de actividad del servicio en Render.',
-  nube: '☁️ La nube puede alojar aplicaciones y datos.',
-  web: '🌐 Una aplicación web funciona mediante tecnologías del navegador y servidor.',
-  html: '🌐 HTML estructura páginas web.',
-  css: '🎨 CSS da estilo a las páginas.',
-  js: '🟨 JavaScript agrega lógica e interacción.',
-  json: '📦 JSON organiza datos en texto.',
-  api: '🔌 Una API permite comunicar aplicaciones.',
-  npm: '📦 npm administra paquetes de Node.js.',
-  nodejs: '🟩 Node.js ejecuta JavaScript en el servidor.',
-  git: '🐙 Git registra cambios del proyecto.',
-  repo: '📁 Un repositorio guarda el código y su historial.',
-  debug: '🐞 Depurar es buscar y corregir errores.',
-  bug: '🐞 Un bug es un error de software.',
-  funcion: '🧩 Una función agrupa instrucciones reutilizables.',
-  variable: '📦 Una variable guarda un valor.',
-  array: '📚 Un array contiene varios valores.',
-  objeto: '🧱 Un objeto agrupa propiedades y datos.',
-  loop: '🔁 Un bucle repite instrucciones.',
-  if: '🔀 if permite ejecutar código según una condición.',
-  async: '⚡ async se usa para trabajar con operaciones asíncronas.',
-  await: '⏳ await espera el resultado de una promesa.',
-  render2: '🌐 Render puede ejecutar servicios web y bots.',
-  deploy: '🚀 Deploy significa publicar una aplicación.',
-  logs: '📋 Los logs muestran lo que ocurre en el servidor.',
-  servidor: '🖥️ Un servidor procesa solicitudes y ejecuta servicios.',
-  puerto: '🔌 Un puerto permite recibir conexiones de red.',
-  qr: '🔐 La vinculación actual de TITANBOT usa Pairing Code.',
-  vincular: '📱 Ve a WhatsApp → Dispositivos vinculados → Vincular dispositivo.',
-  conexion: '🔗 TITANBOT usa una conexión con WhatsApp Web.',
-  perfil2: '👤 Usa .perfil para ver tu perfil.',
-  miid: '🆔 Usa .id para consultar tu identificador.',
-  micuenta: '👤 Tu cuenta puede guardar progreso y estadísticas.',
-  stats: '📊 Usa los comandos de perfil y XP para ver estadísticas.',
-  estadisticas: '📊 Consulta tus estadísticas con los comandos disponibles.',
-  progreso: '📈 Tu progreso aumenta al usar el bot.',
-  actividad: '📊 La actividad se registra en las estadísticas del bot.',
-  economia: '💰 Usa .saldo, .diario y .trabajar para la economía.',
-  dinero: '💰 Revisa tu saldo con .saldo.',
-  coins: '🪙 Las monedas forman parte de la economía del bot.',
-  monedas: '🪙 Usa .saldo para consultar monedas.',
-  shop: '🛒 Usa .tienda para ver la tienda.',
-  comprar2: '🛒 Usa .comprar seguido del artículo que quieras adquirir.',
-  item: '📦 Usa .inventario para revisar tus artículos.',
-  inventario2: '🎒 Revisa tu inventario con .inventario.',
-  trabajo: '💼 Usa .trabajar para ganar monedas.',
-  daily: '🎁 Usa .diario para reclamar tu recompensa.',
-  ranking: '🏆 Usa .topmonedas o .topxp para rankings.',
-  xp2: '⭐ Usa .xp para consultar experiencia.',
-  level: '📈 Usa .nivel para consultar tu nivel.',
-  levelup: '✨ Sigue ganando XP para subir de nivel.',
-  logro: '🏅 Usa .logros para consultar logros.',
-  racha2: '🔥 Usa .racha para consultar tu racha.',
-  top: '🏆 Usa .rank para consultar posiciones.',
-  grupo2: '👥 Funciones de grupo disponibles.',
-  reglas2: '📜 Recuerda respetar las reglas del grupo.',
-  normas: '📜 Mantén una convivencia respetuosa.',
-  miembros: '👥 En un grupo puedes consultar información con .infogrupo.',
-  admins2: '🛡️ Usa .admins para consultar administradores.',
-  invitar: '🔗 Usa .linkgrupo si tienes permisos.',
-  mencion: '📢 Usa .tagall con responsabilidad.',
-  aviso: '📢 Usa .hidetag para avisos cuando corresponda.',
-  admin2: '🛡️ Algunas acciones requieren ser administrador.',
-  moderacion: '🛡️ Las acciones de moderación requieren permisos.',
-  juego2: '🎮 Prueba .dado, .moneda, .ppt y .quiz.',
-  jugar: '🎮 ¡A jugar!',
-  quiz2: '🧠 Usa .quiz para jugar preguntas.',
-  ppt2: '✊ Usa .ppt para piedra, papel o tijera.',
-  numero2: '🔢 Usa .numero para un juego numérico.',
-  dado3: '🎲 Usa .dado para lanzar un dado.',
-  moneda3: '🪙 Usa .moneda para lanzar una moneda.',
-  reto3: '🎯 Usa .reto para un reto.',
-  verdad3: '🗣️ Usa .verdad para una pregunta.',
-  anime2: '🎴 Usa .anime para la tarjeta anime.',
-  manga: '📖 Modo manga activado.',
-  pixel: '🟪 Modo pixel activado.',
-  fantasia: '🧙 Modo fantasía activado.',
-  aventura: '🗺️ ¡La aventura comienza!',
-  heroe: '🦸 Modo héroe activado.',
-  villano: '🦹 Modo villano activado.',
-  magia: '✨ Magia activada.',
-  boss: '👹 ¡Prepárate para un jefe!',
-  musica2: '🎵 Modo música activado.',
-  sonido: '🔊 Modo sonido activado.',
-  silencio: '🔇 Modo silencio textual activado.',
-  pelicula: '🎬 Modo película activado.',
-  serie: '📺 Modo serie activado.',
-  historia: '📚 Modo historia activado.',
-  libro: '📖 Modo lectura activado.',
-  autor: '✍️ Modo autor activado.',
-  clima: '🌤️ Para clima real se necesita una fuente meteorológica externa.',
-  temperatura: '🌡️ Para temperatura real se necesita una fuente meteorológica externa.',
-  calculadora: '🧮 Usa .calc para operaciones básicas.',
-  math: '🧮 Usa .calc para calcular.',
-  hora2: '🕐 Usa .hora para consultar la hora del servidor.',
-  fecha2: '📅 Usa .fecha para consultar la fecha del servidor.',
-  texto: '📝 Puedes usar .say para repetir texto.',
-  repetir: '🔁 Usa .say seguido del texto.',
-  consejo2: '💡 Divide los problemas grandes en pasos pequeños.',
-  tip: '💡 Consejo: prueba una función antes de añadir otra.',
-  tip2: '💡 Consejo: revisa los logs cuando algo falle.',
-  tip3: '💡 Consejo: guarda copias de tu código.',
-  tip4: '💡 Consejo: usa nombres claros para variables.',
-  tip5: '💡 Consejo: prueba comandos con entradas simples.',
-  tip6: '💡 Consejo: mantén tus funciones pequeñas cuando sea posible.',
-  tip7: '💡 Consejo: documenta las partes importantes.',
-  tip8: '💡 Consejo: evita duplicar lógica innecesariamente.',
-  tip9: '💡 Consejo: valida los datos que recibes.',
-  tip10: '💡 Consejo: reinicia el servicio después de cambios importantes.',
-  energia: '⚡ Energía TITAN al máximo.',
-  fuego: '🔥 Modo fuego.',
-  rayo: '⚡ Modo rayo.',
-  agua: '💧 Modo agua.',
-  tierra: '🌍 Modo tierra.',
-  aire: '🌬️ Modo aire.',
-  hielo: '❄️ Modo hielo.',
-  sol: '☀️ Modo sol.',
-  luna: '🌙 Modo luna.',
-  estrella: '⭐ Modo estrella.',
-  galaxia: '🌌 Modo galaxia.',
-  portal: '🌀 Portal abierto en la imaginación.',
-  espacio: '🚀 Modo espacial.',
-  robot: '🤖 Modo robot.',
-  cyber: '💻 Modo cyber.',
-  futuro2: '🚀 El futuro empieza creando.',
-  motivacion2: '🔥 Cada error puede enseñarte algo.',
-  animo: '💙 Sigue adelante paso a paso.',
-  confianza: '💪 Confía en tu proceso.',
-  enfoque: '🎯 Enfócate en una cosa a la vez.',
-  paciencia: '⏳ La paciencia ayuda a resolver problemas.',
-  aprende: '📚 Aprender requiere práctica.',
-  crea: '🛠️ Crea, prueba y mejora.',
-  proyecto: '🚀 Un proyecto crece con pequeñas mejoras.',
-  idea: '💡 Una idea puede convertirse en una función.',
-  meta: '🎯 Define una meta y divídela en pasos.',
-  fechaactual: '📅 Usa .fecha para la fecha actual del servidor.',
-  horario: '🕐 Usa .hora para el horario del servidor.',
-  ayuda2: '📚 Usa .menu o .todos para explorar comandos.',
-  comandos2: '📚 Usa .todos para ver todos los comandos.',
-  manual: '📖 Usa .menu como manual rápido.',
-  inicio: '🏠 Bienvenido al inicio de TITANBOT.',
-  principal: '🏠 Menú principal: .menu',
-  categoria: '📚 Las funciones están organizadas por categorías.',
-  nuevos: '🆕 Esta versión incluye comandos adicionales.',
-  actualizado: '🔄 TITANBOT tiene funciones actualizadas.',
-  seguridad: '🛡️ No compartas contraseñas ni códigos de acceso.',
-  privacidad: '🔒 Protege tus datos personales.',
-  backup: '💾 Mantén una copia de seguridad de tu proyecto.',
-  archivo: '📁 Los archivos del proyecto deben mantenerse organizados.',
-  codigo2: '💻 Mantén tu código ordenado y probado.',
-  error: '⚠️ Si aparece un error, revisa los Logs.',
-  log: '📋 Revisa los Logs de Render para diagnosticar problemas.',
-  fix: '🔧 Identifica primero el error y después aplica el cambio.',
-  actualizar: '🔄 Actualiza dependencias con cuidado y prueba después.',
-  version2: '⚙️ Consulta la versión con .version.',
-  funcionextra1: '⚡ Función extra #194 de TITANBOT.',
-  funcionextra2: '⚡ Función extra #195 de TITANBOT.',
-  funcionextra3: '⚡ Función extra #196 de TITANBOT.',
-  funcionextra4: '⚡ Función extra #197 de TITANBOT.',
-  funcionextra5: '⚡ Función extra #198 de TITANBOT.',
-  funcionextra6: '⚡ Función extra #199 de TITANBOT.',
-  funcionextra7: '⚡ Función extra #200 de TITANBOT.',
-}
-
-Object.assign(simpleCommands, extraCommands);
 
 function allCommandNames() {
   return Object.keys(simpleCommands).sort();
@@ -697,12 +459,12 @@ async function handleProfile(cmd, m, id) {
         caption: text
       });
     }
-    return sendCommandText(m.key.remoteJid, cmd, text);
+    return sendText(m.key.remoteJid, text);
   }
 
   if (cmd === "completarperfil") {
     profileSteps[id] = { step: 1, data: {} };
-    return sendCommandText(m.key.remoteJid, cmd,
+    return sendText(m.key.remoteJid,
       "👤 *COMPLETAR PERFIL*\n\nEscribe tu *nombre*.");
   }
 
@@ -717,21 +479,21 @@ async function handleProfile(cmd, m, id) {
         caption: `🖼️ Foto de perfil de ${displayName(m)}`
       });
     } catch {
-      return sendCommandText(m.key.remoteJid, cmd, "❌ No pude obtener la foto de perfil.");
+      return sendText(m.key.remoteJid, "❌ No pude obtener la foto de perfil.");
     }
   }
 
   if (cmd === "frasefavorita" || cmd === "frase") {
-    if (!p?.phrase) return sendCommandText(m.key.remoteJid, cmd, "💬 No tienes una frase guardada. Usa .completarperfil");
-    return sendCommandText(m.key.remoteJid, cmd, `💬 *Tu frase favorita:*\n\n${p.phrase}`);
+    if (!p?.phrase) return sendText(m.key.remoteJid, "💬 No tienes una frase guardada. Usa .completarperfil");
+    return sendText(m.key.remoteJid, `💬 *Tu frase favorita:*\n\n${p.phrase}`);
   }
 
   if (cmd === "edad") {
-    return sendCommandText(m.key.remoteJid, cmd, `🎂 Edad: *${p?.age || "No registrada"}*`);
+    return sendText(m.key.remoteJid, `🎂 Edad: *${p?.age || "No registrada"}*`);
   }
 
   if (cmd === "cumple") {
-    return sendCommandText(m.key.remoteJid, cmd, `📅 Cumpleaños: *${p?.birthday || "No registrado"}*`);
+    return sendText(m.key.remoteJid, `📅 Cumpleaños: *${p?.birthday || "No registrado"}*`);
   }
 
   return false;
@@ -741,7 +503,7 @@ async function handleEconomy(cmd, args, m, id) {
   const u = ensureUser(id);
 
   if (cmd === "saldo") {
-    return sendCommandText(m.key.remoteJid, cmd,
+    return sendText(m.key.remoteJid,
 `💰 *SALDO*
 👤 ${displayName(m)}
 💵 ${money(u.coins)} monedas
@@ -753,7 +515,7 @@ async function handleEconomy(cmd, args, m, id) {
     const now = Date.now();
     if (now - u.daily < 86400000) {
       const remaining = 86400000 - (now - u.daily);
-      return sendCommandText(m.key.remoteJid, cmd,
+      return sendText(m.key.remoteJid,
         `⏳ Ya reclamaste tu recompensa.\nVuelve en ${Math.ceil(remaining / 3600000)} hora(s).`);
     }
     const reward = 500 + Math.floor(Math.random() * 501);
@@ -762,7 +524,7 @@ async function handleEconomy(cmd, args, m, id) {
     u.streak++;
     addXP(id, 25);
     saveData();
-    return sendCommandText(m.key.remoteJid, cmd,
+    return sendText(m.key.remoteJid,
 `🎁 *RECOMPENSA DIARIA*
 💰 +${money(reward)} monedas
 🔥 Racha: ${u.streak}
@@ -775,7 +537,7 @@ async function handleEconomy(cmd, args, m, id) {
     u.coins += reward;
     addXP(id, 15);
     saveData();
-    return sendCommandText(m.key.remoteJid, cmd,
+    return sendText(m.key.remoteJid,
 `💼 *TRABAJO COMPLETADO*
 ${pick(jobs)}
 💰 +${money(reward)} monedas
@@ -783,36 +545,36 @@ ${pick(jobs)}
   }
 
   if (cmd === "robar") {
-    if (u.coins < 100) return sendCommandText(m.key.remoteJid, cmd, "❌ Necesitas 100 monedas.");
+    if (u.coins < 100) return sendText(m.key.remoteJid, "❌ Necesitas 100 monedas.");
     if (Math.random() < 0.45) {
       const gain = 100 + Math.floor(Math.random() * 501);
       u.coins += gain;
       saveData();
-      return sendCommandText(m.key.remoteJid, cmd, `🕵️ ¡Lo lograste!\n💰 +${money(gain)} monedas`);
+      return sendText(m.key.remoteJid, `🕵️ ¡Lo lograste!\n💰 +${money(gain)} monedas`);
     }
     const loss = Math.min(u.coins, 100 + Math.floor(Math.random() * 301));
     u.coins -= loss;
     saveData();
-    return sendCommandText(m.key.remoteJid, cmd, `🚨 Te atraparon.\n💸 -${money(loss)} monedas`);
+    return sendText(m.key.remoteJid, `🚨 Te atraparon.\n💸 -${money(loss)} monedas`);
   }
 
   if (cmd === "pagar") {
     const target = getMention(m);
     const amount = Number(args.find(x => /^\d+$/.test(x)));
-    if (!target) return sendCommandText(m.key.remoteJid, cmd, "❌ Menciona a quien quieres pagar.");
-    if (!amount || amount < 1) return sendCommandText(m.key.remoteJid, cmd, "❌ Escribe una cantidad válida.");
-    if (u.coins < amount) return sendCommandText(m.key.remoteJid, cmd, "❌ No tienes suficientes monedas.");
+    if (!target) return sendText(m.key.remoteJid, "❌ Menciona a quien quieres pagar.");
+    if (!amount || amount < 1) return sendText(m.key.remoteJid, "❌ Escribe una cantidad válida.");
+    if (u.coins < amount) return sendText(m.key.remoteJid, "❌ No tienes suficientes monedas.");
     const receiver = ensureUser(cleanNumber(target));
     u.coins -= amount;
     receiver.coins += amount;
     saveData();
-    return sendCommandText(m.key.remoteJid, cmd, `💸 Pagaste ${money(amount)} monedas a @${cleanNumber(target)}`, {
+    return sendText(m.key.remoteJid, `💸 Pagaste ${money(amount)} monedas a @${cleanNumber(target)}`, {
       mentions: [target]
     });
   }
 
   if (cmd === "tienda") {
-    return sendCommandText(m.key.remoteJid, cmd,
+    return sendText(m.key.remoteJid,
 `🛒 *TIENDA*
 🍀 amuleto — 1.000
 ⚔️ espada — 2.500
@@ -825,16 +587,16 @@ Usa .comprar <objeto>`);
   if (cmd === "comprar") {
     const prices = { amuleto:1000, espada:2500, escudo:3500, corona:5000 };
     const item = args[0]?.toLowerCase();
-    if (!prices[item]) return sendCommandText(m.key.remoteJid, cmd, "❌ Producto no encontrado.");
-    if (u.coins < prices[item]) return sendCommandText(m.key.remoteJid, cmd, "❌ No tienes suficientes monedas.");
+    if (!prices[item]) return sendText(m.key.remoteJid, "❌ Producto no encontrado.");
+    if (u.coins < prices[item]) return sendText(m.key.remoteJid, "❌ No tienes suficientes monedas.");
     u.coins -= prices[item];
     u.inventory.push(item);
     saveData();
-    return sendCommandText(m.key.remoteJid, cmd, `✅ Compraste *${item}* por ${money(prices[item])} monedas.`);
+    return sendText(m.key.remoteJid, `✅ Compraste *${item}* por ${money(prices[item])} monedas.`);
   }
 
   if (cmd === "inventario") {
-    return sendCommandText(m.key.remoteJid, cmd,
+    return sendText(m.key.remoteJid,
 `🎒 *INVENTARIO*
 
 ${u.inventory.length ? u.inventory.map((x,i)=>`${i+1}. ${x}`).join("\n") : "Vacío"}`);
@@ -844,168 +606,104 @@ ${u.inventory.length ? u.inventory.map((x,i)=>`${i+1}. ${x}`).join("\n") : "Vac�
     const top = Object.entries(data.users)
       .sort((a,b)=>(b[1].coins||0)-(a[1].coins||0))
       .slice(0,10);
-    return sendCommandText(m.key.remoteJid, cmd,
+    return sendText(m.key.remoteJid,
 `🏆 *TOP MONEDAS*
 
 ${top.map(([n,v],i)=>`${i+1}. @${n} — ${money(v.coins||0)} 💰`).join("\n")}`,
       { mentions: top.map(x=>`${x[0]}@s.whatsapp.net`) });
   }
 
-  if (cmd === "ranking" || cmd === "topmonedas") {
-    const top = Object.entries(data.users)
-      .sort((a,b)=>(b[1].coins||0)-(a[1].coins||0)).slice(0,10);
-    return sendCommandText(m.key.remoteJid, cmd,
-`╭━━〔 🏆 TOP MONEDAS 〕━━╮
-${top.map(([n,v],i)=>`┃ ${i+1}. @${n} — ${money(v.coins||0)} 💰`).join("\n") || "┃ Sin datos todavía."}
-╰━━━━━━━━━━━━━━━━━━━━╯`, {mentions: top.map(x=>`${x[0]}@s.whatsapp.net`)});
-  }
-
   return false;
 }
 
 async function handleGames(cmd, args, m, id) {
-  const jid = m.key.remoteJid;
-  const decorated = (title, body) =>
-`╭━━━〔 🎮 TITANBOT 〕━━━╮
-┃ ✦ *${title}*
-╰━━━━━━━━━━━━━━━━━━━━╯
-
-${body}
-
-╰─〔 ⚡ EL FUTURO EMPIEZA AHORA 〕─╯`;
-
   if (cmd === "dado") {
-    return sendText(jid, decorated("DADO", `🎲 Resultado: *${1 + Math.floor(Math.random()*6)}*`));
+    return sendText(m.key.remoteJid, `🎲 Resultado: *${1 + Math.floor(Math.random()*6)}*`);
   }
 
   if (cmd === "moneda") {
-    return sendText(jid, decorated("MONEDA", `🪙 Salió: *${pick(["CARA","SELLO"])}*`));
+    return sendText(m.key.remoteJid, `🪙 Salió: *${pick(["CARA","SELLO"])}*`);
   }
 
   if (cmd === "ppt") {
     const choices = ["piedra","papel","tijera"];
     const user = args[0]?.toLowerCase();
-    if (!choices.includes(user)) return sendText(jid, decorated("PIEDRA • PAPEL • TIJERA", "❌ Usa: *.ppt piedra* / *.ppt papel* / *.ppt tijera*"));
+    if (!choices.includes(user)) return sendText(m.key.remoteJid, "🎮 Usa: .ppt piedra/papel/tijera");
     const bot = pick(choices);
     let result = "🤝 Empate";
-    if ((user==="piedra"&&bot==="tijera")||(user==="papel"&&bot==="piedra")||(user==="tijera"&&bot==="papel")) result="🏆 ¡Ganaste!";
+    if ((user==="piedra"&&bot==="tijera")||(user==="papel"&&bot==="piedra")||(user==="tijera"&&bot==="papel")) result="🏆 Ganaste";
     else if (user !== bot) result="🤖 Gané yo";
-    return sendText(jid, decorated("PPT", `👤 Tú: *${user}*\n🤖 Yo: *${bot}*\n\n${result}`));
+    return sendText(m.key.remoteJid, `🎮 Tú: ${user}\n🤖 Yo: ${bot}\n\n${result}`);
   }
 
   if (cmd === "numero") {
     const n = 1 + Math.floor(Math.random()*10);
-    return sendText(jid, decorated("NÚMERO", `🔢 Pensé en un número del 1 al 10.\n\n🎯 Era: *${n}*`));
+    return sendText(m.key.remoteJid, `🔢 Pensé en un número del 1 al 10.\n\n🎯 Era: *${n}*`);
   }
 
   if (cmd === "quiz") {
     const q = pick([
       ["¿Qué lenguaje usa Node.js principalmente?", "JavaScript"],
-      ["¿Qué archivo contiene las dependencias de Node?", "package.json"],
+      ["¿Qué archivo suele contener dependencias de Node?", "package.json"],
       ["¿Qué plataforma sirve para alojar repositorios Git?", "GitHub"],
-      ["¿Qué símbolo es el prefijo de TITANBOT?", "."]
+      ["¿Qué símbolo usamos como prefijo en este bot?", "."]
     ]);
-    return sendText(jid, decorated("QUIZ", `🧠 ${q[0]}\n\n💡 Respuesta: *${q[1]}*`));
+    return sendText(m.key.remoteJid, `🧠 *QUIZ*\n\n${q[0]}\n\n💡 Respuesta: *${q[1]}*`);
   }
 
   if (cmd === "reto") {
-    return sendText(jid, decorated("RETO", `🎯 ${pick([
+    return sendText(m.key.remoteJid, `🎯 *RETO*\n\n${pick([
       "Di un dato curioso.",
       "Aprende una palabra nueva.",
       "Escribe una meta para hoy.",
-      "Comparte una idea creativa.",
-      "Inventa un nombre para un videojuego."
-    ])}`));
+      "Comparte una idea creativa."
+    ])}`);
   }
 
   if (cmd === "verdad") {
-    return sendText(jid, decorated("VERDAD", `🗣️ ${pick([
+    return sendText(m.key.remoteJid, `🗣️ *VERDAD*\n\n${pick([
       "¿Qué habilidad te gustaría aprender?",
       "¿Cuál es tu juego favorito?",
-      "¿Qué proyecto te gustaría crear?",
-      "¿Qué comando nuevo agregarías al bot?"
-    ])}`));
+      "¿Qué proyecto te gustaría crear?"
+    ])}`);
   }
 
   if (cmd === "pregunta") {
-    return sendText(jid, decorated("PREGUNTA", `❓ ${pick([
+    return sendText(m.key.remoteJid, `❓ ${pick([
       "¿Qué estás aprendiendo?",
       "¿Qué proyecto tienes en mente?",
-      "¿Qué función debería tener TITANBOT?"
-    ])}`));
+      "¿Qué función debería tener TitanBot?"
+    ])}`);
   }
 
-  if (cmd === "azar") {
-    const options = args.filter(Boolean);
-    if (options.length < 2) return sendText(jid, decorated("AZAR", "❌ Ejemplo: *.azar pizza hamburguesa*"));
-    return sendText(jid, decorated("AZAR", `🎯 Ganador: *${pick(options)}*`));
-  }
-
-  if (cmd === "8ball") {
-    return sendText(jid, decorated("BOLA MÁGICA", `🔮 ${pick(["Sí.", "No.", "Probablemente.", "No estoy seguro.", "Inténtalo.", "Las posibilidades son buenas."])}`));
-  }
-
-  return false;
-}
-
-async function handleStats(cmd, m, id) {
-  const jid = m.key.remoteJid;
-  const u = ensureUser(id);
-  const decorated = (title, body) =>
-`╭━━━〔 ⭐ TITANBOT 〕━━━╮
-┃ ✦ *${title}*
-╰━━━━━━━━━━━━━━━━━━━━╯
-
-${body}
-
-╰─〔 🤖 ONLINE 〕─╯`;
-
-  if (cmd === "xp") return sendText(jid, decorated("EXPERIENCIA", `✨ XP: *${u.xp}*\n⭐ Nivel: *${u.level}*\n📈 Falta: *${Math.max(0, u.level * 100 - u.xp)} XP*`));
-  if (cmd === "nivel" || cmd === "level") return sendText(jid, decorated("NIVEL", `⭐ Nivel actual: *${u.level}*\n✨ XP: *${u.xp}*`));
-  if (cmd === "rank" || cmd === "rankingxp" || cmd === "topxp") {
-    const top = Object.entries(data.users).sort((a,b)=>((b[1].level||1)*100+(b[1].xp||0))-((a[1].level||1)*100+(a[1].xp||0))).slice(0,10);
-    return sendText(jid, decorated("TOP XP", top.map(([n,v],i)=>`${i+1}. @${n} — Nivel ${v.level||1} • ${v.xp||0} XP`).join("\n") || "Sin datos."), {mentions: top.map(x=>`${x[0]}@s.whatsapp.net`)});
-  }
-  if (cmd === "racha") return sendText(jid, decorated("RACHA", `🔥 Tu racha diaria: *${u.streak || 0}*`));
-  if (cmd === "logros") {
-    const achievements = [];
-    if ((u.messages||0) >= 1) achievements.push("🏅 Primer comando");
-    if ((u.messages||0) >= 50) achievements.push("🏆 50 mensajes");
-    if ((u.level||1) >= 5) achievements.push("⭐ Nivel 5");
-    if ((u.coins||0) >= 5000) achievements.push("💰 5.000 monedas");
-    return sendText(jid, decorated("LOGROS", achievements.length ? achievements.join("\n") : "🔒 Aún no tienes logros desbloqueados."));
-  }
-  if (cmd === "stats" || cmd === "estadisticas") {
-    return sendText(jid, decorated("ESTADÍSTICAS", `💬 Mensajes: *${u.messages||0}*\n⭐ Nivel: *${u.level||1}*\n✨ XP: *${u.xp||0}*\n💰 Monedas: *${money(u.coins||0)}*\n🔥 Racha: *${u.streak||0}*`));
-  }
   return false;
 }
 
 async function handleGroup(cmd, args, m) {
-  if (!isGroup(m)) return sendCommandText(m.key.remoteJid, cmd, "❌ Este comando solo funciona en grupos.");
+  if (!isGroup(m)) return sendText(m.key.remoteJid, "❌ Este comando solo funciona en grupos.");
 
   const jid = m.key.remoteJid;
   const g = ensureGroup(jid);
 
   if (["antilink","welcome","goodbye"].includes(cmd)) {
-    if (!(await isAdmin(m))) return sendCommandText(jid, cmd, "❌ Solo los administradores pueden usarlo.");
+    if (!(await isAdmin(m))) return sendText(jid, "❌ Solo los administradores pueden usarlo.");
     g[cmd] = !g[cmd];
     saveData();
-    return sendCommandText(jid, cmd, `${g[cmd] ? "✅ ACTIVADO" : "❌ DESACTIVADO"}: *${cmd}*`);
+    return sendText(jid, `${g[cmd] ? "✅ ACTIVADO" : "❌ DESACTIVADO"}: *${cmd}*`);
   }
 
   if (cmd === "admins") {
     const meta = await groupMetadata(jid);
-    if (!meta) return sendCommandText(jid, cmd, "❌ No pude obtener la información.");
+    if (!meta) return sendText(jid, "❌ No pude obtener la información.");
     const list = meta.participants.filter(p=>p.admin).map(p=>`• @${cleanNumber(p.id)}`).join("\n");
-    return sendCommandText(jid, cmd, `🛡️ *ADMINISTRADORES*\n\n${list || "No encontrados."}`,
+    return sendText(jid, `🛡️ *ADMINISTRADORES*\n\n${list || "No encontrados."}`,
       {mentions: meta.participants.filter(p=>p.admin).map(p=>p.id)});
   }
 
   if (cmd === "infogrupo") {
     const meta = await groupMetadata(jid);
-    if (!meta) return sendCommandText(jid, cmd, "❌ No pude obtener la información.");
-    return sendCommandText(jid, cmd,
+    if (!meta) return sendText(jid, "❌ No pude obtener la información.");
+    return sendText(jid,
 `👥 *INFORMACIÓN DEL GRUPO*
 📛 Nombre: ${meta.subject}
 👤 Miembros: ${meta.participants.length}
@@ -1013,32 +711,32 @@ async function handleGroup(cmd, args, m) {
   }
 
   if (cmd === "tagall" || cmd === "hidetag") {
-    if (!(await isAdmin(m))) return sendCommandText(jid, cmd, "❌ Solo administradores.");
+    if (!(await isAdmin(m))) return sendText(jid, "❌ Solo administradores.");
     const meta = await groupMetadata(jid);
     const mentions = meta.participants.map(p=>p.id);
     const text = args.join(" ") || "📢 Atención grupo";
-    return sendCommandText(jid, cmd, text, { mentions });
+    return sendText(jid, text, { mentions });
   }
 
   if (cmd === "linkgrupo") {
-    if (!(await isAdmin(m))) return sendCommandText(jid, cmd, "❌ Solo administradores.");
-    if (!(await botIsAdmin(jid))) return sendCommandText(jid, cmd, "❌ Necesito ser administrador.");
+    if (!(await isAdmin(m))) return sendText(jid, "❌ Solo administradores.");
+    if (!(await botIsAdmin(jid))) return sendText(jid, "❌ Necesito ser administrador.");
     try {
       const code = await sock.groupInviteCode(jid);
-      return sendCommandText(jid, cmd, `🔗 https://chat.whatsapp.com/${code}`);
+      return sendText(jid, `🔗 https://chat.whatsapp.com/${code}`);
     } catch {
-      return sendCommandText(jid, cmd, "❌ No pude obtener el enlace.");
+      return sendText(jid, "❌ No pude obtener el enlace.");
     }
   }
 
   if (cmd === "promote" || cmd === "demote" || cmd === "kick") {
-    if (!(await isAdmin(m))) return sendCommandText(jid, cmd, "❌ Solo administradores.");
-    if (!(await botIsAdmin(jid))) return sendCommandText(jid, cmd, "❌ Necesito ser administrador.");
+    if (!(await isAdmin(m))) return sendText(jid, "❌ Solo administradores.");
+    if (!(await botIsAdmin(jid))) return sendText(jid, "❌ Necesito ser administrador.");
     const target = getMention(m);
-    if (!target) return sendCommandText(jid, cmd, "❌ Menciona a la persona.");
+    if (!target) return sendText(jid, "❌ Menciona a la persona.");
     const action = cmd === "promote" ? "promote" : cmd === "demote" ? "demote" : "remove";
     await sock.groupParticipantsUpdate(jid, [target], action);
-    return sendCommandText(jid, cmd, `✅ Acción *${cmd}* realizada.`);
+    return sendText(jid, `✅ Acción *${cmd}* realizada.`);
   }
 
   return false;
@@ -1047,162 +745,124 @@ async function handleGroup(cmd, args, m) {
 async function handleUtilities(cmd, args, m) {
   if (cmd === "calc") {
     const expression = args.join(" ");
-    if (!/^[0-9+\-*/().%\s]+$/.test(expression)) return sendCommandText(m.key.remoteJid, cmd, "❌ Solo operaciones matemáticas básicas.");
+    if (!/^[0-9+\-*/().%\s]+$/.test(expression)) return sendText(m.key.remoteJid, "❌ Solo operaciones matemáticas básicas.");
     try {
       const result = Function(`"use strict"; return (${expression})`)();
-      return sendCommandText(m.key.remoteJid, cmd, `🧮 ${expression} = *${result}*`);
+      return sendText(m.key.remoteJid, `🧮 ${expression} = *${result}*`);
     } catch {
-      return sendCommandText(m.key.remoteJid, cmd, "❌ Operación inválida.");
+      return sendText(m.key.remoteJid, "❌ Operación inválida.");
     }
   }
 
   if (cmd === "say") {
-    return sendCommandText(m.key.remoteJid, cmd, args.join(" ") || "❌ Escribe algo.");
+    return sendText(m.key.remoteJid, args.join(" ") || "❌ Escribe algo.");
   }
 
   if (cmd === "hora") {
-    return sendCommandText(m.key.remoteJid, cmd, `🕐 Hora del servidor: ${new Date().toLocaleTimeString("es-CO")}`);
+    return sendText(m.key.remoteJid, `🕐 Hora del servidor: ${new Date().toLocaleTimeString("es-CO")}`);
   }
 
   if (cmd === "fecha") {
-    return sendCommandText(m.key.remoteJid, cmd, `📅 Fecha: ${new Date().toLocaleDateString("es-CO")}`);
+    return sendText(m.key.remoteJid, `📅 Fecha: ${new Date().toLocaleDateString("es-CO")}`);
   }
 
-
-  if (cmd === "qr") {
-    const value = args.join(" ").trim();
-    if (!value) return sendCommandText(m.key.remoteJid, cmd, "❌ Escribe el texto que quieres convertir en QR.\n💡 Ejemplo: *.qr Hola TITANBOT*");
-    try {
-      const buffer = await QRCode.toBuffer(value, { type: "png", width: 700, margin: 2 });
-      return sock.sendMessage(m.key.remoteJid, {
-        image: buffer,
-        caption: `╭━━━〔 📱 QR TITANBOT 〕━━━╮\n┃ ✦ Código generado correctamente\n╰━━━━━━━━━━━━━━━━━━━━╯\n\n📝 Contenido: ${value}`
-      });
-    } catch {
-      return sendCommandText(m.key.remoteJid, cmd, "❌ No pude generar el QR.");
+  // Música: solo acepta enlaces directos a medios que el usuario tenga derecho a compartir.
+  // No convierte ni descarga contenido desde plataformas de terceros.
+  if (cmd === "musica") {
+    const url = args[0];
+    if (!url || !/^https?:\/\//i.test(url)) {
+      return sendText(m.key.remoteJid,
+        `🎵 *MÚSICA*\n\nUsa:\n*.musica <enlace directo al audio/video>*\n\n` +
+        `Ejemplo:\n*.musica https://servidor.com/cancion.mp3\n\n` +
+        `ℹ️ El enlace debe ser directo a un archivo multimedia que puedas compartir.`);
     }
-  }
 
-  if (["mayus", "minus", "invertir", "contar"].includes(cmd)) {
-    const value = args.join(" ").trim();
-    if (!value) return sendCommandText(m.key.remoteJid, cmd, "❌ Escribe un texto.\n💡 Ejemplo: *.mayus hola mundo*");
-    let result;
-    if (cmd === "mayus") result = value.toUpperCase();
-    if (cmd === "minus") result = value.toLowerCase();
-    if (cmd === "invertir") result = [...value].reverse().join("");
-    if (cmd === "contar") result = `🔢 Caracteres: *${value.length}*\n📝 Palabras: *${value.split(/\s+/).filter(Boolean).length}*`;
-    return sendCommandText(m.key.remoteJid, cmd, `📄 Resultado:\n\n${result}`);
-  }
+    const lower = url.toLowerCase().split("?")[0];
+    const jid = m.key.remoteJid;
+    try {
+      if (/\.(mp4|webm|mov|m4v)$/i.test(lower)) {
+        await sock.sendMessage(jid, {
+          video: { url },
+          caption: "🎬 *VIDEO*\n▶️ Reproducción enviada por TITANBOT"
+        });
+        return sendText(jid, "🎧 Para enviar el audio separado, usa un enlace directo a un archivo .mp3/.m4a/.ogg.");
+      }
 
-  if (cmd === "numeroazar") {
-    const min = Number(args[0]);
-    const max = Number(args[1]);
-    if (!Number.isFinite(min) || !Number.isFinite(max) || max < min) return sendCommandText(m.key.remoteJid, cmd, "❌ Ejemplo: *.numeroazar 1 100*");
-    const result = Math.floor(Math.random() * (max - min + 1)) + min;
-    return sendCommandText(m.key.remoteJid, cmd, `🎯 Número: *${result}*`);
-  }
+      if (/\.(mp3|m4a|aac|ogg|wav|opus)$/i.test(lower)) {
+        return sock.sendMessage(jid, {
+          audio: { url },
+          mimetype: "audio/mpeg",
+          ptt: false
+        });
+      }
 
-  if (cmd === "dado10" || cmd === "dado20") {
-    const sides = Number(cmd.replace("dado", ""));
-    return sendCommandText(m.key.remoteJid, cmd, `🎲 D${sides}: *${1 + Math.floor(Math.random() * sides)}*`);
-  }
-
-  if (cmd === "elige") {
-    const options = args.filter(Boolean);
-    if (options.length < 2) return sendCommandText(m.key.remoteJid, cmd, "❌ Ejemplo: *.elige rojo azul verde*");
-    return sendCommandText(m.key.remoteJid, cmd, `🎯 Elegí: *${pick(options)}*`);
+      return sendText(jid,
+        `🎵 *ENLACE DE MÚSICA*\n\n${url}\n\n` +
+        `⚠️ Para enviarlo como archivo, usa un enlace directo terminado en .mp3, .m4a, .ogg, etc.`);
+    } catch (e) {
+      console.error("❌ Error enviando música:", e?.message || e);
+      return sendText(jid, "❌ No pude enviar ese archivo. Comprueba que el enlace sea público y directo.");
+    }
   }
 
   return false;
 }
 
-async function handleAnime(cmd, m, id, args = []) {
+async function handleAnime(cmd, m, id) {
+  if (cmd === "w") {
+    const pending = pendingAnime[id];
+    if (!pending) {
+      return sendText(m.key.remoteJid, "🎁 No tienes ningún personaje pendiente de reclamar. Usa *.anime* primero.");
+    }
+
+    const u = ensureUser(id);
+    u.inventory = Array.isArray(u.inventory) ? u.inventory : [];
+    if (!u.inventory.includes(pending.character)) {
+      u.inventory.push(pending.character);
+    }
+    delete pendingAnime[id];
+    addXP(id, 25);
+    saveData();
+
+    return sendText(m.key.remoteJid,
+`╭━━〔 🎁 PERSONAJE RECLAMADO 〕━━╮
+┃ ⭐ ${pending.character}
+┃ 👤 ${displayName(m)}
+┃ ✨ +25 XP
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+
+✅ Guardado en tu inventario.
+📦 Usa *.inventario* para verlo.`);
+  }
+
   if (cmd !== "s" && cmd !== "anime" && cmd !== "waifu") return false;
 
-  const jid = m.key.remoteJid;
-  const choice = (args[0] || "random").toLowerCase();
-  const gender = choice === "hombre" || choice === "male" ? "Hombre"
-    : choice === "mujer" || choice === "female" ? "Mujer"
-    : Math.random() < 0.5 ? "Hombre" : "Mujer";
+  const image = process.env.ANIME_IMAGE_URL;
+  const character = pick(ANIME_CHARACTERS);
+  pendingAnime[id] = { character, createdAt: Date.now() };
 
-  const maleNames = ["Akira", "Ren", "Kaito", "Haru", "Sora", "Yuki"];
-  const femaleNames = ["Aiko", "Hana", "Yuna", "Sakura", "Mika", "Akari"];
-  const names = gender === "Hombre" ? maleNames : femaleNames;
-  const name = names[Math.floor(Math.random() * names.length)];
-  const animeId = String(Math.floor(1000 + Math.random() * 9000));
+  const p = data.profiles[id];
+  const name = p?.name || displayName(m);
 
   const caption =
-`╭━━〔 🎴 TARJETA ANIME 〕━━╮
-┃ 👤 Nombre: ${name}
-┃ 🧑 Género: ${gender}
-┃ 💚 Estado: Libre
-┃ 🆔 ID: ${animeId}
-┃ 🤖 Bot: TITANBOT
-╰━━━━━━━━━━━━━━━━━━━━╯
+`╭━━〔 🎴 PERSONAJE ANIME 〕━━╮
+┃ ✨ ${character}
+┃ 👤 ${name}
+┃ ⭐ Nivel: ${ensureUser(id).level}
+┃ 💫 TITANBOT
+╰━━━━━━━━━━━━━━━━━━━━━━╯
 
-✨ Usa *.s hombre* o *.s mujer* para elegir.
-⚡ El futuro empieza ahora.`;
+🎁 *¡Personaje disponible!*
+👉 Escribe *.w* para reclamarlo.`;
 
-  const headers = {
-    "User-Agent": "TITANBOT (https://github.com/whiskeysockets/baileys)"
-  };
-
-  // NEKOSBEST tiene categorías separadas y aptas para todo público:
-  // waifu = femenino, husbando = masculino.
-  const primaryCategory = gender === "Hombre" ? "husbando" : "waifu";
-  const primaryUrl = `https://nekos.best/api/v2/${primaryCategory}`;
-
-  async function fetchImageFromApi(apiUrl) {
-    const response = await fetch(apiUrl, { headers });
-    if (!response.ok) throw new Error(`API HTTP ${response.status}`);
-    const data = await response.json();
-    const imageUrl = data?.results?.[0]?.url || data?.url;
-    if (!imageUrl) throw new Error("La API no devolvió una imagen");
-
-    const imageResponse = await fetch(imageUrl, { headers });
-    if (!imageResponse.ok) throw new Error(`Imagen HTTP ${imageResponse.status}`);
-    return Buffer.from(await imageResponse.arrayBuffer());
+  if (image) {
+    return sock.sendMessage(m.key.remoteJid, {
+      image: { url: image },
+      caption
+    });
   }
 
-  try {
-    const buffer = await fetchImageFromApi(primaryUrl);
-    await sock.sendMessage(jid, { image: buffer, caption });
-    return true;
-  } catch (error) {
-    console.error(`Error NEKOSBEST .s ${gender}:`, error.message);
-  }
-
-  // Segundo intento: NekosAPI con filtro de género.
-  try {
-    const tag = gender === "Hombre" ? "male" : "female";
-    const apiUrl = `https://api.nekosapi.com/v4/images/random?rating=safe&tags=${encodeURIComponent(tag)}&limit=1`;
-    const buffer = await fetchImageFromApi(apiUrl);
-    await sock.sendMessage(jid, { image: buffer, caption });
-    return true;
-  } catch (error) {
-    console.error(`Respaldo NekosAPI .s ${gender}:`, error.message);
-  }
-
-  // Tercer intento: URL configurada en Render. Solo se recomienda
-  // configurar una imagen que corresponda al género seleccionado.
-  try {
-    const fallback = gender === "Hombre"
-      ? process.env.ANIME_MALE_IMAGE_URL
-      : process.env.ANIME_FEMALE_IMAGE_URL;
-    if (fallback) {
-      await sock.sendMessage(jid, { image: { url: fallback }, caption });
-      return true;
-    }
-  } catch (error) {
-    console.error("Respaldo por URL .s falló:", error.message);
-  }
-
-  // No usamos la foto del perfil del bot como respaldo porque podría
-  // ser de un género diferente al indicado en la tarjeta.
-  await sock.sendMessage(jid, {
-    text: `${caption}\n\n⚠️ No pude cargar una imagen ${gender.toLowerCase()} en este momento. Intenta *.s* de nuevo.`
-  });
-  return true;
+  return sendText(m.key.remoteJid, caption);
 }
 
 async function executeCommand(text, m) {
@@ -1211,31 +871,15 @@ async function executeCommand(text, m) {
     const raw = parts.shift()?.toLowerCase();
     if (!raw) return;
 
-    const cmd = aliases[raw] || raw;
+    const cmd = raw;
     const args = parts;
-    const shownCmd = raw;
     const id = userId(m.key.participant || m.key.remoteJid);
 
     ensureUser(id).messages++;
     addXP(id, 1);
 
-    if (cmd === "menu" || cmd === "comandos") {
-      const caption = commandMenu();
-      try {
-        if (fs.existsSync(TITANBOT_PROFILE_IMAGE)) {
-          return sock.sendMessage(m.key.remoteJid, {
-            image: fs.readFileSync(TITANBOT_PROFILE_IMAGE),
-            caption
-          });
-        }
-      } catch (e) {
-        console.error("⚠️ No se pudo cargar la foto del menú:", e.message);
-      }
-      return sendText(m.key.remoteJid, caption);
-    }
-
-    if (cmd === "help" || cmd === "ayuda") {
-      return sendText(m.key.remoteJid, decorateCommandResponse("help", commandHelp(args[0] || "menu")));
+    if (cmd === "menu" || cmd === "help" || cmd === "comandos") {
+      return sendText(m.key.remoteJid, commandMenu());
     }
 
     if (cmd === "todos") {
@@ -1248,7 +892,7 @@ ${names.map((x,i)=>`${i+1}. .${x}`).join("\n")}`);
     }
 
     if (await handleProfile(cmd, m, id)) return;
-    if (await handleAnime(cmd, m, id, args)) return;
+    if (await handleAnime(cmd, m, id)) return;
     if (await handleEconomy(cmd, args, m, id)) return;
     if (await handleGames(cmd, args, m, id)) return;
     if (await handleGroup(cmd, args, m)) return;
@@ -1256,7 +900,7 @@ ${names.map((x,i)=>`${i+1}. .${x}`).join("\n")}`);
 
     if (Object.prototype.hasOwnProperty.call(simpleCommands, cmd)) {
       const response = simpleCommands[cmd];
-      if (response) return sendText(m.key.remoteJid, decorateCommandResponse(cmd, response));
+      if (response) return sendText(m.key.remoteJid, response);
     }
 
     return sendText(m.key.remoteJid,
@@ -1390,109 +1034,73 @@ async function processMessage(m) {
   }
 }
 
-async function setTitanBotProfilePicture() {
-  try {
-    if (!sock?.user?.id) return;
-    if (!fs.existsSync(TITANBOT_PROFILE_IMAGE)) {
-      console.log("⚠️ No se encontró titanbot-profile.png");
-      return;
-    }
-    await sock.updateProfilePicture(sock.user.id, { url: TITANBOT_PROFILE_IMAGE });
-    console.log("🖼️ Foto de perfil de TITANBOT actualizada.");
-  } catch (error) {
-    console.error("⚠️ No se pudo actualizar la foto de perfil:", error?.message || error);
-  }
-}
-
 async function startBot() {
   try {
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-
-    // WhatsApp puede rechazar el emparejamiento si usamos una versión
-    // de Web desactualizada. Preferimos la revisión viva de web.whatsapp.com
-    // y dejamos fetchLatestBaileysVersion() como respaldo.
-    let version;
-    try {
-      const live = await fetchLatestWaWebVersion({});
-      version = live.version;
-      console.log(`🌐 WhatsApp Web live version: ${version.join(".")}`);
-    } catch (liveError) {
-      const fallback = await fetchLatestBaileysVersion({});
-      version = fallback.version;
-      console.log(`⚠️ No se pudo obtener la versión Web en vivo. Usando Baileys: ${version.join(".")}`);
-    }
+    const { version } = await fetchLatestBaileysVersion();
 
     sock = makeWASocket({
       version,
       auth: state,
       printQRInTerminal: false,
       logger: pino({ level: "silent" }),
-      // Chrome/Linux mantiene el flujo como WEB_BROWSER y evita anunciar
-      // un cliente Desktop de macOS desde Render.
       browser: Browsers.ubuntu("Chrome"),
-      generateHighQualityLinkPreview: true,
-      syncFullHistory: false
+      generateHighQualityLinkPreview: true
     });
 
     sock.ev.on("creds.update", saveCreds);
 
-    let pairingRequested = false;
+    let pairingCodeRequested = false;
 
     sock.ev.on("connection.update", async update => {
       try {
         const { connection, lastDisconnect, qr } = update;
 
-        // Baileys emite un QR internamente antes de aceptar el Pairing Code.
-        // Lo usamos solamente como señal de que el socket ya está listo;
-        // el QR nunca se muestra ni se ofrece al usuario.
-        if (qr && !state.creds.registered && !pairingRequested) {
-          pairingRequested = true;
-          currentQR = null;
-          botConnection = "pairing";
+        if (!state.creds.registered && PAIRING_NUMBER && !pairingCodeRequested && connection === "connecting") {
+          pairingCodeRequested = true;
+          const number = PAIRING_NUMBER.replace(/\D/g, "");
+          try {
+            const code = await sock.requestPairingCode(number);
+            console.log("================================");
+            console.log("📱 CÓDIGO PARA VINCULAR POR NÚMERO:");
+            console.log(`🔢 ${code}`);
+            console.log("================================");
+          } catch (error) {
+            pairingCodeRequested = false;
+            console.error("❌ Error generando código de número:", error?.message || error);
+          }
+        }
 
-          if (!PAIRING_NUMBER) {
-            pairingRequested = false;
-            botConnection = "pairing_error";
-            console.log("❌ Falta PAIRING_NUMBER en las variables de entorno.");
-            console.log("📱 Configura PAIRING_NUMBER en formato internacional, sin + ni espacios.");
-          } else {
+        if (qr && !state.creds.registered) {
+          if (PAIRING_METHOD === "number" && PAIRING_NUMBER && !pairingCodeRequested) {
+            pairingCodeRequested = true;
+            const number = PAIRING_NUMBER.replace(/\D/g, "");
             try {
-              const code = await sock.requestPairingCode(PAIRING_NUMBER);
-              pairingCode = code;
+              const code = await sock.requestPairingCode(number);
               console.log("================================");
-              console.log("📱 CÓDIGO DE VINCULACIÓN TITANBOT");
-              console.log(`🔐 ${pairingCode}`);
-              console.log("📲 WhatsApp > Dispositivos vinculados > Vincular dispositivo > Vincular con número de teléfono");
+              console.log("📱 CÓDIGO PARA VINCULAR POR NÚMERO:");
+              console.log(code);
               console.log("================================");
             } catch (error) {
-              pairingRequested = false;
-              pairingCode = null;
-              botConnection = "pairing_error";
-              console.error("❌ No se pudo generar el Pairing Code:", error?.message || error);
+              pairingCodeRequested = false;
+              console.error("❌ Error generando código de número:", error?.message || error);
             }
           }
         }
 
         if (connection === "connecting") {
-          botConnection = "connecting";
           console.log("🔄 Conectando TITANBOT...");
         }
 
         if (connection === "open") {
-          currentQR = null;
-          pairingCode = null;
-          botConnection = "connected";
           console.log("================================");
           console.log("✅ TITANBOT CONECTADO");
           console.log(`🤖 ${BOT_NAME}`);
           console.log(`⚡ ${FRASE}`);
           console.log("================================");
-          await setTitanBotProfilePicture();
         }
 
         if (connection === "close") {
-          currentQR = null;
-          botConnection = "closed";
           const code = lastDisconnect?.error?.output?.statusCode;
 
           console.log("❌ Conexión cerrada. Código:", code);
@@ -1516,147 +1124,30 @@ async function startBot() {
       }
     });
 
-    // El Pairing Code se solicita dentro de connection.update cuando Baileys
-    // ya emitió la señal QR/handshake. Así evitamos pedirlo demasiado pronto.
+    if (!state.creds.registered) {
+      console.log("📲 TITANBOT está esperando la vinculación.");
+      console.log(`🔧 Método configurado: ${PAIRING_METHOD}`);
+      console.log("🔢 Se generará código por número cuando WhatsApp lo solicite.");
+    }
   } catch (error) {
     console.error("❌ Error iniciando TitanBot:", error);
     setTimeout(startBot, 10000);
   }
 }
 
-http.createServer(async (req, res) => {
-  try {
-    const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
-
-    // Estado y Pairing Code para la página web.
-    if (url.pathname === "/api/pairing") {
-      res.writeHead(200, {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0"
-      });
-      res.end(JSON.stringify({
-        status: botConnection,
-        pairingCode: pairingCode || null,
-        configured: Boolean(PAIRING_NUMBER)
-      }));
-      return;
-    }
-
-    if (url.pathname === "/") {
-      res.writeHead(200, {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0"
-      });
-      res.end(`<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Cache-Control" content="no-store">
-<title>TITANBOT - Pairing Code</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:#0b0f12;color:#fff;font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;padding:20px}
-.card{width:min(92vw,430px);background:#151a1f;border:1px solid #293139;border-radius:22px;padding:26px;text-align:center;box-shadow:0 15px 45px rgba(0,0,0,.4)}
-h1{margin:0 0 8px;font-size:28px}
-p{color:#aeb7bf;line-height:1.45}
-.status{font-weight:700;margin:12px 0;font-size:18px}
-.qrbox{width:320px;max-width:100%;min-height:150px;margin:20px auto;background:#0f1317;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid #293139}
-.code{font-size:34px;letter-spacing:5px;font-weight:800;word-break:break-all;padding:28px 16px}
-.message{color:#222;font-weight:700;padding:20px}
-.ok{font-size:64px}
-.steps{text-align:left;background:#0f1317;border-radius:14px;padding:14px 18px;color:#d9e0e5}
-.steps li{margin:9px 0}
-button{border:0;border-radius:12px;padding:12px 18px;background:#fff;color:#111;font-weight:700;cursor:pointer}
-.small{font-size:13px;color:#7f8992}
-</style>
-</head>
-<body>
-<div class="card">
-<h1>🤖 TITANBOT</h1>
-<p>Vinculación por número de teléfono</p>
-<div id="status" class="status">⏳ Generando código...</div>
-<div id="qrbox" class="qrbox"><div id="code" class="code">••••••••</div></div>
-<button onclick="updatePairing(true)">🔄 Actualizar estado</button>
-<ol class="steps">
-<li>Abre WhatsApp en tu teléfono.</li>
-<li>Ve a <b>Dispositivos vinculados</b>.</li>
-<li>Pulsa <b>Vincular dispositivo</b>.</li>
-<li>Elige <b>Vincular con número de teléfono</b>.</li>
-<li>Escribe el código que aparece arriba.</li>
-</ol>
-<p class="small">El número se configura en Render con la variable PAIRING_NUMBER.</p>
-</div>
-<script>
-const statusEl=document.getElementById('status');
-const box=document.getElementById('qrbox');
-const codeEl=document.getElementById('code');
-
-async function updatePairing(){
-  try{
-    const r=await fetch('/api/pairing?ts='+Date.now(),{cache:'no-store'});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const data=await r.json();
-
-    if(data.status==='connected'){
-      statusEl.textContent='✅ TITANBOT CONECTADO';
-      codeEl.textContent='✓ LISTO';
-      return;
-    }
-
-    if(data.pairingCode){
-      statusEl.textContent='🔐 CÓDIGO DE VINCULACIÓN';
-      codeEl.textContent=data.pairingCode;
-      return;
-    }
-
-    if(!data.configured){
-      statusEl.textContent='⚠️ FALTA PAIRING_NUMBER';
-      codeEl.textContent='CONFIGURA EL NÚMERO';
-      return;
-    }
-
-    statusEl.textContent=data.status==='pairing_error'?'❌ ERROR GENERANDO CÓDIGO':'⏳ GENERANDO CÓDIGO...';
-    codeEl.textContent='••••••••';
-  }catch(e){
-    statusEl.textContent='⚠️ Error consultando el estado';
-    codeEl.textContent='SIN CONEXIÓN';
-    console.error(e);
-  }
-}
-
-updatePairing();
-setInterval(updatePairing,1500);
-</script>
-</body>
-</html>`);
-      return;
-    }
-
-    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-    res.end("404 - No encontrado\n");
-  } catch (error) {
-    console.error("❌ Error en servidor web:", error);
-    if (!res.headersSent) {
-      res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
-    }
-    res.end("500 - Error interno\n");
-  }
+http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end("🤖 TITANBOT ONLINE\n");
 }).listen(PORT, () => {
   console.log(`🌐 TitanBot disponible en el puerto ${PORT}`);
-  console.log(`📱 Pairing Code: abre la URL principal para ver el estado.`);
 });
 
 console.log("================================");
 console.log(`🤖 ${BOT_NAME}`);
 console.log(`⚡ ${FRASE}`);
-console.log("📱 Vinculación: número de teléfono");
-console.log("🟢 Pairing Code: ACTIVADO");
+console.log("📱 Vinculación: NÚMERO");
 console.log("🚫 QR: DESACTIVADO");
+console.log("🔢 CÓDIGO POR NÚMERO: ACTIVADO SI EXISTE NUMBER");
 console.log("================================");
 
 startBot();
