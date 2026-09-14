@@ -1,105 +1,107 @@
-async function herramientas(
-  sock,
-  chat,
-  comando,
-  args,
-  id
-) {
+const config = require("../config");
 
-  // =========================
+async function herramientas(sock, chat, comando, args, id) {
+
+  // ========================================
   // MENÚ DE HERRAMIENTAS
-  // =========================
+  // ========================================
 
   if (comando === "herramientas") {
-
     return sock.sendMessage(chat, {
       text:
 `🛠️ HERRAMIENTAS TITANBOT
 
 🕐 .hora
+Ver la hora actual.
+
 📅 .fecha
-🧮 .calculadora
+Ver la fecha actual.
+
+🧮 .calculadora operación
+Hacer cálculos.
+
 🆔 .id
+Ver tu ID.
+
 🤖 .botinfo
+Información del bot.
 
-Ejemplos:
+━━━━━━━━━━━━━━━━━━
 
-.calculadora 25+25
-.hora
-.fecha
-.id`
+Ejemplo:
+
+.calculadora 25*4+10`
     });
   }
 
-  // =========================
+
+  // ========================================
   // HORA
-  // =========================
+  // ========================================
 
   if (comando === "hora") {
 
-    const ahora =
-      new Date();
+    const ahora = new Date();
 
-    const hora =
-      ahora.toLocaleTimeString(
-        "es-CO",
-        {
-          timeZone: "America/Bogota",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit"
-        }
-      );
+    const hora = ahora.toLocaleTimeString(
+      "es-CO",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+        timeZone: "America/Bogota"
+      }
+    );
 
     return sock.sendMessage(chat, {
       text:
 `🕐 HORA ACTUAL
 
-🇨🇴 Colombia:
-${hora}`
+🇨🇴 Colombia
+
+⏰ ${hora}`
     });
   }
 
-  // =========================
+
+  // ========================================
   // FECHA
-  // =========================
+  // ========================================
 
   if (comando === "fecha") {
 
-    const ahora =
-      new Date();
+    const ahora = new Date();
 
-    const fecha =
-      ahora.toLocaleDateString(
-        "es-CO",
-        {
-          timeZone: "America/Bogota",
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric"
-        }
-      );
+    const fecha = ahora.toLocaleDateString(
+      "es-CO",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "America/Bogota"
+      }
+    );
 
     return sock.sendMessage(chat, {
       text:
-`📅 FECHA
+`📅 FECHA ACTUAL
 
-🇨🇴 ${fecha}`
+🇨🇴 Colombia
+
+📆 ${fecha}`
     });
   }
 
-  // =========================
+
+  // ========================================
   // CALCULADORA
-  // =========================
+  // ========================================
 
   if (comando === "calculadora") {
 
-    const expresion =
-      args.join("");
-
-    if (!expresion) {
-
+    if (args.length === 0) {
       return sock.sendMessage(chat, {
         text:
 `🧮 CALCULADORA
@@ -108,23 +110,33 @@ Escribe una operación.
 
 Ejemplos:
 
-.calculadora 25+25
+.calculadora 10+5
+
+.calculadora 20*3
+
 .calculadora 100/4
-.calculadora 10*5
-.calculadora 50-20`
+
+.calculadora (10+5)*2`
       });
     }
 
-    // Solo permite números y operadores
-    if (
-      !/^[0-9+\-*/().% ]+$/.test(
-        expresion
-      )
-    ) {
+    const expresion = args.join(" ");
 
+    // Solo permite números y operaciones básicas
+    if (!/^[0-9+\-*/().% ]+$/.test(expresion)) {
       return sock.sendMessage(chat, {
         text:
-          "❌ La operación contiene caracteres no permitidos."
+`❌ OPERACIÓN NO VÁLIDA
+
+Solo puedes utilizar:
+
+🔢 Números
+➕ Suma
+➖ Resta
+✖️ Multiplicación
+➗ División
+% Porcentaje
+( ) Paréntesis`
       });
     }
 
@@ -146,10 +158,10 @@ Ejemplos:
         text:
 `🧮 CALCULADORA
 
-📌 Operación:
+📥 Operación:
 ${expresion}
 
-✅ Resultado:
+📤 Resultado:
 ${resultado}`
       });
 
@@ -157,37 +169,50 @@ ${resultado}`
 
       return sock.sendMessage(chat, {
         text:
-          "❌ No pude calcular esa operación."
+`❌ No pude calcular esa operación.
+
+Ejemplo:
+
+.calculadora 25*4`
       });
     }
   }
 
-  // =========================
+
+  // ========================================
   // ID
-  // =========================
+  // ========================================
 
   if (comando === "id") {
 
     return sock.sendMessage(chat, {
       text:
-`🆔 ID
+`🆔 TU ID
 
 ${id}`
     });
   }
 
-  // =========================
-  // INFORMACIÓN DEL BOT
-  // =========================
+
+  // ========================================
+  // BOT INFO
+  // ========================================
 
   if (comando === "botinfo") {
 
     return sock.sendMessage(chat, {
       text:
-`🤖 TITANBOT
+`🤖 INFORMACIÓN DE TITANBOT
 
-📦 Versión:
-2.5.0
+╔════════════════════╗
+║    🤖 TITANBOT     ║
+╚════════════════════╝
+
+📦 Nombre:
+${config.nombre}
+
+🔢 Versión:
+${config.version}
 
 🟢 Estado:
 Online
@@ -198,10 +223,15 @@ WhatsApp
 🔧 Sistema:
 Baileys
 
-👨‍💻 Proyecto:
-TitanBot`
+👑 Creador:
+${config.creador}
+
+━━━━━━━━━━━━━━━━━━
+
+🚀 TitanBot v${config.version}`
     });
   }
+
 
   return false;
 }
