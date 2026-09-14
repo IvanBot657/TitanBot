@@ -2,44 +2,93 @@ const fs = require("fs");
 
 const DB = "./database/users.json";
 
-function cargarDB() {
+// ==========================================
+// BASE DE DATOS
+// ==========================================
+
+function cargarUsuarios() {
+
   if (!fs.existsSync(DB)) {
     fs.writeFileSync(DB, "{}");
   }
 
-  return JSON.parse(
-    fs.readFileSync(DB, "utf8")
-  );
+  try {
+
+    return JSON.parse(
+      fs.readFileSync(DB, "utf8")
+    );
+
+  } catch {
+
+    return {};
+  }
 }
 
-function guardarDB(db) {
+
+function guardarUsuarios(db) {
+
   fs.writeFileSync(
     DB,
     JSON.stringify(db, null, 2)
   );
 }
 
+
+// ==========================================
+// OBTENER USUARIO
+// ==========================================
+
 function obtenerUsuario(db, id) {
 
   if (!db[id]) {
 
     db[id] = {
-      dinero: 0,
-      xp: 0,
-      nivel: 1,
-      mensajes: 0,
-      inventario: [],
-      banco: 0,
-      ultimoDaily: 0,
-      ultimoTrabajo: 0,
-      ultimoMineria: 0,
-      ultimaPesca: 0
-    };
 
+      dinero: 0,
+
+      banco: 0,
+
+      xp: 0,
+
+      nivel: 1,
+
+      mensajes: 0,
+
+      inventario: [],
+
+      ultimoDaily: 0,
+
+      ultimoTrabajo: 0,
+
+      ultimoMineria: 0,
+
+      ultimaPesca: 0,
+
+      ultimaXP: 0
+
+    };
   }
 
   return db[id];
 }
+
+
+// ==========================================
+// TIEMPOS
+// ==========================================
+
+const DAILY = 24 * 60 * 60 * 1000;
+
+const TRABAJO = 60 * 60 * 1000;
+
+const MINERIA = 30 * 60 * 1000;
+
+const PESCA = 20 * 60 * 1000;
+
+
+// ==========================================
+// ECONOMÍA
+// ==========================================
 
 async function economia(
   sock,
@@ -49,408 +98,520 @@ async function economia(
   id
 ) {
 
-  const db = cargarDB();
-  const user = obtenerUsuario(db, id);
+  const db = cargarUsuarios();
 
-  // ==============================
+  const user =
+    obtenerUsuario(db, id);
+
+
+  // ========================================
   // SALDO
-  // ==============================
+  // ========================================
 
   if (comando === "saldo") {
 
-    guardarDB(db);
+    guardarUsuarios(db);
 
     return sock.sendMessage(chat, {
+
       text:
 `💰 SALDO
 
-💵 Efectivo: ${user.dinero}
-🏦 Banco: ${user.banco || 0}
+💵 Dinero:
+${user.dinero}
 
-💰 Total:
-${user.dinero + (user.banco || 0)} monedas`
+🏦 Banco:
+${user.banco}
+
+💎 Patrimonio:
+${user.dinero + user.banco}`
+
     });
-
   }
 
-  // ==============================
+
+  // ========================================
   // DAILY
-  // ==============================
+  // ========================================
 
   if (comando === "daily") {
 
     const ahora = Date.now();
-    const espera = 24 * 60 * 60 * 1000;
+
+    const restante =
+      DAILY -
+      (ahora - user.ultimoDaily);
+
 
     if (
-      ahora - user.ultimoDaily <
-      espera
+      user.ultimoDaily &&
+      restante > 0
     ) {
 
-      const restante =
-        espera -
-        (ahora - user.ultimoDaily);
-
       const horas =
-        Math.ceil(
-          restante / (60 * 60 * 1000)
+        Math.floor(
+          restante / 3600000
+        );
+
+      const minutos =
+        Math.floor(
+          (restante % 3600000) / 60000
         );
 
       return sock.sendMessage(chat, {
+
         text:
-`⏳ RECOMPENSA DIARIA
+`⏳ DAILY
 
 Ya reclamaste tu recompensa.
 
-🕐 Vuelve en aproximadamente ${horas} horas.`
-      });
+Vuelve en:
+${horas}h ${minutos}m`
 
+      });
     }
+
 
     const recompensa =
       Math.floor(
         Math.random() * 501
       ) + 500;
 
+
     user.dinero += recompensa;
+
     user.ultimoDaily = ahora;
 
-    guardarDB(db);
+    guardarUsuarios(db);
+
 
     return sock.sendMessage(chat, {
-      text:
-`🎁 RECOMPENSA DIARIA
 
-💰 Ganaste:
+      text:
+`🎁 DAILY
+
+💰 Recompensa:
 +${recompensa} monedas
 
 💵 Saldo:
 ${user.dinero}`
-    });
 
+    });
   }
 
-  // ==============================
+
+  // ========================================
   // TRABAJAR
-  // ==============================
+  // ========================================
 
   if (comando === "trabajar") {
 
     const ahora = Date.now();
-    const espera = 60 * 60 * 1000;
+
+    const restante =
+      TRABAJO -
+      (ahora - user.ultimoTrabajo);
+
 
     if (
-      ahora - user.ultimoTrabajo <
-      espera
+      user.ultimoTrabajo &&
+      restante > 0
     ) {
 
-      return sock.sendMessage(chat, {
-        text:
-"⏳ Ya trabajaste recientemente.\nPuedes volver a trabajar en 1 hora."
-      });
+      const minutos =
+        Math.ceil(
+          restante / 60000
+        );
 
+      return sock.sendMessage(chat, {
+
+        text:
+`⏳ TRABAJO
+
+Ya trabajaste recientemente.
+
+Espera:
+${minutos} minutos.`
+
+      });
     }
 
+
     const trabajos = [
-      "👨‍🍳 Trabajaste como cocinero.",
+
+      "👨‍🍳 Cocinaste en un restaurante.",
+
       "💻 Trabajaste como programador.",
-      "🚗 Trabajaste como conductor.",
-      "📦 Trabajaste organizando paquetes.",
-      "🛠️ Trabajaste reparando equipos."
+
+      "🚕 Trabajaste como conductor.",
+
+      "📦 Entregaste varios paquetes.",
+
+      "🔧 Reparaste algunos equipos.",
+
+      "🏪 Ayudaste en una tienda."
+
     ];
+
 
     const trabajo =
       trabajos[
         Math.floor(
-          Math.random() * trabajos.length
+          Math.random() *
+          trabajos.length
         )
       ];
 
-    const dinero =
+
+    const recompensa =
       Math.floor(
-        Math.random() * 301
+        Math.random() * 401
       ) + 200;
 
-    user.dinero += dinero;
+
+    user.dinero += recompensa;
+
     user.ultimoTrabajo = ahora;
 
-    guardarDB(db);
+    guardarUsuarios(db);
+
 
     return sock.sendMessage(chat, {
+
       text:
-`${trabajo}
+`💼 TRABAJO
+
+${trabajo}
 
 💰 Ganaste:
-+${dinero} monedas
++${recompensa}
 
 💵 Saldo:
 ${user.dinero}`
-    });
 
+    });
   }
 
-  // ==============================
+
+  // ========================================
   // MINAR
-  // ==============================
+  // ========================================
 
   if (comando === "minar") {
 
     const ahora = Date.now();
-    const espera = 30 * 60 * 1000;
+
+    const restante =
+      MINERIA -
+      (ahora - user.ultimoMineria);
+
 
     if (
-      ahora - user.ultimoMineria <
-      espera
+      user.ultimoMineria &&
+      restante > 0
     ) {
 
+      const minutos =
+        Math.ceil(
+          restante / 60000
+        );
+
       return sock.sendMessage(chat, {
+
         text:
-"⏳ Debes esperar 30 minutos para volver a minar."
+`⛏️ MINERÍA
+
+Debes esperar:
+${minutos} minutos.`
+
       });
-
     }
 
-    const minerales = [
-      "🪨 Piedra",
-      "🪙 Oro",
-      "💎 Diamante",
-      "⛏️ Hierro"
-    ];
 
-    const mineral =
-      minerales[
-        Math.floor(
-          Math.random() * minerales.length
-        )
-      ];
-
-    const dinero =
+    const recompensa =
       Math.floor(
-        Math.random() * 401
-      ) + 100;
+        Math.random() * 501
+      ) + 300;
 
-    user.dinero += dinero;
 
-    if (!user.inventario) {
-      user.inventario = [];
-    }
-
-    user.inventario.push(mineral);
+    user.dinero += recompensa;
 
     user.ultimoMineria = ahora;
 
-    guardarDB(db);
+    guardarUsuarios(db);
+
 
     return sock.sendMessage(chat, {
+
       text:
 `⛏️ MINERÍA
 
-Encontraste:
-${mineral}
+Encontraste recursos valiosos.
 
-💰 Valor obtenido:
-+${dinero} monedas
+💰 Ganaste:
++${recompensa}
 
 💵 Saldo:
 ${user.dinero}`
-    });
 
+    });
   }
 
-  // ==============================
+
+  // ========================================
   // PESCA
-  // ==============================
+  // ========================================
 
   if (comando === "pescar") {
 
     const ahora = Date.now();
-    const espera = 20 * 60 * 1000;
+
+    const restante =
+      PESCA -
+      (ahora - user.ultimaPesca);
+
 
     if (
-      ahora - user.ultimaPesca <
-      espera
+      user.ultimaPesca &&
+      restante > 0
     ) {
 
-      return sock.sendMessage(chat, {
-        text:
-"⏳ Debes esperar 20 minutos para pescar nuevamente."
-      });
+      const minutos =
+        Math.ceil(
+          restante / 60000
+        );
 
+      return sock.sendMessage(chat, {
+
+        text:
+`🎣 PESCA
+
+Espera:
+${minutos} minutos.`
+
+      });
     }
 
+
     const peces = [
-      "🐟 Sardina",
+
+      "🐟 Pez común",
+
       "🐠 Pez tropical",
+
       "🐡 Pez globo",
-      "🦈 Pez grande"
+
+      "🦈 Pez raro"
+
     ];
+
 
     const pez =
       peces[
         Math.floor(
-          Math.random() * peces.length
+          Math.random() *
+          peces.length
         )
       ];
 
-    const dinero =
+
+    const recompensa =
       Math.floor(
-        Math.random() * 251
+        Math.random() * 301
       ) + 100;
 
-    user.dinero += dinero;
 
-    if (!user.inventario) {
-      user.inventario = [];
-    }
-
-    user.inventario.push(pez);
+    user.dinero += recompensa;
 
     user.ultimaPesca = ahora;
 
-    guardarDB(db);
+    guardarUsuarios(db);
+
 
     return sock.sendMessage(chat, {
+
       text:
 `🎣 PESCA
 
-Atrapaste:
+Encontraste:
 ${pez}
 
 💰 Ganaste:
-+${dinero} monedas
++${recompensa}
 
 💵 Saldo:
 ${user.dinero}`
-    });
 
+    });
   }
 
-  // ==============================
+
+  // ========================================
   // DEPOSITAR
-  // ==============================
+  // ========================================
 
   if (comando === "depositar") {
 
     const cantidad =
-      parseInt(args[0]);
+      Number(args[0]);
+
 
     if (
       !cantidad ||
-      cantidad <= 0
+      cantidad <= 0 ||
+      !Number.isInteger(cantidad)
     ) {
 
       return sock.sendMessage(chat, {
-        text:
-"❌ Usa el comando así:\n.depositar 500"
-      });
 
+        text:
+`🏦 DEPOSITAR
+
+Usa:
+
+.depositar cantidad
+
+Ejemplo:
+
+.depositar 500`
+
+      });
     }
+
 
     if (
-      user.dinero < cantidad
+      cantidad >
+      user.dinero
     ) {
 
       return sock.sendMessage(chat, {
-        text:
-"❌ No tienes suficiente dinero en efectivo."
-      });
 
+        text:
+          "❌ No tienes suficiente dinero."
+      });
     }
 
-    user.dinero -= cantidad;
-    user.banco =
-      (user.banco || 0) + cantidad;
 
-    guardarDB(db);
+    user.dinero -= cantidad;
+
+    user.banco += cantidad;
+
+    guardarUsuarios(db);
+
 
     return sock.sendMessage(chat, {
+
       text:
 `🏦 DEPÓSITO
 
-💵 Depositaste:
+💵 Depositado:
 ${cantidad}
 
-💰 Efectivo:
+💰 Dinero:
 ${user.dinero}
 
 🏦 Banco:
 ${user.banco}`
-    });
 
+    });
   }
 
-  // ==============================
+
+  // ========================================
   // RETIRAR
-  // ==============================
+  // ========================================
 
   if (comando === "retirar") {
 
     const cantidad =
-      parseInt(args[0]);
+      Number(args[0]);
+
 
     if (
       !cantidad ||
-      cantidad <= 0
+      cantidad <= 0 ||
+      !Number.isInteger(cantidad)
     ) {
 
       return sock.sendMessage(chat, {
-        text:
-"❌ Usa el comando así:\n.retirar 500"
-      });
 
+        text:
+`🏦 RETIRAR
+
+Usa:
+
+.retirar cantidad
+
+Ejemplo:
+
+.retirar 500`
+
+      });
     }
+
 
     if (
-      (user.banco || 0) < cantidad
+      cantidad >
+      user.banco
     ) {
 
       return sock.sendMessage(chat, {
-        text:
-"❌ No tienes suficiente dinero en el banco."
-      });
 
+        text:
+          "❌ No tienes suficiente dinero en el banco."
+      });
     }
 
+
     user.banco -= cantidad;
+
     user.dinero += cantidad;
 
-    guardarDB(db);
+    guardarUsuarios(db);
+
 
     return sock.sendMessage(chat, {
+
       text:
 `🏦 RETIRO
 
-💵 Retiraste:
+💵 Retirado:
 ${cantidad}
 
-💰 Efectivo:
+💰 Dinero:
 ${user.dinero}
 
 🏦 Banco:
 ${user.banco}`
-    });
 
+    });
   }
 
-  // ==============================
+
+  // ========================================
   // INVENTARIO
-  // ==============================
+  // ========================================
 
   if (comando === "inventario") {
 
     const inventario =
       user.inventario || [];
 
-    if (!inventario.length) {
+
+    if (
+      inventario.length === 0
+    ) {
 
       return sock.sendMessage(chat, {
-        text:
-"🎒 Tu inventario está vacío."
-      });
 
+        text:
+          "🎒 Tu inventario está vacío."
+      });
     }
 
+
     return sock.sendMessage(chat, {
+
       text:
 `🎒 INVENTARIO
 
@@ -460,86 +621,94 @@ ${inventario
       `${i + 1}. ${item}`
   )
   .join("\n")}`
-    });
 
+    });
   }
 
-  // ==============================
+
+  // ========================================
   // TIENDA
-  // ==============================
+  // ========================================
 
   if (comando === "tienda") {
 
     return sock.sendMessage(chat, {
+
       text:
 `🛒 TIENDA TITANBOT
 
-1️⃣ 🍎 Manzana — 100
-2️⃣ 🎁 Cofre — 500
-3️⃣ ⚔️ Espada — 1000
-4️⃣ 🧪 Poción — 750
-5️⃣ 💎 Diamante — 1500
+1️⃣ 🍎 Manzana
+Precio: 100
 
-Comprar:
+2️⃣ 💎 Diamante
+Precio: 1000
 
-.comprar 1
-.comprar 2
-.comprar 3
-.comprar 4
-.comprar 5`
+3️⃣ 🎁 Caja misteriosa
+Precio: 500
+
+4️⃣ 🛡️ Escudo
+Precio: 1500
+
+Usa:
+
+.comprar número
+
+Ejemplo:
+
+.comprar 1`
+
     });
-
   }
 
-  // ==============================
+
+  // ========================================
   // COMPRAR
-  // ==============================
+  // ========================================
 
   if (comando === "comprar") {
 
-    const numero =
-      args[0];
+    const opcion =
+      Number(args[0]);
+
 
     const productos = {
 
-      "1": {
+      1: {
         nombre: "🍎 Manzana",
         precio: 100
       },
 
-      "2": {
-        nombre: "🎁 Cofre",
-        precio: 500
-      },
-
-      "3": {
-        nombre: "⚔️ Espada",
+      2: {
+        nombre: "💎 Diamante",
         precio: 1000
       },
 
-      "4": {
-        nombre: "🧪 Poción",
-        precio: 750
+      3: {
+        nombre: "🎁 Caja misteriosa",
+        precio: 500
       },
 
-      "5": {
-        nombre: "💎 Diamante",
+      4: {
+        nombre: "🛡️ Escudo",
         precio: 1500
       }
 
     };
 
+
     const producto =
-      productos[numero];
+      productos[opcion];
+
 
     if (!producto) {
 
       return sock.sendMessage(chat, {
-        text:
-"❌ Producto no encontrado.\n\nUsa .tienda"
-      });
 
+        text:
+          "❌ Producto no encontrado.\n\nUsa .tienda"
+      });
     }
+
 
     if (
       user.dinero <
@@ -547,64 +716,78 @@ Comprar:
     ) {
 
       return sock.sendMessage(chat, {
+
         text:
-`❌ DINERO INSUFICIENTE
-
-💰 Precio:
-${producto.precio}
-
-💵 Tienes:
-${user.dinero}`
+          "❌ No tienes suficiente dinero."
       });
-
     }
+
 
     user.dinero -=
       producto.precio;
 
-    if (!user.inventario) {
+
+    if (
+      !Array.isArray(
+        user.inventario
+      )
+    ) {
+
       user.inventario = [];
     }
+
 
     user.inventario.push(
       producto.nombre
     );
 
-    guardarDB(db);
+
+    guardarUsuarios(db);
+
 
     return sock.sendMessage(chat, {
-      text:
-`✅ COMPRA REALIZADA
 
-🛍️ ${producto.nombre}
+      text:
+`🛒 COMPRA REALIZADA
+
+${producto.nombre}
 
 💰 Precio:
 ${producto.precio}
 
-💵 Saldo:
-${user.dinero}`
-    });
+💵 Dinero restante:
+${user.dinero}
 
+🎒 Añadido al inventario.`
+
+    });
   }
 
-  // ==============================
+
+  // ========================================
   // TRANSFERIR
-  // ==============================
+  // ========================================
 
   if (comando === "transferir") {
 
     return sock.sendMessage(chat, {
+
       text:
-`💸 TRANSFERENCIAS
+`💸 TRANSFERIR
 
-Para agregar transferencias entre usuarios necesitamos identificar correctamente al destinatario.
+Próximamente podrás enviar
+dinero a otros usuarios.
 
-Esta función la agregaremos en la siguiente mejora de economía.`
+Ejemplo:
+
+.transferir @usuario 500`
+
     });
-
   }
+
 
   return false;
 }
+
 
 module.exports = economia;
