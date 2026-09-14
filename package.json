@@ -1,17 +1,14 @@
 {
-  "name": "titanbot",
+  "name": "titan-bot",
   "version": "2.5.0",
-  "description": "TITANBOT - Baileys bot para Render con vinculación por número, anime y música por enlaces directos",
+  "description": "Titan Bot WhatsApp",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "check": "node --check index.js"
-  },
-  "engines": {
-    "node": ">=18"
+    "start": "node index.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "7.0.0-rc14",
-    "pino": "^9.0.0"
+    "@whiskeysockets/baileys": "^6.7.18",
+    "pino": "^9.4.0",
+    "qrcode-terminal": "^0.12.0"
   }
 }
