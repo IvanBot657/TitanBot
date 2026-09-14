@@ -1,8 +1,9 @@
 const fs = require("fs");
 
-const DB = "./database/users.json";
+const DB = "./database/groups.json";
 
-function cargarDB() {
+function cargarGrupos() {
+
   if (!fs.existsSync(DB)) {
     fs.writeFileSync(DB, "{}");
   }
@@ -12,12 +13,32 @@ function cargarDB() {
   );
 }
 
-function guardarDB(db) {
+function guardarGrupos(db) {
+
   fs.writeFileSync(
     DB,
     JSON.stringify(db, null, 2)
   );
 }
+
+function obtenerGrupo(id) {
+
+  const db = cargarGrupos();
+
+  if (!db[id]) {
+
+    db[id] = {
+      bienvenida: false,
+      despedida: false,
+      reglas: "No hay reglas configuradas."
+    };
+
+    guardarGrupos(db);
+  }
+
+  return db[id];
+}
+
 
 async function ajustes(
   sock,
@@ -25,159 +46,129 @@ async function ajustes(
   comando,
   args,
   id,
-  isGroup,
-  isAdmin
+  esGrupo,
+  esAdmin
 ) {
 
-  const db = cargarDB();
+  // =========================
+  // SOLO GRUPOS
+  // =========================
 
-  // ==============================
+  if (
+    [
+      "ajustes",
+      "estado",
+      "configgrupo",
+      "bienvenida",
+      "despedida"
+    ].includes(comando)
+    && !esGrupo
+  ) {
+
+    return sock.sendMessage(chat, {
+      text:
+        "❌ Este comando solo funciona en grupos."
+    });
+  }
+
+
+  if (!esGrupo) {
+    return false;
+  }
+
+
+  const grupo = obtenerGrupo(chat);
+
+
+  // =========================
   // AJUSTES
-  // ==============================
+  // =========================
 
   if (comando === "ajustes") {
 
     return sock.sendMessage(chat, {
       text:
-`⚙️ AJUSTES TITANBOT
+`⚙️ AJUSTES DEL GRUPO
 
-📋 Comandos:
+🔔 Bienvenida:
+${grupo.bienvenida ? "🟢 ACTIVADA" : "🔴 DESACTIVADA"}
 
-.ajustes
-.prefijo
-.estado
+👋 Despedida:
+${grupo.despedida ? "🟢 ACTIVADA" : "🔴 DESACTIVADA"}
 
-👥 En grupos, algunas opciones
-requieren permisos de administrador.`
+📜 Reglas:
+${grupo.reglas}
+
+Usa:
+
+.bienvenida on
+.bienvenida off
+
+.despedida on
+.despedida off`
     });
-
   }
 
-  // ==============================
+
+  // =========================
   // ESTADO
-  // ==============================
+  // =========================
 
   if (comando === "estado") {
 
     return sock.sendMessage(chat, {
       text:
-`⚙️ ESTADO
+`📊 ESTADO DEL GRUPO
 
-🤖 TitanBot: 🟢 Online
-📦 Versión: 2.5.0
-💬 Prefijo actual: .
-💾 Base de datos: 🟢 Activa`
+🔔 Bienvenida:
+${grupo.bienvenida ? "🟢 ON" : "🔴 OFF"}
+
+👋 Despedida:
+${grupo.despedida ? "🟢 ON" : "🔴 OFF"}
+
+📜 Reglas:
+${grupo.reglas}`
     });
-
   }
 
-  // ==============================
-  // PREFIJO
-  // ==============================
 
-  if (comando === "prefijo") {
-
-    return sock.sendMessage(chat, {
-      text:
-`🔧 PREFIJO
-
-El prefijo actual de TitanBot es:
-
-.
-
-Ejemplo:
-
-.menu
-.ping
-.perfil`
-    });
-
-  }
-
-  // ==============================
-  // CONFIGURACIÓN DEL GRUPO
-  // ==============================
+  // =========================
+  // CONFIGGRUPO
+  // =========================
 
   if (comando === "configgrupo") {
 
-    if (!isGroup) {
-
-      return sock.sendMessage(chat, {
-        text:
-          "❌ Este comando solo funciona en grupos."
-      });
-
-    }
-
-    if (!isAdmin) {
-
-      return sock.sendMessage(chat, {
-        text:
-          "❌ Solo los administradores pueden usar este comando."
-      });
-
-    }
-
-    if (!db[chat]) {
-
-      db[chat] = {
-        bienvenida: true,
-        despedida: true
-      };
-
-      guardarDB(db);
-
-    }
-
     return sock.sendMessage(chat, {
       text:
-`⚙️ CONFIGURACIÓN DEL GRUPO
+`⚙️ CONFIGURACIÓN
 
-👋 Bienvenida:
-${db[chat].bienvenida ? "🟢 Activada" : "🔴 Desactivada"}
+🔔 Bienvenida:
+${grupo.bienvenida ? "🟢 ON" : "🔴 OFF"}
 
-🚪 Despedida:
-${db[chat].despedida ? "🟢 Activada" : "🔴 Desactivada"}`
+👋 Despedida:
+${grupo.despedida ? "🟢 ON" : "🔴 OFF"}`
     });
-
   }
 
-  // ==============================
+
+  // =========================
   // BIENVENIDA
-  // ==============================
+  // =========================
 
   if (comando === "bienvenida") {
 
-    if (!isGroup) {
+    if (!esAdmin) {
 
       return sock.sendMessage(chat, {
         text:
-          "❌ Este comando solo funciona en grupos."
+          "❌ Solo los administradores pueden cambiar esta configuración."
       });
-
     }
 
-    if (!isAdmin) {
-
-      return sock.sendMessage(chat, {
-        text:
-          "❌ Solo los administradores pueden cambiar esta opción."
-      });
-
-    }
-
-    if (!db[chat]) {
-
-      db[chat] = {
-        bienvenida: true,
-        despedida: true
-      };
-
-    }
 
     const opcion =
-      (args[0] || "")
-        .toLowerCase();
+      (args[0] || "").toLowerCase();
+
 
     if (
       opcion !== "on" &&
@@ -186,67 +177,56 @@ ${db[chat].despedida ? "🟢 Activada" : "🔴 Desactivada"}`
 
       return sock.sendMessage(chat, {
         text:
-`👋 BIENVENIDA
+`🔔 BIENVENIDA
 
 Usa:
 
 .bienvenida on
 .bienvenida off`
       });
-
     }
 
-    db[chat].bienvenida =
+
+    grupo.bienvenida =
       opcion === "on";
 
-    guardarDB(db);
+
+    const db = cargarGrupos();
+
+    db[chat] = grupo;
+
+    guardarGrupos(db);
+
 
     return sock.sendMessage(chat, {
       text:
-`👋 BIENVENIDA
+`🔔 BIENVENIDA
 
-Estado:
-${db[chat].bienvenida ? "🟢 Activada" : "🔴 Desactivada"}`
+${grupo.bienvenida
+  ? "🟢 Bienvenida activada."
+  : "🔴 Bienvenida desactivada."}`
     });
-
   }
 
-  // ==============================
+
+  // =========================
   // DESPEDIDA
-  // ==============================
+  // =========================
 
   if (comando === "despedida") {
 
-    if (!isGroup) {
+    if (!esAdmin) {
 
       return sock.sendMessage(chat, {
         text:
-          "❌ Este comando solo funciona en grupos."
+          "❌ Solo los administradores pueden cambiar esta configuración."
       });
-
     }
 
-    if (!isAdmin) {
-
-      return sock.sendMessage(chat, {
-        text:
-          "❌ Solo los administradores pueden cambiar esta opción."
-      });
-
-    }
-
-    if (!db[chat]) {
-
-      db[chat] = {
-        bienvenida: true,
-        despedida: true
-      };
-
-    }
 
     const opcion =
-      (args[0] || "")
-        .toLowerCase();
+      (args[0] || "").toLowerCase();
+
 
     if (
       opcion !== "on" &&
@@ -255,32 +235,40 @@ ${db[chat].bienvenida ? "🟢 Activada" : "🔴 Desactivada"}`
 
       return sock.sendMessage(chat, {
         text:
-`🚪 DESPEDIDA
+`👋 DESPEDIDA
 
 Usa:
 
 .despedida on
 .despedida off`
       });
-
     }
 
-    db[chat].despedida =
+
+    grupo.despedida =
       opcion === "on";
 
-    guardarDB(db);
+
+    const db = cargarGrupos();
+
+    db[chat] = grupo;
+
+    guardarGrupos(db);
+
 
     return sock.sendMessage(chat, {
       text:
-`🚪 DESPEDIDA
+`👋 DESPEDIDA
 
-Estado:
-${db[chat].despedida ? "🟢 Activada" : "🔴 Desactivada"}`
+${grupo.despedida
+  ? "🟢 Despedida activada."
+  : "🔴 Despedida desactivada."}`
     });
-
   }
+
 
   return false;
 }
+
 
 module.exports = ajustes;
