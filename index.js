@@ -1,427 +1,200 @@
 const {
   default: makeWASocket,
   useMultiFileAuthState,
-  DisconnectReason
+  DisconnectReason,
+  fetchLatestBaileysVersion
 } = require("@whiskeysockets/baileys");
 
 const P = require("pino");
 const http = require("http");
 
-// ==========================================
-// ⚙️ CONFIGURACIÓN
-// ==========================================
-
 const PORT = process.env.PORT || 3000;
-
-const PAIRING_NUMBER =
-  process.env.PAIRING_NUMBER || "";
+const PAIRING_NUMBER = process.env.PAIRING_NUMBER || "";
 
 let codigoVinculacion = null;
 let conectado = false;
 let solicitandoCodigo = false;
 let reconectando = false;
 
-// ==========================================
-// 👤 SISTEMA DE PERFILES
-// ==========================================
+// ===============================
+// PERFILES
+// ===============================
 
 const perfiles = {};
 const perfilesEnProceso = {};
 const personajesReclamados = {};
 
-// ==========================================
-// 🌐 SERVIDOR WEB
-// ==========================================
+// ===============================
+// SERVIDOR WEB PARA RENDER
+// ===============================
 
-const server = http.createServer(
-  (req, res) => {
+const server = http.createServer((req, res) => {
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8"
+  });
 
-    res.writeHead(
-      200,
-      {
-        "Content-Type":
-          "text/html; charset=utf-8"
-      }
-    );
-
-    let contenido = "";
-
-    if (conectado) {
-
-      contenido = `
-        <h1>🟢 TitanBot conectado</h1>
-        <p>
-          El bot está conectado correctamente
-          a WhatsApp.
-        </p>
-      `;
-
-    } else if (codigoVinculacion) {
-
-      contenido = `
-        <h1>🤖 TitanBot</h1>
-
-        <h2>🔐 Código de vinculación</h2>
-
-        <div class="codigo">
-          ${codigoVinculacion}
-        </div>
-
-        <p>
-          Abre WhatsApp en tu teléfono.
-        </p>
-
-        <p>
-          Ve a
-          <b>Dispositivos vinculados</b>.
-        </p>
-
-        <p>
-          Selecciona
-          <b>Vincular un dispositivo</b>.
-        </p>
-
-        <p>
-          Elige
-          <b>Vincular con número de teléfono</b>.
-        </p>
-
-        <p>
-          Introduce el código mostrado arriba.
-        </p>
-      `;
-
-    } else {
-
-      contenido = `
-        <h1>🤖 TitanBot</h1>
-
-        <h2>
-          ⏳ Preparando vinculación...
-        </h2>
-
-        <p>
-          Espera unos segundos.
-        </p>
-      `;
-    }
-
-    res.end(`
-      <!DOCTYPE html>
-
-      <html>
-
+  res.end(`
+    <html>
       <head>
-
-        <meta charset="UTF-8">
-
-        <meta
-          name="viewport"
-          content="width=device-width,
-          initial-scale=1.0"
-        >
-
-        <meta
-          http-equiv="refresh"
-          content="5"
-        >
-
         <title>TitanBot</title>
-
-        <style>
-
-          body {
-            font-family: Arial, sans-serif;
-            background: #111;
-            color: white;
-            text-align: center;
-            padding: 40px 20px;
-          }
-
-          h1 {
-            font-size: 32px;
-          }
-
-          h2 {
-            margin-top: 30px;
-          }
-
-          p {
-            font-size: 18px;
-            line-height: 1.6;
-          }
-
-          .codigo {
-            font-size: 32px;
-            font-weight: bold;
-            letter-spacing: 6px;
-            margin: 30px;
-            padding: 20px;
-            border: 2px solid white;
-            border-radius: 12px;
-            display: inline-block;
-          }
-
-        </style>
-
+        <meta name="viewport" content="width=device-width, initial-scale=1">
       </head>
+      <body style="font-family:Arial;text-align:center;padding:40px;background:#111;color:white;">
+        <h1>🤖 TitanBot</h1>
+        <h2>${conectado ? "🟢 Conectado" : "🟡 Conectando..."}</h2>
 
-      <body>
-
-        ${contenido}
-
+        ${
+          codigoVinculacion
+            ? `<p>🔢 Código de vinculación:</p>
+               <h1 style="letter-spacing:8px;">${codigoVinculacion}</h1>
+               <p>WhatsApp → Dispositivos vinculados → Vincular con número de teléfono</p>`
+            : ""
+        }
       </body>
+    </html>
+  `);
+});
 
-      </html>
-    `);
-  }
-);
+server.listen(PORT, () => {
+  console.log(`🌐 Servidor web activo en el puerto ${PORT}`);
+});
 
-// ==========================================
-// 🌐 INICIAR SERVIDOR
-// ==========================================
-
-server.listen(
-  PORT,
-  () => {
-
-    console.log(
-      `🌐 Servidor iniciado en el puerto ${PORT}`
-    );
-
-  }
-);
-
-// ==========================================
-// 🤖 INICIAR TITANBOT
-// ==========================================
+// ===============================
+// INICIAR BOT
+// ===============================
 
 async function iniciarBot() {
-
   try {
+    const { state, saveCreds } =
+      await useMultiFileAuthState("auth_info");
 
-    const {
-      state,
-      saveCreds
-    } = await useMultiFileAuthState(
-      "auth_info"
-    );
+    let version;
+
+    try {
+      const latest = await fetchLatestBaileysVersion();
+      version = latest.version;
+      console.log("📦 Versión de WhatsApp:", version);
+    } catch (error) {
+      console.log("⚠️ No se pudo obtener la versión más reciente.");
+    }
 
     const sock = makeWASocket({
-
       auth: state,
-
-      logger: P({
-        level: "silent"
-      }),
-
-      printQRInTerminal: false
-
+      logger: P({ level: "silent" }),
+      printQRInTerminal: false,
+      ...(version ? { version } : {})
     });
 
-    // ======================================
-    // 💾 GUARDAR CREDENCIALES
-    // ======================================
+    sock.ev.on("creds.update", saveCreds);
 
-    sock.ev.on(
-      "creds.update",
-      saveCreds
-    );
-
-    // ======================================
-    // 🔌 ESTADO DE CONEXIÓN
-    // ======================================
+    // ===============================
+    // CONEXIÓN
+    // ===============================
 
     sock.ev.on(
       "connection.update",
       async (update) => {
-
         const {
           connection,
           lastDisconnect
         } = update;
 
-        // ----------------------------------
-        // 🟡 CONECTANDO
-        // ----------------------------------
-
-        if (
-          connection === "connecting"
-        ) {
-
-          console.log(
-            "🟡 Conectando TitanBot a WhatsApp..."
-          );
+        if (connection === "connecting") {
+          console.log("🟡 Conectando TitanBot a WhatsApp...");
 
           if (
             !state.creds.registered &&
             PAIRING_NUMBER &&
             !solicitandoCodigo
           ) {
-
             solicitandoCodigo = true;
 
             try {
-
-              await new Promise(
-                resolve =>
-                  setTimeout(
-                    resolve,
-                    3000
-                  )
+              await new Promise(resolve =>
+                setTimeout(resolve, 5000)
               );
 
               const numero =
-                PAIRING_NUMBER
-                  .replace(/\D/g, "");
+                PAIRING_NUMBER.replace(/\D/g, "");
 
               console.log(
                 "🔢 Generando código de vinculación..."
               );
 
               codigoVinculacion =
-                await sock.requestPairingCode(
-                  numero
-                );
+                await sock.requestPairingCode(numero);
 
               console.log(
                 "🔢 Código de vinculación:",
                 codigoVinculacion
               );
-
             } catch (error) {
-
               console.error(
                 "❌ Error generando código:"
               );
-
               console.error(error);
 
-              codigoVinculacion =
-                null;
-
-              solicitandoCodigo =
-                false;
+              codigoVinculacion = null;
+              solicitandoCodigo = false;
             }
           }
         }
 
-        // ----------------------------------
-        // 🟢 CONECTADO
-        // ----------------------------------
-
-        if (
-          connection === "open"
-        ) {
-
+        if (connection === "open") {
           conectado = true;
+          codigoVinculacion = null;
+          solicitandoCodigo = false;
+          reconectando = false;
 
-          codigoVinculacion =
-            null;
-
-          solicitandoCodigo =
-            false;
-
-          reconectando =
-            false;
-
-          console.log(
-            "===================================="
-          );
-
-          console.log(
-            "✅ TITANBOT CONECTADO"
-          );
-
-          console.log(
-            "===================================="
-          );
+          console.log("================================");
+          console.log("🟢 TITANBOT CONECTADO");
+          console.log("🤖 WhatsApp conectado correctamente");
+          console.log("================================");
         }
 
-        // ----------------------------------
-        // 🔴 DESCONECTADO
-        // ----------------------------------
-
-        if (
-          connection === "close"
-        ) {
-
+        if (connection === "close") {
           conectado = false;
 
-          codigoVinculacion =
-            null;
+          const statusCode =
+            lastDisconnect?.error?.output?.statusCode;
 
-          solicitandoCodigo =
-            false;
-
-          const codigo =
-            lastDisconnect
-              ?.error
-              ?.output
-              ?.statusCode;
+          const loggedOut =
+            statusCode === DisconnectReason.loggedOut;
 
           console.log(
-            "❌ Sesión cerrada."
+            "🔴 Conexión cerrada."
           );
 
-          console.log(
-            "Código:",
-            codigo
-          );
+          if (loggedOut) {
+            console.log(
+              "❌ La sesión fue cerrada desde WhatsApp."
+            );
+            return;
+          }
 
-          if (
-            codigo !==
-              DisconnectReason.loggedOut &&
-            !reconectando
-          ) {
-
-            reconectando =
-              true;
+          if (!reconectando) {
+            reconectando = true;
 
             console.log(
-              "🔄 Reconectando en 3 segundos..."
+              "🔄 Intentando reconectar en 3 segundos..."
             );
 
-            setTimeout(
-              () => {
-
-                reconectando =
-                  false;
-
-                iniciarBot();
-
-              },
-              3000
-            );
-
-          } else if (
-            codigo ===
-            DisconnectReason.loggedOut
-          ) {
-
-            console.log(
-              "❌ WhatsApp cerró la sesión."
-            );
-
-            console.log(
-              "ℹ️ Será necesario volver a vincular el bot."
-            );
+            setTimeout(() => {
+              iniciarBot();
+            }, 3000);
           }
         }
-
       }
     );
 
-     // ======================================
-    // 💬 SISTEMA DE MENSAJES
-    // ======================================
+    // ===============================
+    // MENSAJES
+    // ===============================
 
     sock.ev.on(
       "messages.upsert",
       async ({ messages }) => {
-
         try {
-
           const msg = messages[0];
 
           if (!msg || !msg.message) {
@@ -432,40 +205,47 @@ async function iniciarBot() {
             return;
           }
 
-          const remoteJid =
-            msg.key.remoteJid;
+          const remoteJid = msg.key.remoteJid;
 
           if (!remoteJid) {
             return;
           }
 
-          // ==================================
-          // 📝 OBTENER TEXTO DEL MENSAJE
-          // ==================================
+          // ===============================
+          // OBTENER TEXTO
+          // ===============================
 
           const tipoMensaje =
             Object.keys(msg.message)[0];
 
           let texto = "";
 
-          if (
-            tipoMensaje ===
-            "conversation"
-          ) {
-
+          if (tipoMensaje === "conversation") {
             texto =
-              msg.message.conversation ||
+              msg.message.conversation || "";
+          }
+
+          else if (
+            tipoMensaje === "extendedTextMessage"
+          ) {
+            texto =
+              msg.message.extendedTextMessage?.text ||
               "";
+          }
 
-          } else if (
-            tipoMensaje ===
-            "extendedTextMessage"
+          else if (
+            tipoMensaje === "imageMessage"
           ) {
-
             texto =
-              msg.message
-                ?.extendedTextMessage
-                ?.text ||
+              msg.message.imageMessage?.caption ||
+              "";
+          }
+
+          else if (
+            tipoMensaje === "videoMessage"
+          ) {
+            texto =
+              msg.message.videoMessage?.caption ||
               "";
           }
 
@@ -475,114 +255,110 @@ async function iniciarBot() {
 
           texto = texto.trim();
 
-          // ==================================
-          // 📝 RESPUESTAS DE COMPLETAR PERFIL
-          // ==================================
-
           const numeroPerfil =
-            remoteJid.replace(
-              "@s.whatsapp.net",
-              ""
-            );
+            remoteJid.split("@")[0];
+
+          // ===============================
+          // RESPUESTA A MENSAJE DEL BOT
+          // ===============================
+
+          const contexto =
+            msg.message.extendedTextMessage
+              ?.contextInfo;
 
           if (
-            perfilesEnProceso[
-              numeroPerfil
-            ] &&
+            contexto?.quotedMessage &&
+            contexto?.fromMe
+          ) {
+            await sock.sendMessage(
+              remoteJid,
+              {
+                text:
+`🤖 *TITANBOT*
+
+✅ Recibí tu respuesta al mensaje del bot.
+
+💬 Dijiste:
+"${texto}"
+
+⚡ TitanBot está atento.`
+              }
+            );
+
+            return;
+          }
+
+          // ===============================
+          // COMPLETAR PERFIL
+          // ===============================
+
+          if (
+            perfilesEnProceso[numeroPerfil] &&
             !texto.startsWith(".")
           ) {
-
             const proceso =
-              perfilesEnProceso[
-                numeroPerfil
-              ];
+              perfilesEnProceso[numeroPerfil];
 
-            // ------------------------------
-            // 👤 NOMBRE
-            // ------------------------------
-
-            if (
-              proceso.paso === 1
-            ) {
-
-              proceso.datos.nombre =
-                texto;
-
+            if (proceso.paso === 1) {
+              proceso.datos.nombre = texto;
               proceso.paso = 2;
 
               await sock.sendMessage(
                 remoteJid,
                 {
                   text:
-                    "🎂 Ahora escribe tu *edad*."
+`🎂 *PERFIL*
+
+Perfecto.
+
+Ahora escribe tu *edad*.`
                 }
               );
 
               return;
             }
 
-            // ------------------------------
-            // 🎂 EDAD
-            // ------------------------------
-
-            if (
-              proceso.paso === 2
-            ) {
-
-              proceso.datos.edad =
-                texto;
-
+            if (proceso.paso === 2) {
+              proceso.datos.edad = texto;
               proceso.paso = 3;
 
               await sock.sendMessage(
                 remoteJid,
                 {
                   text:
-                    "🎉 Ahora escribe tu *cumpleaños*.\n\nEjemplo: 15/08/2010"
+`📅 *PERFIL*
+
+Ahora escribe tu *cumpleaños*.
+
+Ejemplo:
+15/08/2010`
                 }
               );
 
               return;
             }
 
-            // ------------------------------
-            // 🎉 CUMPLEAÑOS
-            // ------------------------------
-
-            if (
-              proceso.paso === 3
-            ) {
-
-              proceso.datos.cumpleanos =
-                texto;
-
+            if (proceso.paso === 3) {
+              proceso.datos.cumpleanos = texto;
               proceso.paso = 4;
 
               await sock.sendMessage(
                 remoteJid,
                 {
                   text:
-                    "💬 Ahora escribe tu *frase favorita*."
+`💬 *PERFIL*
+
+Por último, escribe tu *frase favorita*.`
                 }
               );
 
               return;
             }
 
-            // ------------------------------
-            // 💬 FRASE
-            // ------------------------------
+            if (proceso.paso === 4) {
+              proceso.datos.frase = texto;
 
-            if (
-              proceso.paso === 4
-            ) {
-
-              proceso.datos.frase =
-                texto;
-
-              perfiles[
-                numeroPerfil
-              ] =
+              perfiles[numeroPerfil] =
                 proceso.datos;
 
               delete perfilesEnProceso[
@@ -593,17 +369,21 @@ async function iniciarBot() {
                 remoteJid,
                 {
                   text:
-                    `╭━━〔 ✅ PERFIL COMPLETADO 〕━━╮
-┃
-┃ 👤 Nombre: ${proceso.datos.nombre}
-┃ 🎂 Edad: ${proceso.datos.edad}
-┃ 🎉 Cumpleaños: ${proceso.datos.cumpleanos}
-┃ 💬 Frase: ${proceso.datos.frase}
-┃
-╰━━━━━━━━━━━━━━━━━━━━╯
+`✅ *PERFIL COMPLETADO*
 
-Ahora puedes usar:
-.id`
+👤 Nombre:
+${proceso.datos.nombre}
+
+🎂 Edad:
+${proceso.datos.edad}
+
+📅 Cumpleaños:
+${proceso.datos.cumpleanos}
+
+💬 Frase:
+"${proceso.datos.frase}"
+
+🆔 Ya puedes usar *.id* para ver tu tarjeta.`
                 }
               );
 
@@ -611,19 +391,13 @@ Ahora puedes usar:
             }
           }
 
-          // ==================================
-          // 🚫 IGNORAR MENSAJES SIN COMANDO
-          // ==================================
+          // ===============================
+          // SOLO COMANDOS
+          // ===============================
 
-          if (
-            !texto.startsWith(".")
-          ) {
+          if (!texto.startsWith(".")) {
             return;
           }
-
-          // ==================================
-          // ⚙️ SEPARAR COMANDO
-          // ==================================
 
           const partes =
             texto.split(/\s+/);
@@ -631,36 +405,28 @@ Ahora puedes usar:
           const comando =
             partes[0].toLowerCase();
 
-          const argumento =
-            partes
-              .slice(1)
-              .join(" ");
+          const argumentos =
+            partes.slice(1).join(" ");
 
-          // ==================================
-          // 🏓 PING
-          // ==================================
+          // ===============================
+          // PING
+          // ===============================
 
-          if (
-            comando === ".ping"
-          ) {
-
+          if (comando === ".ping") {
             await sock.sendMessage(
               remoteJid,
               {
                 text:
-                  "🏓 Pong! TitanBot está funcionando."
+                  "🏓 *Pong!*\n\n🤖 TitanBot está funcionando."
               }
             );
           }
 
-          // ==================================
-          // 📋 MENU
-          // ==================================
+          // ===============================
+          // MENU
+          // ===============================
 
-          else if (
-            comando === ".menu"
-          ) {
-
+          else if (comando === ".menu") {
             await sock.sendMessage(
               remoteJid,
               {
@@ -679,6 +445,14 @@ Ahora puedes usar:
 ┃ 🕐 .hora
 ┃ 📅 .fecha
 ┃ 🆔 .id
+┃
+┣━━〔 👤 PERFIL 〕━━
+┃
+┃ 📝 .completarperfil
+┃
+┣━━〔 🎴 ANIME 〕━━
+┃
+┃ 🎴 .s
 ┃
 ┣━━〔 🎮 DIVERSIÓN 〕━━
 ┃
@@ -702,15 +476,6 @@ Ahora puedes usar:
 ┃ 👑 .admins
 ┃ 📜 .reglas
 ┃
-┣━━〔 👤 PERFIL 〕━━
-┃
-┃ 🆔 .id
-┃ 📝 .completarperfil
-┃
-┣━━〔 🎴 ANIME 〕━━
-┃
-┃ 🎴 .s
-┃
 ┣━━〔 ❓ AYUDA 〕━━
 ┃
 ┃ 📋 .ayuda
@@ -721,199 +486,200 @@ Ahora puedes usar:
             );
           }
 
-          // ==================================
-          // 🤖 BOT
-          // ==================================
+          // ===============================
+          // BOT
+          // ===============================
 
-          else if (
-            comando === ".bot"
-          ) {
-
-            await sock.sendMessage(
-              remoteJid,
-              {
-                text:
-                  "🤖 Soy TitanBot, un bot de WhatsApp."
-              }
-            );
-          }
-
-          // ==================================
-          // ℹ️ INFO
-          // ==================================
-
-          else if (
-            comando === ".info"
-          ) {
-
+          else if (comando === ".bot") {
             await sock.sendMessage(
               remoteJid,
               {
                 text:
 `🤖 *TITANBOT*
 
-⚙️ Plataforma: Node.js
-📦 Librería: Baileys
-☁️ Servidor: Render
-📱 Plataforma: WhatsApp
+⚡ Estado: ${conectado ? "🟢 ONLINE" : "🔴 OFFLINE"}
 
-🚀 TitanBot está activo.`
+🚀 Sistema activo.
+📱 WhatsApp conectado.
+🛠️ Bot funcionando correctamente.`
               }
             );
           }
 
-          // ==================================
-          // 📊 ESTADO
-          // ==================================
+          // ===============================
+          // INFO
+          // ===============================
 
-          else if (
-            comando === ".estado"
-          ) {
-
+          else if (comando === ".info") {
             await sock.sendMessage(
               remoteJid,
               {
                 text:
-                  conectado
-                    ? "🟢 TitanBot está conectado."
-                    : "🔴 TitanBot está desconectado."
+`ℹ️ *INFORMACIÓN DE TITANBOT*
+
+🤖 Nombre: TitanBot
+⚡ Estado: ${conectado ? "Online" : "Offline"}
+📱 Plataforma: WhatsApp
+🛠️ Sistema: Baileys
+
+🚀 Bot desarrollado para administrar comandos y funciones en WhatsApp.`
               }
             );
           }
 
-          // ==================================
-          // 🕐 HORA
-          // ==================================
+          // ===============================
+          // ESTADO
+          // ===============================
 
-          else if (
-            comando === ".hora"
-          ) {
+          else if (comando === ".estado") {
+            await sock.sendMessage(
+              remoteJid,
+              {
+                text:
+`📊 *ESTADO DE TITANBOT*
+
+🤖 Bot: ${conectado ? "🟢 ONLINE" : "🔴 OFFLINE"}
+📱 WhatsApp: ${conectado ? "🟢 CONECTADO" : "🔴 DESCONECTADO"}
+⚡ Sistema: 🟢 ACTIVO`
+              }
+            );
+          }
+
+          // ===============================
+          // HORA
+          // ===============================
+
+          else if (comando === ".hora") {
+            const ahora = new Date();
 
             const hora =
-              new Intl.DateTimeFormat(
+              ahora.toLocaleTimeString(
                 "es-CO",
                 {
-                  timeZone:
-                    "America/Bogota",
-                  hour:
-                    "2-digit",
-                  minute:
-                    "2-digit",
-                  second:
-                    "2-digit"
+                  timeZone: "America/Bogota"
                 }
-              ).format(
-                new Date()
               );
 
             await sock.sendMessage(
               remoteJid,
               {
                 text:
-                  `🕐 Hora de Colombia: ${hora}`
+                  `🕐 *HORA ACTUAL*\n\n🇨🇴 Colombia: *${hora}*`
               }
             );
           }
 
-          // ==================================
-          // 📅 FECHA
-          // ==================================
+          // ===============================
+          // FECHA
+          // ===============================
 
-          else if (
-            comando === ".fecha"
-          ) {
+          else if (comando === ".fecha") {
+            const ahora = new Date();
 
             const fecha =
-              new Intl.DateTimeFormat(
+              ahora.toLocaleDateString(
                 "es-CO",
                 {
-                  timeZone:
-                    "America/Bogota",
-                  day:
-                    "2-digit",
-                  month:
-                    "2-digit",
-                  year:
-                    "numeric"
+                  timeZone: "America/Bogota",
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric"
                 }
-              ).format(
-                new Date()
               );
 
             await sock.sendMessage(
               remoteJid,
               {
                 text:
-                  `📅 Fecha: ${fecha}`
+                  `📅 *FECHA ACTUAL*\n\n🇨🇴 ${fecha}`
               }
             );
           }
 
-          // ==================================
-          // 🆔 ID
-          // ==================================
+          // ===============================
+          // ID / PERFIL
+          // ===============================
 
-          else if (
-            comando === ".id"
-          ) {
-
-            const numero =
-              remoteJid.replace(
-                "@s.whatsapp.net",
-                ""
-              );
-
+          else if (comando === ".id") {
             const perfil =
-              perfiles[numero];
+              perfiles[numeroPerfil];
+
+            let fotoPerfil = null;
+
+            try {
+              fotoPerfil =
+                await sock.profilePictureUrl(
+                  remoteJid,
+                  "image"
+                );
+            } catch (error) {
+              fotoPerfil = null;
+            }
 
             if (!perfil) {
-
               await sock.sendMessage(
                 remoteJid,
                 {
                   text:
-`╭━━━〔 👤 PERFIL 〕━━━╮
-┃
-┃ 🆔 ID: ${numero}
-┃
-┃ ❌ Perfil incompleto.
-┃
-┃ Usa:
-┃ .completarperfil
-┃
-╰━━━━━━━━━━━━━━━━━━╯`
+`🆔 *TU ID*
+
+📱 ID:
+${numeroPerfil}
+
+❌ Todavía no tienes un perfil.
+
+📝 Usa:
+*.completarperfil*
+
+para crear tu perfil.`
                 }
               );
 
               return;
             }
 
-            await sock.sendMessage(
-              remoteJid,
-              {
-                text:
-`╭━━━〔 👤 PERFIL 〕━━━╮
+            const tarjeta =
+`╭━━━〔 🪪 TITAN ID 〕━━━╮
 ┃
+┃ 🆔 ID: ${numeroPerfil}
 ┃ 👤 Nombre: ${perfil.nombre}
-┃ 🆔 ID: ${numero}
 ┃ 🎂 Edad: ${perfil.edad}
-┃ 🎉 Cumpleaños: ${perfil.cumpleanos}
-┃ 💬 Frase: ${perfil.frase}
+┃ 📅 Cumpleaños: ${perfil.cumpleanos}
+┃
+┃ 💬 Frase favorita:
+┃ "${perfil.frase}"
 ┃
 ╰━━━━━━━━━━━━━━━━━━╯
-        🤖 TitanBot`
-              }
-            );
+        🤖 TitanBot`;
+
+            if (fotoPerfil) {
+              await sock.sendMessage(
+                remoteJid,
+                {
+                  image: {
+                    url: fotoPerfil
+                  },
+                  caption: tarjeta
+                }
+              );
+            } else {
+              await sock.sendMessage(
+                remoteJid,
+                {
+                  text: tarjeta
+                }
+              );
+            }
           }
 
-          // ==================================
-          // 📝 COMPLETAR PERFIL
-          // ==================================
+          // ===============================
+          // COMPLETAR PERFIL
+          // ===============================
 
           else if (
             comando === ".completarperfil"
           ) {
-
             perfilesEnProceso[
               numeroPerfil
             ] = {
@@ -934,18 +700,30 @@ Vamos a crear tu perfil.
             );
           }
 
-                  else if (comando === ".dado") {
-            const numero = Math.floor(Math.random() * 6) + 1;
+          // ===============================
+          // DADO
+          // ===============================
+
+          else if (comando === ".dado") {
+            const numero =
+              Math.floor(
+                Math.random() * 6
+              ) + 1;
 
             await sock.sendMessage(
               remoteJid,
               {
-                text: `🎲 *DADO*
+                text:
+`🎲 *DADO*
 
 🎯 Resultado: *${numero}*`
               }
             );
           }
+
+          // ===============================
+          // MONEDA
+          // ===============================
 
           else if (comando === ".moneda") {
             const resultado =
@@ -956,12 +734,17 @@ Vamos a crear tu perfil.
             await sock.sendMessage(
               remoteJid,
               {
-                text: `🪙 *MONEDA*
+                text:
+`🪙 *MONEDA*
 
 🎯 Resultado: *${resultado}*`
               }
             );
           }
+
+          // ===============================
+          // 8 BALL
+          // ===============================
 
           else if (comando === ".8ball") {
             const respuestas = [
@@ -976,18 +759,26 @@ Vamos a crear tu perfil.
 
             const respuesta =
               respuestas[
-                Math.floor(Math.random() * respuestas.length)
+                Math.floor(
+                  Math.random() *
+                  respuestas.length
+                )
               ];
 
             await sock.sendMessage(
               remoteJid,
               {
-                text: `🔮 *8 BALL*
+                text:
+`🔮 *8 BALL*
 
 ${respuesta}`
               }
             );
           }
+
+          // ===============================
+          // RETO
+          // ===============================
 
           else if (comando === ".reto") {
             const retos = [
@@ -1000,18 +791,26 @@ ${respuesta}`
 
             const reto =
               retos[
-                Math.floor(Math.random() * retos.length)
+                Math.floor(
+                  Math.random() *
+                  retos.length
+                )
               ];
 
             await sock.sendMessage(
               remoteJid,
               {
-                text: `🎯 *RETO*
+                text:
+`🎯 *RETO*
 
 ${reto}`
               }
             );
           }
+
+          // ===============================
+          // VERDAD
+          // ===============================
 
           else if (comando === ".verdad") {
             const preguntas = [
@@ -1024,18 +823,26 @@ ${reto}`
 
             const pregunta =
               preguntas[
-                Math.floor(Math.random() * preguntas.length)
+                Math.floor(
+                  Math.random() *
+                  preguntas.length
+                )
               ];
 
             await sock.sendMessage(
               remoteJid,
               {
-                text: `😈 *VERDAD*
+                text:
+`😈 *VERDAD*
 
 ${pregunta}`
               }
             );
           }
+
+          // ===============================
+          // MAYUS
+          // ===============================
 
           else if (comando === ".mayus") {
             if (!argumentos) {
@@ -1043,21 +850,27 @@ ${pregunta}`
                 remoteJid,
                 {
                   text:
-                    "🔠 Escribe algo después del comando.\n\nEjemplo: *.mayus hola mundo*"
+"🔠 Escribe algo después del comando.\n\nEjemplo: *.mayus hola mundo*"
                 }
               );
+
               return;
             }
 
             await sock.sendMessage(
               remoteJid,
               {
-                text: `🔠 *MAYÚSCULAS*
+                text:
+`🔠 *MAYÚSCULAS*
 
 ${argumentos.toUpperCase()}`
               }
             );
           }
+
+          // ===============================
+          // MINUS
+          // ===============================
 
           else if (comando === ".minus") {
             if (!argumentos) {
@@ -1065,21 +878,27 @@ ${argumentos.toUpperCase()}`
                 remoteJid,
                 {
                   text:
-                    "🔡 Escribe algo después del comando.\n\nEjemplo: *.minus HOLA MUNDO*"
+"🔡 Escribe algo después del comando.\n\nEjemplo: *.minus HOLA MUNDO*"
                 }
               );
+
               return;
             }
 
             await sock.sendMessage(
               remoteJid,
               {
-                text: `🔡 *MINÚSCULAS*
+                text:
+`🔡 *MINÚSCULAS*
 
 ${argumentos.toLowerCase()}`
               }
             );
           }
+
+          // ===============================
+          // CONTADOR
+          // ===============================
 
           else if (comando === ".contador") {
             if (!argumentos) {
@@ -1087,13 +906,16 @@ ${argumentos.toLowerCase()}`
                 remoteJid,
                 {
                   text:
-                    "🔢 Escribe un texto después del comando.\n\nEjemplo: *.contador hola mundo*"
+"🔢 Escribe un texto después del comando.\n\nEjemplo: *.contador hola mundo*"
                 }
               );
+
               return;
             }
 
-            const caracteres = argumentos.length;
+            const caracteres =
+              argumentos.length;
+
             const palabras =
               argumentos
                 .trim()
@@ -1115,29 +937,40 @@ ${argumentos.toLowerCase()}`
             );
           }
 
+          // ===============================
+          // CALCULADORA
+          // ===============================
+
           else if (comando === ".calcular") {
             if (!argumentos) {
               await sock.sendMessage(
                 remoteJid,
                 {
                   text:
-                    "🧮 Escribe una operación.\n\nEjemplo: *.calcular 25+15*"
+"🧮 Escribe una operación.\n\nEjemplo: *.calcular 25+15*"
                 }
               );
+
               return;
             }
 
             try {
-              const operacion = argumentos
-                .replace(/[^0-9+\-*/().% ]/g, "");
+              const operacion =
+                argumentos.replace(
+                  /[^0-9+\-*/().% ]/g,
+                  ""
+                );
 
               if (!operacion.trim()) {
-                throw new Error("Operación inválida");
+                throw new Error(
+                  "Operación inválida"
+                );
               }
 
-              const resultado = Function(
-                `"use strict"; return (${operacion})`
-              )();
+              const resultado =
+                Function(
+                  `"use strict"; return (${operacion})`
+                )();
 
               await sock.sendMessage(
                 remoteJid,
@@ -1160,6 +993,10 @@ ${argumentos.toLowerCase()}`
             }
           }
 
+          // ===============================
+          // TARJETA ANIME
+          // ===============================
+
           else if (comando === ".s") {
             const personajes = [
               "Naruto Uzumaki",
@@ -1172,17 +1009,28 @@ ${argumentos.toLowerCase()}`
               "Ichigo Kurosaki"
             ];
 
-            if (!personajesReclamados[numeroPerfil]) {
+            if (
+              !personajesReclamados[
+                numeroPerfil
+              ]
+            ) {
               const personaje =
                 personajes[
-                  Math.floor(Math.random() * personajes.length)
+                  Math.floor(
+                    Math.random() *
+                    personajes.length
+                  )
                 ];
 
-              personajesReclamados[numeroPerfil] = personaje;
+              personajesReclamados[
+                numeroPerfil
+              ] = personaje;
             }
 
             const personaje =
-              personajesReclamados[numeroPerfil];
+              personajesReclamados[
+                numeroPerfil
+              ];
 
             await sock.sendMessage(
               remoteJid,
@@ -1190,8 +1038,11 @@ ${argumentos.toLowerCase()}`
                 text:
 `╭━━━〔 🎴 ANIME CARD 〕━━━╮
 ┃
-┃ 👤 *ID:* ${numeroPerfil}
-┃ 🏷️ *Nombre:* ${perfiles[numeroPerfil]?.nombre || "Sin registrar"}
+┃ 🆔 *ID:* ${numeroPerfil}
+┃ 👤 *Nombre:* ${
+                  perfiles[numeroPerfil]?.nombre ||
+                  "Sin registrar"
+                }
 ┃
 ┃ 🎴 *Personaje:* ${personaje}
 ┃
@@ -1203,10 +1054,14 @@ ${argumentos.toLowerCase()}`
             );
           }
 
-          else if (
-            comando === ".admins"
-          ) {
-            if (!remoteJid.endsWith("@g.us")) {
+          // ===============================
+          // ADMINS
+          // ===============================
+
+          else if (comando === ".admins") {
+            if (
+              !remoteJid.endsWith("@g.us")
+            ) {
               await sock.sendMessage(
                 remoteJid,
                 {
@@ -1214,23 +1069,30 @@ ${argumentos.toLowerCase()}`
                     "👑 Este comando solo funciona en grupos."
                 }
               );
+
               return;
             }
 
             const metadata =
-              await sock.groupMetadata(remoteJid);
+              await sock.groupMetadata(
+                remoteJid
+              );
 
             const admins =
               metadata.participants.filter(
                 participante =>
-                  participante.admin === "admin" ||
-                  participante.admin === "superadmin"
+                  participante.admin ===
+                    "admin" ||
+                  participante.admin ===
+                    "superadmin"
               );
 
             let textoAdmins =
               "👑 *ADMINISTRADORES*\n\n";
 
-            for (const admin of admins) {
+            for (
+              const admin of admins
+            ) {
               textoAdmins +=
                 `• @${admin.id.split("@")[0]}\n`;
             }
@@ -1239,15 +1101,21 @@ ${argumentos.toLowerCase()}`
               remoteJid,
               {
                 text: textoAdmins,
-                mentions: admins.map(admin => admin.id)
+                mentions: admins.map(
+                  admin => admin.id
+                )
               }
             );
           }
 
-          else if (
-            comando === ".miembros"
-          ) {
-            if (!remoteJid.endsWith("@g.us")) {
+          // ===============================
+          // MIEMBROS
+          // ===============================
+
+          else if (comando === ".miembros") {
+            if (
+              !remoteJid.endsWith("@g.us")
+            ) {
               await sock.sendMessage(
                 remoteJid,
                 {
@@ -1255,11 +1123,14 @@ ${argumentos.toLowerCase()}`
                     "👥 Este comando solo funciona en grupos."
                 }
               );
+
               return;
             }
 
             const metadata =
-              await sock.groupMetadata(remoteJid);
+              await sock.groupMetadata(
+                remoteJid
+              );
 
             await sock.sendMessage(
               remoteJid,
@@ -1273,10 +1144,14 @@ ${argumentos.toLowerCase()}`
             );
           }
 
-          else if (
-            comando === ".grupo"
-          ) {
-            if (!remoteJid.endsWith("@g.us")) {
+          // ===============================
+          // GRUPO
+          // ===============================
+
+          else if (comando === ".grupo") {
+            if (
+              !remoteJid.endsWith("@g.us")
+            ) {
               await sock.sendMessage(
                 remoteJid,
                 {
@@ -1284,11 +1159,14 @@ ${argumentos.toLowerCase()}`
                     "👥 Este comando solo funciona en grupos."
                 }
               );
+
               return;
             }
 
             const metadata =
-              await sock.groupMetadata(remoteJid);
+              await sock.groupMetadata(
+                remoteJid
+              );
 
             await sock.sendMessage(
               remoteJid,
@@ -1302,11 +1180,13 @@ ${argumentos.toLowerCase()}`
 ${remoteJid}`
               }
             );
-              }
+          }
 
-                  else if (
-            comando === ".reglas"
-          ) {
+          // ===============================
+          // REGLAS
+          // ===============================
+
+          else if (comando === ".reglas") {
             await sock.sendMessage(
               remoteJid,
               {
@@ -1324,9 +1204,11 @@ ${remoteJid}`
             );
           }
 
-          else if (
-            comando === ".ayuda"
-          ) {
+          // ===============================
+          // AYUDA
+          // ===============================
+
+          else if (comando === ".ayuda") {
             await sock.sendMessage(
               remoteJid,
               {
@@ -1335,10 +1217,14 @@ ${remoteJid}`
 
 📋 Escribe *.menu* para ver todos los comandos.
 
-También puedes responder directamente a un mensaje enviado por TitanBot y el bot responderá automáticamente. 🤖`
+💬 También puedes responder directamente a un mensaje enviado por TitanBot y el bot responderá.`
               }
             );
           }
+
+          // ===============================
+          // COMANDO DESCONOCIDO
+          // ===============================
 
           else {
             await sock.sendMessage(
@@ -1354,21 +1240,48 @@ No conozco el comando:
               }
             );
           }
+
+        } catch (error) {
+          console.error(
+            "❌ Error procesando mensaje:",
+            error
+          );
         }
-      } catch (error) {
-        console.error(
-          "❌ Error procesando mensaje:",
-          error
-        );
       }
+    );
+
+  } catch (error) {
+    console.error(
+      "❌ Error iniciando TitanBot:"
+    );
+
+    console.error(error);
+
+    if (!reconectando) {
+      reconectando = true;
+
+      setTimeout(() => {
+        reconectando = false;
+        iniciarBot();
+      }, 5000);
     }
-  );
-
   }
+}
 
-// Iniciar TitanBot
+// ===============================
+// INICIAR TITANBOT
+// ===============================
+
 iniciarBot();
 
-console.log("🚀 TitanBot iniciado correctamente.");
-console.log("📱 Sistema de vinculación por número activo.");
-console.log("🤖 Esperando conexión con WhatsApp...");
+console.log(
+  "🚀 TitanBot iniciado correctamente."
+);
+
+console.log(
+  "📱 Sistema de vinculación por número activo."
+);
+
+console.log(
+  "🤖 Esperando conexión con WhatsApp..."
+);
