@@ -1,6 +1,6 @@
 {
   "name": "titanbot",
-  "version": "2.9.0",
+  "version": "2.5.0",
   "description": "TITANBOT - Baileys bot para Render con vinculación por número, anime y música por enlaces directos",
   "main": "index.js",
   "scripts": {
