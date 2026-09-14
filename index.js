@@ -312,7 +312,7 @@ const simpleCommands = {
   dato9: "🧠 Baileys permite interactuar con WhatsApp Web.",
   estado2: "🟢 Todos los sistemas básicos están listos.",
   sistema: "⚙️ Sistemas básicos operativos.",
-  versionbot: "🤖 TITANBOT v1.0",
+  versionbot: "🤖 TITANBOT 4.6.0 — v2.6\n⚡ El futuro empieza ahora.",
   frase: FRASE,
   titan: "⚡ TITANBOT: potencia, orden y creatividad.",
   futuro: "🚀 El futuro se construye creando.",
@@ -1163,7 +1163,7 @@ async function handleAnime(cmd, m, id, args = []) {
   } catch (error) {
     console.error("Error en .s:", error.message);
 
-    // Si Render tiene una imagen alternativa configurada, la usamos.
+    // Respaldo 1: imagen configurada en Render.
     const fallback = process.env.ANIME_IMAGE_URL;
     if (fallback) {
       await sock.sendMessage(jid, {
@@ -1173,8 +1173,37 @@ async function handleAnime(cmd, m, id, args = []) {
       return true;
     }
 
+    // Respaldo 2: otra fuente pública de imágenes anime SFW.
+    try {
+      const backupResponse = await fetch("https://api.waifu.pics/sfw/waifu");
+      if (backupResponse.ok) {
+        const backupData = await backupResponse.json();
+        if (backupData?.url) {
+          const backupImage = await fetch(backupData.url);
+          if (backupImage.ok) {
+            const backupBuffer = Buffer.from(await backupImage.arrayBuffer());
+            await sock.sendMessage(jid, { image: backupBuffer, caption });
+            return true;
+          }
+        }
+      }
+    } catch (backupError) {
+      console.error("Respaldo anime falló:", backupError.message);
+    }
+
+    // Respaldo 3: la imagen anime local del perfil del bot.
+    try {
+      const localProfile = path.join(__dirname, "titanbot-profile.png");
+      if (fs.existsSync(localProfile)) {
+        await sock.sendMessage(jid, { image: fs.readFileSync(localProfile), caption });
+        return true;
+      }
+    } catch (localError) {
+      console.error("Respaldo local anime falló:", localError.message);
+    }
+
     await sock.sendMessage(jid, {
-      text: `${caption}\n\n❌ No pude cargar la imagen de anime. Intenta de nuevo.`
+      text: `${caption}\n\n❌ No se pudo cargar ninguna imagen. Intenta de nuevo.`
     });
     return true;
   }

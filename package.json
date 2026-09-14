@@ -1,7 +1,7 @@
 {
   "name": "titanbot",
-  "version": "1.0.0",
-  "description": "TITANBOT - WhatsApp bot con vinculación QR web",
+  "version": "4.6.0",
+  "description": "TITANBOT 4.6.0 — v2.6 | WhatsApp bot con QR web, comandos y anime SFW",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,5 +10,8 @@
     "@whiskeysockets/baileys": "7.0.0-rc14",
     "pino": "^9.7.0",
     "qrcode": "^1.5.4"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
