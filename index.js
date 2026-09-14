@@ -6,6 +6,7 @@ const {
 
 const pino = require("pino");
 const http = require("http");
+const QRCode = require("qrcode");
 
 // ==============================
 // COMANDOS
@@ -22,24 +23,193 @@ const grupos = require("./commands/grupos");
 // ==============================
 
 const PORT = process.env.PORT || 10000;
-const NUMERO = process.env.PHONE_NUMBER;
 
-let bot;
+let qrActual = null;
+let estado = "Iniciando TitanBot...";
+let sockActual = null;
 let iniciando = false;
-let conectado = false;
-let codigoSolicitado = false;
 
 // ==============================
-// SERVIDOR PARA RENDER
+// PÁGINA WEB DEL QR
 // ==============================
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
+
+  if (req.url === "/qr") {
+
+    let contenidoQR = "";
+
+    if (qrActual) {
+
+      try {
+
+        contenidoQR =
+          await QRCode.toDataURL(qrActual);
+
+      } catch (error) {
+
+        contenidoQR = "";
+      }
+    }
+
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8"
+    });
+
+    res.end(`
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>TitanBot QR</title>
+
+<style>
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.contenedor {
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 25px;
+}
+
+h1 {
+  font-size: 30px;
+}
+
+.estado {
+  margin: 20px 0;
+  font-size: 18px;
+}
+
+.qr {
+  background: white;
+  padding: 15px;
+  border-radius: 15px;
+  display: inline-block;
+}
+
+.qr img {
+  width: 280px;
+  height: 280px;
+}
+
+.info {
+  margin-top: 25px;
+  line-height: 1.7;
+}
+
+.boton {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 12px 20px;
+  background: #25D366;
+  color: white;
+  text-decoration: none;
+  border-radius: 10px;
+}
+
+</style>
+
+<meta http-equiv="refresh" content="5">
+
+</head>
+
+<body>
+
+<div class="contenedor">
+
+<h1>🤖 TitanBot v2.5</h1>
+
+<div class="estado">
+${estado}
+</div>
+
+${
+  contenidoQR
+    ? `
+<div class="qr">
+<img src="${contenidoQR}" alt="QR de WhatsApp">
+</div>
+
+<div class="info">
+📱 Abre WhatsApp<br>
+➡️ Dispositivos vinculados<br>
+➡️ Vincular dispositivo<br>
+➡️ Escanea este código QR
+</div>
+`
+    : `
+<div class="info">
+⏳ Esperando código QR...
+<br><br>
+La página se actualizará automáticamente.
+</div>
+`
+}
+
+</div>
+
+</body>
+</html>
+`);
+
+    return;
+  }
 
   res.writeHead(200, {
-    "Content-Type": "text/plain"
+    "Content-Type": "text/html; charset=utf-8"
   });
 
-  res.end("🤖 TitanBot v2.5 ONLINE");
+  res.end(`
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+<title>TitanBot</title>
+</head>
+
+<body style="
+font-family:Arial;
+text-align:center;
+background:#111;
+color:white;
+padding:40px;
+">
+
+<h1>🤖 TitanBot v2.5</h1>
+
+<p>${estado}</p>
+
+<a href="/qr"
+style="
+display:inline-block;
+padding:15px 25px;
+background:#25D366;
+color:white;
+text-decoration:none;
+border-radius:10px;
+">
+📱 Ver QR de WhatsApp
+</a>
+
+</body>
+</html>
+`);
 });
 
 server.listen(PORT, "0.0.0.0", () => {
@@ -47,10 +217,14 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(
     `🌐 Servidor iniciado en puerto ${PORT}`
   );
+
+  console.log(
+    "📱 Abre la URL de Render y entra en /qr"
+  );
 });
 
 // ==============================
-// INICIAR TITANBOT
+// INICIAR WHATSAPP
 // ==============================
 
 async function iniciarBot() {
@@ -60,6 +234,8 @@ async function iniciarBot() {
   iniciando = true;
 
   try {
+
+    estado = "🔄 Conectando con WhatsApp...";
 
     console.log("");
     console.log(
@@ -71,7 +247,7 @@ async function iniciarBot() {
       saveCreds
     } = await useMultiFileAuthState("./session");
 
-    bot = makeWASocket({
+    const sock = makeWASocket({
 
       auth: state,
 
@@ -90,55 +266,87 @@ async function iniciarBot() {
       ]
     });
 
-    bot.ev.on(
+    sockActual = sock;
+
+    sock.ev.on(
       "creds.update",
       saveCreds
     );
 
-    // ==========================
-    // ESTADO DE CONEXIÓN
-    // ==========================
+    // ==============================
+    // CONEXIÓN Y QR
+    // ==============================
 
-    bot.ev.on(
+    sock.ev.on(
       "connection.update",
       async (update) => {
 
         const {
           connection,
+          qr,
           lastDisconnect
         } = update;
 
+        // NUEVO QR
+        if (qr) {
+
+          qrActual = qr;
+
+          estado =
+            "📱 QR listo. Escanéalo desde WhatsApp.";
+
+          console.log("");
+          console.log(
+            "📱 ¡QR GENERADO!"
+          );
+
+          console.log(
+            "🌐 Abre la URL de Render y entra en /qr"
+          );
+
+          console.log("");
+        }
+
+        // CONECTANDO
         if (connection === "connecting") {
+
+          estado =
+            "🔄 Conectando con WhatsApp...";
 
           console.log(
             "🔄 Conectando con WhatsApp..."
           );
         }
 
+        // CONECTADO
         if (connection === "open") {
 
-          conectado = true;
           iniciando = false;
+
+          qrActual = null;
+
+          estado =
+            "🟢 TitanBot conectado a WhatsApp.";
 
           console.log("");
           console.log(
-            "╔══════════════════════════╗"
+            "╔════════════════════════════╗"
           );
           console.log(
-            "║   🤖 TITANBOT V2.5      ║"
+            "║     🤖 TITANBOT V2.5      ║"
           );
           console.log(
-            "║    🟢 CONECTADO         ║"
+            "║      🟢 CONECTADO         ║"
           );
           console.log(
-            "╚══════════════════════════╝"
+            "╚════════════════════════════╝"
           );
           console.log("");
         }
 
+        // CERRADO
         if (connection === "close") {
 
-          conectado = false;
           iniciando = false;
 
           const codigo =
@@ -146,7 +354,7 @@ async function iniciarBot() {
 
           console.log("");
           console.log(
-            "⚠️ WhatsApp cerró la conexión."
+            "⚠️ Conexión cerrada."
           );
 
           console.log(
@@ -154,150 +362,45 @@ async function iniciarBot() {
             codigo || "desconocido"
           );
 
-          // Si ya estaba vinculado y WhatsApp
-          // cerró la conexión, esperamos antes
-          // de volver a intentar.
+          estado =
+            "⚠️ Conexión cerrada. Esperando reconexión...";
 
+          // Si se cerró la sesión
           if (
             codigo === DisconnectReason.loggedOut
           ) {
 
+            qrActual = null;
+
+            estado =
+              "❌ Sesión cerrada. Se necesita volver a vincular.";
+
             console.log(
-              "❌ La sesión fue cerrada."
+              "❌ Sesión cerrada."
             );
 
             return;
           }
 
-          if (state.creds.registered) {
+          // Esperar antes de reconectar
+          setTimeout(() => {
 
             console.log(
-              "🔄 Se intentará reconectar en 30 segundos..."
+              "🔄 Intentando reconectar..."
             );
 
-            setTimeout(() => {
+            iniciarBot();
 
-              iniciarBot();
-
-            }, 30000);
-
-          } else {
-
-            console.log("");
-            console.log(
-              "⏳ La cuenta todavía no está vinculada."
-            );
-            console.log(
-              "No se realizará un bucle rápido de reconexión."
-            );
-            console.log("");
-          }
+          }, 10000);
         }
       }
     );
 
-    // ==========================
-    // CÓDIGO DE VINCULACIÓN
-    // ==========================
-
-    if (
-      !state.creds.registered &&
-      !codigoSolicitado
-    ) {
-
-      codigoSolicitado = true;
-
-      if (!NUMERO) {
-
-        console.log("");
-        console.log(
-          "❌ Falta PHONE_NUMBER en Render."
-        );
-        console.log("");
-
-        return;
-      }
-
-      try {
-
-        // Esperamos a que la conexión
-        // inicial esté preparada.
-
-        await new Promise(resolve => {
-          setTimeout(resolve, 3000);
-        });
-
-        console.log("");
-        console.log(
-          "🔗 Generando código de vinculación..."
-        );
-
-        const codigo =
-          await bot.requestPairingCode(
-            NUMERO
-          );
-
-        console.log("");
-        console.log(
-          "╔════════════════════════════╗"
-        );
-        console.log(
-          "║   🔗 TITANBOT V2.5        ║"
-        );
-        console.log(
-          "║   CÓDIGO DE VINCULACIÓN   ║"
-        );
-        console.log(
-          "╚════════════════════════════╝"
-        );
-        console.log("");
-        console.log(
-          "📱 CÓDIGO:"
-        );
-        console.log("");
-        console.log(
-          "       " + codigo
-        );
-        console.log("");
-        console.log(
-          "AHORA EN WHATSAPP:"
-        );
-        console.log(
-          "1. Dispositivos vinculados"
-        );
-        console.log(
-          "2. Vincular dispositivo"
-        );
-        console.log(
-          "3. Vincular con número de teléfono"
-        );
-        console.log(
-          "4. Introduce el código mostrado arriba"
-        );
-        console.log("");
-        console.log(
-          "⏳ Esperando la vinculación..."
-        );
-        console.log("");
-
-      } catch (error) {
-
-        console.log("");
-        console.log(
-          "❌ ERROR AL GENERAR EL CÓDIGO"
-        );
-        console.log(
-          error.message
-        );
-        console.log("");
-      }
-    }
-
-    // ==========================
+    // ==============================
     // MENSAJES
-    // ==========================
+    // ==============================
 
-    bot.ev.on(
+    sock.ev.on(
       "messages.upsert",
       async ({ messages }) => {
 
@@ -345,7 +448,7 @@ async function iniciarBot() {
           let isAdmin = false;
 
           // ==========================
-          // ADMIN DEL GRUPO
+          // ADMIN
           // ==========================
 
           if (isGroup) {
@@ -353,7 +456,7 @@ async function iniciarBot() {
             try {
 
               const metadata =
-                await bot.groupMetadata(chat);
+                await sock.groupMetadata(chat);
 
               const participante =
                 metadata.participants.find(
@@ -377,7 +480,7 @@ async function iniciarBot() {
 
             respondio =
               await inicio(
-                bot,
+                sock,
                 chat,
                 comando
               );
@@ -388,7 +491,7 @@ async function iniciarBot() {
 
             respondio =
               await usuario.usuario(
-                bot,
+                sock,
                 chat,
                 comando,
                 id
@@ -400,7 +503,7 @@ async function iniciarBot() {
 
             respondio =
               await economia(
-                bot,
+                sock,
                 chat,
                 comando,
                 args,
@@ -413,7 +516,7 @@ async function iniciarBot() {
 
             respondio =
               await juegos(
-                bot,
+                sock,
                 chat,
                 comando,
                 args,
@@ -426,7 +529,7 @@ async function iniciarBot() {
 
             respondio =
               await grupos(
-                bot,
+                sock,
                 chat,
                 comando,
                 args,
@@ -453,19 +556,24 @@ async function iniciarBot() {
 
     iniciando = false;
 
+    estado =
+      "❌ Error iniciando TitanBot.";
+
     console.log("");
     console.log(
       "❌ Error iniciando TitanBot:"
     );
+
     console.log(
       error.message
     );
+
     console.log("");
   }
 }
 
 // ==============================
-// ARRANCAR
+// INICIAR
 // ==============================
 
 iniciarBot();
