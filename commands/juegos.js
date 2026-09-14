@@ -1,68 +1,45 @@
-// ==========================================
-// TITANBOT - JUEGOS
-// ==========================================
-
 const fs = require("fs");
 
 const DB = "./database/users.json";
 
-
-// ==========================================
-// BASE DE DATOS
-// ==========================================
-
 function cargarUsuarios() {
-
   if (!fs.existsSync(DB)) {
     fs.writeFileSync(DB, "{}");
   }
 
   try {
-
-    return JSON.parse(
-      fs.readFileSync(DB, "utf8")
-    );
-
+    return JSON.parse(fs.readFileSync(DB, "utf8"));
   } catch {
-
     return {};
   }
 }
 
-
 function guardarUsuarios(db) {
-
   fs.writeFileSync(
     DB,
     JSON.stringify(db, null, 2)
   );
 }
 
-
-// ==========================================
-// OBTENER USUARIO
-// ==========================================
-
 function obtenerUsuario(db, id) {
 
   if (!db[id]) {
-
     db[id] = {
-
       dinero: 0,
       banco: 0,
       xp: 0,
       nivel: 1,
       mensajes: 0,
-      inventario: [],
-
-      ultimoDaily: 0,
-      ultimoTrabajo: 0,
-      ultimoMineria: 0,
-      ultimaPesca: 0,
-      ultimaXP: 0
-
+      inventario: []
     };
+  }
+
+  if (typeof db[id].dinero !== "number") {
+    db[id].dinero = 0;
+  }
+
+  if (!Array.isArray(db[id].inventario)) {
+    db[id].inventario = [];
   }
 
   return db[id];
@@ -81,14 +58,52 @@ async function juegos(
   id
 ) {
 
-  const db = cargarUsuarios();
+  // ========================================
+  // MENÚ
+  // ========================================
 
-  const user =
-    obtenerUsuario(db, id);
+  if (comando === "juegos") {
+
+    return sock.sendMessage(chat, {
+
+      text:
+`🎮 JUEGOS TITANBOT
+
+🎲 .dado
+Lanza un dado.
+
+🪙 .moneda
+Cara o cruz.
+
+🔮 .8ball pregunta
+Responde una pregunta.
+
+🍀 .suerte
+Prueba tu suerte.
+
+🔢 .numero
+Número aleatorio.
+
+🎯 .adivina número
+Adivina un número del 1 al 10.
+
+✋ .ppt piedra/papel/tijera
+Juega contra TitanBot.
+
+🎲 .dados
+Lanza dos dados.
+
+━━━━━━━━━━━━━━━━━━
+
+💰 Algunos juegos pueden darte
+recompensas.`
+
+    });
+  }
 
 
   // ========================================
-  // 🎲 DADO
+  // DADO
   // ========================================
 
   if (comando === "dado") {
@@ -98,13 +113,13 @@ async function juegos(
         Math.random() * 6
       ) + 1;
 
-
     return sock.sendMessage(chat, {
 
       text:
 `🎲 DADO
 
 Resultado:
+
 🎲 ${resultado}`
 
     });
@@ -112,16 +127,15 @@ Resultado:
 
 
   // ========================================
-  // 🪙 MONEDA
+  // MONEDA
   // ========================================
 
   if (comando === "moneda") {
 
     const resultado =
       Math.random() < 0.5
-        ? "🟡 CARA"
-        : "⚪ SELLO";
-
+        ? "🪙 CARA"
+        : "🪙 CRUZ";
 
     return sock.sendMessage(chat, {
 
@@ -129,6 +143,7 @@ Resultado:
 `🪙 MONEDA
 
 Resultado:
+
 ${resultado}`
 
     });
@@ -136,31 +151,41 @@ ${resultado}`
 
 
   // ========================================
-  // 🔮 8BALL
+  // 8 BALL
   // ========================================
 
   if (comando === "8ball") {
 
+    if (args.length === 0) {
+
+      return sock.sendMessage(chat, {
+
+        text:
+`🔮 8 BALL
+
+Haz una pregunta.
+
+Ejemplo:
+
+.8ball ¿Voy a ganar?`
+
+      });
+    }
+
     const respuestas = [
 
-      "🟢 Sí, definitivamente.",
-
-      "🟢 Parece que sí.",
-
-      "🟡 Probablemente.",
-
-      "🟡 No estoy seguro.",
-
+      "✅ Sí, definitivamente.",
+      "🟢 Todo apunta a que sí.",
+      "👍 Probablemente.",
+      "🤔 Puede ser.",
+      "❓ No estoy seguro.",
+      "🟡 Tal vez más adelante.",
       "🔴 Probablemente no.",
-
-      "🔴 No.",
-
-      "🔴 Definitivamente no.",
-
-      "🟣 El futuro es incierto."
+      "❌ No.",
+      "🌟 Las posibilidades son altas.",
+      "🎲 El destino decidirá."
 
     ];
-
 
     const respuesta =
       respuestas[
@@ -170,11 +195,14 @@ ${resultado}`
         )
       ];
 
-
     return sock.sendMessage(chat, {
 
       text:
-`🔮 8BALL
+`🔮 8 BALL
+
+❓ ${args.join(" ")}
+
+💬 Respuesta:
 
 ${respuesta}`
 
@@ -183,32 +211,47 @@ ${respuesta}`
 
 
   // ========================================
-  // 🍀 SUERTE
+  // SUERTE
   // ========================================
 
   if (comando === "suerte") {
 
-    const numero =
+    const porcentaje =
       Math.floor(
         Math.random() * 101
       );
 
+    let mensaje;
+
+    if (porcentaje >= 90) {
+      mensaje = "🌟 ¡Increíble suerte!";
+    } else if (porcentaje >= 70) {
+      mensaje = "🍀 ¡Tienes bastante suerte!";
+    } else if (porcentaje >= 40) {
+      mensaje = "🙂 Tu suerte es normal.";
+    } else if (porcentaje >= 20) {
+      mensaje = "😬 Hoy no parece tu mejor día.";
+    } else {
+      mensaje = "💀 Mejor inténtalo otro día.";
+    }
 
     return sock.sendMessage(chat, {
 
       text:
 `🍀 SUERTE
 
-Tu nivel de suerte es:
+Tu suerte es:
 
-⭐ ${numero}/100`
+🎯 ${porcentaje}%
+
+${mensaje}`
 
     });
   }
 
 
   // ========================================
-  // 🔢 NÚMERO
+  // NÚMERO
   // ========================================
 
   if (comando === "numero") {
@@ -218,32 +261,32 @@ Tu nivel de suerte es:
         Math.random() * 100
       ) + 1;
 
-
     return sock.sendMessage(chat, {
 
       text:
 `🔢 NÚMERO ALEATORIO
 
-🎯 ${numero}`
+🎯 Resultado:
+
+${numero}`
 
     });
   }
 
 
   // ========================================
-  // 🎯 ADIVINA
+  // ADIVINA
   // ========================================
 
   if (comando === "adivina") {
 
-    const elegido =
+    const numero =
       Number(args[0]);
 
-
     if (
-      !Number.isInteger(elegido) ||
-      elegido < 1 ||
-      elegido > 10
+      !Number.isInteger(numero) ||
+      numero < 1 ||
+      numero > 10
     ) {
 
       return sock.sendMessage(chat, {
@@ -252,7 +295,7 @@ Tu nivel de suerte es:
 `🎯 ADIVINA EL NÚMERO
 
 Debes elegir un número
-entre 1 y 10.
+del 1 al 10.
 
 Ejemplo:
 
@@ -261,60 +304,69 @@ Ejemplo:
       });
     }
 
-
     const secreto =
       Math.floor(
         Math.random() * 10
       ) + 1;
 
+    const db =
+      cargarUsuarios();
+
+    const user =
+      obtenerUsuario(
+        db,
+        id
+      );
 
     if (
-      elegido === secreto
+      numero === secreto
     ) {
 
       const premio = 500;
 
-      user.dinero += premio;
+      user.dinero +=
+        premio;
 
       guardarUsuarios(db);
-
 
       return sock.sendMessage(chat, {
 
         text:
-`🎉 ¡GANASTE!
+`🎯 ¡GANASTE!
 
-🎯 Número:
+🎉 El número era:
+
 ${secreto}
 
 💰 Premio:
 +${premio}
 
-💵 Dinero:
+💵 Saldo:
 ${user.dinero}`
 
       });
 
     }
 
-
     return sock.sendMessage(chat, {
 
       text:
-`❌ No acertaste.
+`❌ PERDISTE
 
 Tu número:
-${elegido}
+${numero}
 
-Número correcto:
-${secreto}`
+🎯 El número correcto era:
+${secreto}
+
+🍀 ¡Inténtalo nuevamente!`
 
     });
   }
 
 
   // ========================================
-  // ✋ PIEDRA PAPEL TIJERA
+  // PIEDRA PAPEL TIJERA
   // ========================================
 
   if (
@@ -323,39 +375,34 @@ ${secreto}`
   ) {
 
     const opciones = [
-
       "piedra",
       "papel",
       "tijera"
-
     ];
 
-
-    const eleccion =
-      (args[0] || "")
+    const jugador =
+      String(args[0] || "")
         .toLowerCase();
 
-
     if (
-      !opciones.includes(
-        eleccion
-      )
+      !opciones.includes(jugador)
     ) {
 
       return sock.sendMessage(chat, {
 
         text:
-`✋ PIEDRA PAPEL TIJERA
+`✋ PIEDRA, PAPEL O TIJERA
 
 Usa:
 
 .ppt piedra
+
 .ppt papel
+
 .ppt tijera`
 
       });
     }
-
 
     const bot =
       opciones[
@@ -365,56 +412,43 @@ Usa:
         )
       ];
 
-
     let resultado;
 
-
-    if (
-      eleccion === bot
-    ) {
+    if (jugador === bot) {
 
       resultado =
-        "🤝 EMPATE";
+        "🤝 ¡EMPATE!";
 
     } else if (
 
-      (
-        eleccion === "piedra" &&
-        bot === "tijera"
-      ) ||
-
-      (
-        eleccion === "papel" &&
-        bot === "piedra"
-      ) ||
-
-      (
-        eleccion === "tijera" &&
-        bot === "papel"
-      )
+      (jugador === "piedra" && bot === "tijera") ||
+      (jugador === "papel" && bot === "piedra") ||
+      (jugador === "tijera" && bot === "papel")
 
     ) {
 
       resultado =
-        "🎉 GANASTE";
+        "🏆 ¡GANASTE!";
 
     } else {
 
       resultado =
-        "❌ PERDISTE";
-    }
+        "😈 ¡GANÓ TITANBOT!";
 
+    }
 
     return sock.sendMessage(chat, {
 
       text:
-`✋ PIEDRA PAPEL TIJERA
+`✋ PIEDRA, PAPEL O TIJERA
 
 👤 Tú:
-${eleccion}
+${jugador}
 
 🤖 TitanBot:
 ${bot}
+
+━━━━━━━━━━━━
 
 ${resultado}`
 
@@ -423,7 +457,7 @@ ${resultado}`
 
 
   // ========================================
-  // 🎲 DOS DADOS
+  // DOS DADOS
   // ========================================
 
   if (comando === "dados") {
@@ -441,11 +475,10 @@ ${resultado}`
     const total =
       dado1 + dado2;
 
-
     return sock.sendMessage(chat, {
 
       text:
-`🎲 DADOS
+`🎲🎲 DOS DADOS
 
 🎲 Dado 1:
 ${dado1}
@@ -453,35 +486,8 @@ ${dado1}
 🎲 Dado 2:
 ${dado2}
 
-🏆 Total:
+➕ Total:
 ${total}`
-
-    });
-  }
-
-
-  // ========================================
-  // 🎮 MENÚ DE JUEGOS
-  // ========================================
-
-  if (comando === "juegos") {
-
-    return sock.sendMessage(chat, {
-
-      text:
-`🎮 JUEGOS TITANBOT
-
-🎲 .dado
-🪙 .moneda
-🔮 .8ball
-🍀 .suerte
-🔢 .numero
-🎯 .adivina 1-10
-✋ .ppt piedra/papel/tijera
-🎲 .dados
-
-💰 Algunos juegos pueden
-dar recompensas.`
 
     });
   }
@@ -490,9 +496,5 @@ dar recompensas.`
   return false;
 }
 
-
-// ==========================================
-// EXPORTAR
-// ==========================================
 
 module.exports = juegos;
