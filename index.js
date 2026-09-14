@@ -212,17 +212,34 @@ async function iniciarBot() {
       "";
 
     if (texto.toLowerCase() === ".ping") {
-
-      await sock.sendMessage(
-        msg.key.remoteJid,
-        {
-          text: "🏓 Pong! TitanBot está funcionando."
-        }
-      );
-
+  await sock.sendMessage(
+    msg.key.remoteJid,
+    {
+      text: "🏓 Pong! TitanBot está funcionando."
     }
-
-  });
+  );
 }
 
-iniciarBot();
+if (texto.toLowerCase() === ".menu") {
+  await sock.sendMessage(
+    msg.key.remoteJid,
+    {
+      text:
+`╭━━━〔 🤖 TITANBOT 〕━━━╮
+┃
+┃ 👋 ¡Hola! Soy TitanBot.
+┃
+┃ 📋 COMANDOS
+┃
+┃ 🏓 .ping
+┃ ┗ Verificar que el bot funciona
+┃
+┃ 📋 .menu
+┃ ┗ Mostrar este menú
+┃
+┃ 🚀 Más funciones próximamente...
+┃
+╰━━━━━━━━━━━━━━━━━━━━╯`
+    }
+  );
+}
