@@ -119,7 +119,10 @@ async function economia(
     cargarUsuarios();
 
   const user =
-    obtenerUsuario(db, id);
+    obtenerUsuario(
+      db,
+      id
+    );
 
 
   // ========================================
@@ -752,16 +755,6 @@ Ejemplo:
       producto.precio;
 
 
-    if (
-      !Array.isArray(
-        user.inventario
-      )
-    ) {
-
-      user.inventario = [];
-    }
-
-
     user.inventario.push(
       producto.nombre
     );
@@ -783,38 +776,105 @@ ${producto.precio}
 💵 Dinero restante:
 ${user.dinero}
 
+// ========================================
+// TRANSFERIR
+// ========================================
+
+if (comando === "transferir") {
+
+  const numeroDestino = String(args[0] || "")
+    .replace(/\D/g, "");
+
+  const cantidad = Number(args[1]);
+
+  if (
+    !numeroDestino ||
+    !Number.isInteger(cantidad) ||
+    cantidad <= 0
+  ) {
+
+    return sock.sendMessage(chat, {
+      text:
+`💸 TRANSFERIR
+
+Uso:
+
+.transferir número cantidad
+
+Ejemplo:
+
+.transferir 573001234567 500`
+    });
+
+  }
+
+  const numeroUsuario = String(id)
+    .split("@")[0]
+    .replace(/\D/g, "");
+
+  // Evitar transferirse a sí mismo
+  if (numeroDestino === numeroUsuario) {
+
+    return sock.sendMessage(chat, {
+      text: "❌ No puedes transferirte dinero a ti mismo."
+    });
+
+  }
+
+  const idDestino =
+    numeroDestino + "@s.whatsapp.net";
+
+  const destinatario =
+    obtenerUsuario(db, idDestino);
+
+  // Verificar saldo
+  if (user.dinero < cantidad) {
+
+    return sock.sendMessage(chat, {
+      text:
+`❌ DINERO INSUFICIENTE
+
+💰 Tu saldo:
+${user.dinero}
+
+💸 Intentaste enviar:
+${cantidad}`
+    });
+
+  }
+
+  // Transferencia
+  user.dinero -= cantidad;
+  destinatario.dinero += cantidad;
+
+  guardarUsuarios(db);
+
+  return sock.sendMessage(chat, {
+    text:
+`💸 TRANSFERENCIA REALIZADA
+
+📤 Enviaste:
+${cantidad} monedas
+
+📱 Destinatario:
+@${numeroDestino}
+
+💰 Tu nuevo saldo:
+${user.dinero}
+
+✅ Transferencia completada.`,
+
+    mentions: [
+      idDestino
+    ]
+  });
+
+}
+
 🎒 Añadido al inventario.`
 
     });
   }
 
 
-  // ========================================
-  // TRANSFERIR
-  // ========================================
-
-  if (comando === "transferir") {
-
-    return sock.sendMessage(chat, {
-
-      text:
-`💸 TRANSFERIR
-
-Esta función todavía está en desarrollo.
-
-Próximamente podrás enviar
-dinero a otros usuarios.
-
-Ejemplo:
-
-.transferir @usuario 500`
-
-    });
-  }
-
-
-  return false;
-}
-
-
-module.exports = economia;
+  
