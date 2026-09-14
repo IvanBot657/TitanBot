@@ -1,25 +1,57 @@
-# TITANBOT v2.9 — actualización
+🤖 TITANBOT v2.9 — ACTUALIZACIÓN
 
-Incluye la base de TITANBOT con vinculación por número y estas mejoras:
+⚡ Más funciones, mejor organización y nuevas opciones para disfrutar TITANBOT.
 
-- Vinculación por número únicamente; QR de terminal desactivado.
-- Render: variable `NUMBER` para el número de WhatsApp, solo dígitos con código de país.
-- Navegador Baileys configurado como Chrome/Ubuntu.
-- `.anime` / `.waifu` generan un personaje pendiente.
-- `.w` reclama el personaje y lo guarda en `inventory`.
-- `.inventario` conserva el sistema existente.
-- `.musica <enlace directo>` envía archivos multimedia cuando el enlace apunta directamente a un archivo de audio o vídeo.
-- No incluye conversión/descarga desde YouTube u otras plataformas; usa enlaces directos a medios que el usuario tenga derecho a compartir.
+🎌 ANIME
 
-## Render
+🎴 Sistema de personajes anime.
 
-Variables de entorno:
+🎁 Nuevas recompensas.
 
-- `NUMBER` = número de WhatsApp con código de país, por ejemplo `573001234567`.
-- `ANIME_IMAGE_URL` = opcional, URL pública de la imagen usada por las tarjetas anime.
+🪄 Comando .w para reclamar personajes.
 
-Comando de inicio:
+🎒 Los personajes reclamados quedan guardados en la colección del usuario.
 
-`npm start`
 
-Antes de desplegar, elimina una sesión `auth_info` anterior si la vinculación anterior quedó a medias.
+🎵 MÚSICA
+
+🎵 Nuevo comando .musica.
+
+🔎 Permite buscar una canción.
+
+🎬 Muestra la información del contenido encontrado.
+
+🎧 Permite obtener el audio disponible.
+
+
+📱 VINCULACIÓN
+
+🔢 Vinculación mediante Pairing Code.
+
+🚫 QR desactivado.
+
+🌐 Preparado para ejecutarse en Render.
+
+⚙️ Configuración mediante la variable NUMBER.
+
+
+⭐ SISTEMA DEL BOT
+
+👤 Perfiles y progreso.
+
+💰 Economía.
+
+🎮 Juegos.
+
+👥 Funciones para grupos.
+
+⭐ XP y niveles.
+
+🛠️ Utilidades.
+
+✨ Comandos de diversión.
+
+
+TITANBOT v2.9
+
+> ⚡ El futuro empieza ahora.
