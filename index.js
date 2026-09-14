@@ -7,6 +7,7 @@ const {
 const P = require("pino");
 const http = require("http");
 const QRCode = require("qrcode");
+const fs = require("fs");
 
 const config = require("./config");
 
@@ -32,14 +33,67 @@ let iniciando = false;
 
 
 // =====================================================
+// DATABASE DE GRUPOS
+// =====================================================
+
+const GROUPS_DB = "./database/groups.json";
+
+function cargarGrupos() {
+  if (!fs.existsSync(GROUPS_DB)) {
+    fs.writeFileSync(GROUPS_DB, "{}");
+  }
+
+  try {
+    return JSON.parse(
+      fs.readFileSync(GROUPS_DB, "utf8")
+    );
+  } catch {
+    return {};
+  }
+}
+
+function guardarGrupos(db) {
+  fs.writeFileSync(
+    GROUPS_DB,
+    JSON.stringify(db, null, 2)
+  );
+}
+
+function registrarGrupo(chat) {
+
+  if (!chat || !chat.endsWith("@g.us")) {
+    return;
+  }
+
+  const db = cargarGrupos();
+
+  if (!db[chat]) {
+
+    db[chat] = {
+      bienvenida: false,
+      despedida: false,
+      reglas: "No hay reglas configuradas."
+    };
+
+    guardarGrupos(db);
+
+    console.log(
+      "👥 Grupo registrado:",
+      chat
+    );
+  }
+}
+
+
+// =====================================================
 // SERVIDOR WEB
 // =====================================================
 
 const server = http.createServer(async (req, res) => {
 
-  // =========================
+  // ===================================================
   // PÁGINA PRINCIPAL
-  // =========================
+  // ===================================================
 
   if (req.url === "/") {
 
@@ -50,9 +104,15 @@ const server = http.createServer(async (req, res) => {
     res.end(`
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
 
 <title>${config.nombre}</title>
 
@@ -118,6 +178,7 @@ button {
 }
 
 </style>
+
 </head>
 
 <body>
@@ -145,9 +206,9 @@ ${estado}
 <p>Ejemplo: 573001234567</p>
 
 <input
-id="numero"
-type="text"
-placeholder="573001234567"
+  id="numero"
+  type="text"
+  placeholder="573001234567"
 >
 
 <br>
@@ -204,10 +265,14 @@ async function actualizar() {
 
 }
 
+
 async function vincular() {
 
   const numero =
-    document.getElementById("numero").value.trim();
+    document
+      .getElementById("numero")
+      .value
+      .trim();
 
   if (!numero) {
 
@@ -240,7 +305,11 @@ async function vincular() {
     } else {
 
       document.getElementById("codigo").innerHTML =
-        "❌ " + (data.error || "No se pudo generar.");
+        "❌ " +
+        (
+          data.error ||
+          "No se pudo generar."
+        );
 
     }
 
@@ -253,13 +322,18 @@ async function vincular() {
 
 }
 
+
 actualizar();
 
-setInterval(actualizar, 3000);
+setInterval(
+  actualizar,
+  3000
+);
 
 </script>
 
 </body>
+
 </html>
 `);
 
@@ -267,9 +341,9 @@ setInterval(actualizar, 3000);
   }
 
 
-  // =========================
+  // ===================================================
   // QR DATA
-  // =========================
+  // ===================================================
 
   if (req.url === "/qr-data") {
 
@@ -289,9 +363,9 @@ setInterval(actualizar, 3000);
   }
 
 
-  // =========================
+  // ===================================================
   // PAIRING CODE
-  // =========================
+  // ===================================================
 
   if (req.url.startsWith("/pairing")) {
 
@@ -314,7 +388,8 @@ setInterval(actualizar, 3000);
 
         res.end(
           JSON.stringify({
-            error: "Número no proporcionado."
+            error:
+              "Número no proporcionado."
           })
         );
 
@@ -322,31 +397,41 @@ setInterval(actualizar, 3000);
       }
 
       numero =
-        numero.replace(/\D/g, "");
+        numero.replace(
+          /\D/g,
+          ""
+        );
 
       if (numero.length < 10) {
 
         res.end(
           JSON.stringify({
-            error: "Número inválido."
+            error:
+              "Número inválido."
           })
         );
 
         return;
       }
 
-      if (!sockActual || !authStateActual) {
+      if (
+        !sockActual ||
+        !authStateActual
+      ) {
 
         res.end(
           JSON.stringify({
-            error: "El bot todavía está iniciando."
+            error:
+              "El bot todavía está iniciando."
           })
         );
 
         return;
       }
 
-      if (authStateActual.creds.registered) {
+      if (
+        authStateActual.creds.registered
+      ) {
 
         res.end(
           JSON.stringify({
@@ -368,7 +453,8 @@ setInterval(actualizar, 3000);
 
       res.end(
         JSON.stringify({
-          codigo: codigoVinculacion
+          codigo:
+            codigoVinculacion
         })
       );
 
@@ -391,18 +477,26 @@ setInterval(actualizar, 3000);
   }
 
 
+  // ===================================================
+  // 404
+  // ===================================================
+
   res.writeHead(404);
 
   res.end("404");
 });
 
-server.listen(PORT, () => {
 
-  console.log(
-    `🌐 Servidor iniciado en puerto ${PORT}`
-  );
+server.listen(
+  PORT,
+  () => {
 
-});
+    console.log(
+      `🌐 Servidor iniciado en puerto ${PORT}`
+    );
+
+  }
+);
 
 
 // =====================================================
@@ -427,10 +521,12 @@ async function iniciarBot() {
         "./session"
       );
 
+
     authStateActual = {
       creds: state.creds,
       keys: state.keys
     };
+
 
     const sock =
       makeWASocket({
@@ -445,6 +541,7 @@ async function iniciarBot() {
         printQRInTerminal: false
 
       });
+
 
     sockActual = sock;
 
@@ -478,7 +575,9 @@ async function iniciarBot() {
         if (qr) {
 
           qrActual =
-            await QRCode.toDataURL(qr);
+            await QRCode.toDataURL(
+              qr
+            );
 
           estado =
             "📱 Escanea el código QR";
@@ -493,11 +592,14 @@ async function iniciarBot() {
         // CONECTADO
         // -------------------------
 
-        if (connection === "open") {
+        if (
+          connection === "open"
+        ) {
 
           qrActual = null;
 
-          codigoVinculacion = null;
+          codigoVinculacion =
+            null;
 
           estado =
             "🟢 TitanBot conectado";
@@ -514,7 +616,9 @@ async function iniciarBot() {
         // DESCONECTADO
         // -------------------------
 
-        if (connection === "close") {
+        if (
+          connection === "close"
+        ) {
 
           const codigo =
             lastDisconnect
@@ -529,6 +633,7 @@ async function iniciarBot() {
 
           iniciando = false;
 
+
           if (
             codigo !==
             DisconnectReason.loggedOut
@@ -537,11 +642,12 @@ async function iniciarBot() {
             estado =
               "🟡 Reconectando...";
 
-            setTimeout(() => {
-
-              iniciarBot();
-
-            }, 3000);
+            setTimeout(
+              () => {
+                iniciarBot();
+              },
+              3000
+            );
 
           } else {
 
@@ -567,156 +673,174 @@ async function iniciarBot() {
 
         try {
 
-          const msg =
-            messages[0];
-
-          if (!msg) {
-            return;
-          }
-
-          if (!msg.message) {
-            return;
-          }
-
-          if (
-            msg.key &&
-            msg.key.fromMe
+          for (
+            const msg
+            of messages
           ) {
-            return;
-          }
+
+            if (!msg) {
+              continue;
+            }
+
+            if (!msg.message) {
+              continue;
+            }
+
+            if (
+              msg.key &&
+              msg.key.fromMe
+            ) {
+              continue;
+            }
 
 
-          // ============================================
-          // CHAT
-          // ============================================
+            // =========================================
+            // CHAT
+            // =========================================
 
-          const chat =
-            msg.key.remoteJid;
+            const chat =
+              msg.key.remoteJid;
 
-          if (!chat) {
-            return;
-          }
-
-
-          // ============================================
-          // TEXTO
-          // ============================================
-
-          const texto =
-            msg.message.conversation ||
-            msg.message.extendedTextMessage?.text ||
-            msg.message.imageMessage?.caption ||
-            msg.message.videoMessage?.caption ||
-            "";
-
-          if (!texto) {
-            return;
-          }
+            if (!chat) {
+              continue;
+            }
 
 
-          // ============================================
-          // PREFIJO
-          // ============================================
+            // =========================================
+            // TEXTO
+            // =========================================
 
-          if (
-            !texto.startsWith(
-              config.prefijo
-            )
-          ) {
-            return;
-          }
-
-
-          const contenido =
-            texto.slice(
-              config.prefijo.length
-            ).trim();
-
-          if (!contenido) {
-            return;
-          }
+            const texto =
+              msg.message.conversation ||
+              msg.message.extendedTextMessage?.text ||
+              msg.message.imageMessage?.caption ||
+              msg.message.videoMessage?.caption ||
+              "";
 
 
-          const partes =
-            contenido.split(/\s+/);
-
-          const comando =
-            partes.shift()
-              .toLowerCase();
-
-          const args =
-            partes;
+            if (!texto) {
+              continue;
+            }
 
 
-          // ============================================
-          // USUARIO
-          // ============================================
+            // =========================================
+            // PREFIJO
+            // =========================================
 
-          const id =
-            msg.key.participant ||
-            msg.key.remoteJid;
-
-
-          // ============================================
-          // GRUPO
-          // ============================================
-
-          const esGrupo =
-            chat.endsWith("@g.us");
+            if (
+              !texto.startsWith(
+                config.prefijo
+              )
+            ) {
+              continue;
+            }
 
 
-          let esAdmin = false;
+            const contenido =
+              texto
+                .slice(
+                  config.prefijo.length
+                )
+                .trim();
 
-          let metadata = null;
+
+            if (!contenido) {
+              continue;
+            }
 
 
-          if (esGrupo) {
+            const partes =
+              contenido.split(/\s+/);
+
+
+            const comando =
+              partes
+                .shift()
+                .toLowerCase();
+
+
+            const args =
+              partes;
+
+
+            // =========================================
+            // USUARIO
+            // =========================================
+
+            const id =
+              msg.key.participant ||
+              msg.key.remoteJid;
+
+
+            // =========================================
+            // GRUPO
+            // =========================================
+
+            const esGrupo =
+              chat.endsWith("@g.us");
+
+
+            let esAdmin = false;
+
+            let metadata = null;
+
+
+            if (esGrupo) {
+
+              // Registrar automáticamente el grupo
+              registrarGrupo(chat);
+
+
+              try {
+
+                metadata =
+                  await sock.groupMetadata(
+                    chat
+                  );
+
+
+                const participante =
+                  metadata.participants.find(
+                    p =>
+                      p.id === id
+                  );
+
+
+                esAdmin =
+                  participante?.admin === "admin" ||
+                  participante?.admin === "superadmin";
+
+              } catch (error) {
+
+                console.log(
+                  "Error obteniendo grupo:",
+                  error
+                );
+
+              }
+
+            }
+
+
+            // =========================================
+            // XP
+            // =========================================
 
             try {
 
-              metadata =
-                await sock.groupMetadata(
-                  chat
-                );
-
-              const participante =
-                metadata.participants.find(
-                  p =>
-                    p.id === id
-                );
-
-              esAdmin =
-                participante?.admin === "admin" ||
-                participante?.admin === "superadmin";
-
-            } catch (error) {
-
-              console.log(
-                "Error obteniendo grupo:",
-                error
-              );
-            }
-          }
+              const resultadoXP =
+                usuario.ganarXP(id);
 
 
-          // ============================================
-          // XP
-          // ============================================
+              if (
+                resultadoXP &&
+                resultadoXP.subioNivel
+              ) {
 
-          try {
-
-            const resultadoXP =
-              usuario.ganarXP(id);
-
-            if (
-              resultadoXP &&
-              resultadoXP.subio
-            ) {
-
-              await sock.sendMessage(
-                chat,
-                {
-                  text:
+                await sock.sendMessage(
+                  chat,
+                  {
+                    text:
 `🎉 ¡SUBISTE DE NIVEL!
 
 👤 Usuario:
@@ -726,349 +850,463 @@ async function iniciarBot() {
 ${resultadoXP.nivel}
 
 💰 Recompensa:
-+250 monedas`,
-                  mentions: [id]
-                }
-              );
-            }
++${resultadoXP.recompensaTotal} monedas`,
+                    mentions: [
+                      id
+                    ]
+                  }
+                );
 
-          } catch (error) {
+              }
 
-            console.log(
-              "Error XP:",
-              error
-            );
-          }
+            } catch (error) {
 
-
-          // ============================================
-          // COMANDOS
-          // ============================================
-
-          let ejecutado = false;
-
-
-          // INICIO
-          if (!ejecutado) {
-
-            const resultado =
-              await inicio(
-                sock,
-                chat,
-                comando,
-                args,
-                id,
-                esGrupo,
-                esAdmin
+              console.log(
+                "Error XP:",
+                error
               );
 
-            if (resultado !== false) {
-              ejecutado = true;
             }
-          }
 
 
-          // USUARIO
-          if (!ejecutado) {
+            // =========================================
+            // COMANDOS
+            // =========================================
 
-            const resultado =
-              await usuario(
-                sock,
-                chat,
-                comando,
-                args,
-                id
-              );
+            let ejecutado = false;
 
-            if (resultado !== false) {
-              ejecutado = true;
+
+            // =========================================
+            // INICIO
+            // =========================================
+
+            if (!ejecutado) {
+
+              const resultado =
+                await inicio(
+                  sock,
+                  chat,
+                  comando,
+                  args,
+                  id,
+                  esGrupo,
+                  esAdmin
+                );
+
+
+              if (
+                resultado !== false
+              ) {
+
+                ejecutado = true;
+
+              }
+
             }
-          }
 
 
-          // ECONOMÍA
-          if (!ejecutado) {
+            // =========================================
+            // USUARIO
+            // =========================================
 
-            const resultado =
-              await economia(
-                sock,
-                chat,
-                comando,
-                args,
-                id
-              );
+            if (!ejecutado) {
 
-            if (resultado !== false) {
-              ejecutado = true;
+              const resultado =
+                await usuario(
+                  sock,
+                  chat,
+                  comando,
+                  args,
+                  id
+                );
+
+
+              if (
+                resultado !== false
+              ) {
+
+                ejecutado = true;
+
+              }
+
             }
-          }
 
 
-          // JUEGOS
-          if (!ejecutado) {
+            // =========================================
+            // ECONOMÍA
+            // =========================================
 
-            const resultado =
-              await juegos(
-                sock,
-                chat,
-                comando,
-                args,
-                id
-              );
+            if (!ejecutado) {
 
-            if (resultado !== false) {
-              ejecutado = true;
+              const resultado =
+                await economia(
+                  sock,
+                  chat,
+                  comando,
+                  args,
+                  id,
+                  msg
+                );
+
+
+              if (
+                resultado !== false
+              ) {
+
+                ejecutado = true;
+
+              }
+
             }
-          }
 
 
-          // ANIME
-          if (!ejecutado) {
+            // =========================================
+            // JUEGOS
+            // =========================================
 
-            const resultado =
-              await anime(
-                sock,
-                chat,
-                comando,
-                args
-              );
+            if (!ejecutado) {
 
-            if (resultado !== false) {
-              ejecutado = true;
+              const resultado =
+                await juegos(
+                  sock,
+                  chat,
+                  comando,
+                  args,
+                  id
+                );
+
+
+              if (
+                resultado !== false
+              ) {
+
+                ejecutado = true;
+
+              }
+
             }
-          }
 
 
-          // GRUPOS
-          if (!ejecutado) {
+            // =========================================
+            // ANIME
+            // =========================================
 
-            const resultado =
-              await grupos(
-                sock,
-                chat,
-                comando,
-                args,
-                id,
-                esGrupo,
-                esAdmin
-              );
+            if (!ejecutado) {
 
-            if (resultado !== false) {
-              ejecutado = true;
+              const resultado =
+                await anime(
+                  sock,
+                  chat,
+                  comando,
+                  args
+                );
+
+
+              if (
+                resultado !== false
+              ) {
+
+                ejecutado = true;
+
+              }
+
             }
-          }
 
 
-          // HERRAMIENTAS
-          if (!ejecutado) {
+            // =========================================
+            // GRUPOS
+            // =========================================
 
-            const resultado =
-              await herramientas(
-                sock,
-                chat,
-                comando,
-                args,
-                id
-              );
+            if (!ejecutado) {
 
-            if (resultado !== false) {
-              ejecutado = true;
+              const resultado =
+                await grupos(
+                  sock,
+                  chat,
+                  comando,
+                  args,
+                  id,
+                  esGrupo,
+                  esAdmin
+                );
+
+
+              if (
+                resultado !== false
+              ) {
+
+                ejecutado = true;
+
+              }
+
             }
-          }
 
 
-          // AJUSTES
-          if (!ejecutado) {
+            // =========================================
+            // HERRAMIENTAS
+            // =========================================
 
-            const resultado =
-              await ajustes(
-                sock,
-                chat,
-                comando,
-                args,
-                id,
-                esGrupo,
-                esAdmin
-              );
+            if (!ejecutado) {
 
-            if (resultado !== false) {
-              ejecutado = true;
+              const resultado =
+                await herramientas(
+                  sock,
+                  chat,
+                  comando,
+                  args,
+                  id
+                );
+
+
+              if (
+                resultado !== false
+              ) {
+
+                ejecutado = true;
+
+              }
+
             }
-          }
 
 
-          // OWNER
-          if (!ejecutado) {
+            // =========================================
+            // AJUSTES
+            // =========================================
 
-            const resultado =
-              await owner(
-                sock,
-                chat,
-                comando,
-                args,
-                id
-              );
+            if (!ejecutado) {
 
-            if (resultado !== false) {
-              ejecutado = true;
+              const resultado =
+                await ajustes(
+                  sock,
+                  chat,
+                  comando,
+                  args,
+                  id,
+                  esGrupo,
+                  esAdmin
+                );
+
+
+              if (
+                resultado !== false
+              ) {
+
+                ejecutado = true;
+
+              }
+
             }
-          }
 
 
-          // ============================================
-          // COMANDO DESCONOCIDO
-          // ============================================
+            // =========================================
+            // OWNER
+            // =========================================
 
-          if (!ejecutado) {
+            if (!ejecutado) {
 
-            await sock.sendMessage(
-              chat,
-              {
-                text:
-`❌ Comando no encontrado.
+              const resultado =
+                await owner(
+                  sock,
+                  chat,
+                  comando,
+                  args,
+                  id
+                );
 
-Usa:
+
+              if (
+                resultado !== false
+              ) {
+
+                ejecutado = true;
+
+              }
+
+            }
+
+ // =========================================
+// DESCONOCIDO
+// =========================================
+
+if (!ejecutado) {
+
+  await sock.sendMessage(
+    chat,
+    {
+      text:
+`❌ COMANDO NO ENCONTRADO
+
+El comando:
+
+.${comando}
+
+no existe.
+
+📋 Usa:
 
 .menu
 
-para ver todos los comandos disponibles.`
-              }
-            );
-          }
+para ver todos los comandos disponibles.
 
-        } catch (error) {
+🤖 TitanBot v${config.version}`
+    }
+  );
 
-          console.log(
-            "❌ Error procesando mensaje:",
-            error
-          );
+}
 
-        }
+} // fin del for
+
+} catch (error) {
+
+  console.log(
+    "❌ Error procesando mensaje:",
+    error
+  );
+
+}
 
       }
     );
 
 
-    // =================================================
-    // BIENVENIDA / DESPEDIDA
-    // =================================================
+// =================================================
+// BIENVENIDA / DESPEDIDA
+// =================================================
 
-    sock.ev.on(
-      "group-participants.update",
-      async ({
-        id: grupoId,
-        participants,
-        action
-      }) => {
+sock.ev.on(
+  "group-participants.update",
+  async ({
+    id: grupoId,
+    participants,
+    action
+  }) => {
 
-        try {
+    try {
 
-          const gruposDB =
-            require("./database/groups.json");
+      // Registrar automáticamente el grupo
+      registrarGrupo(grupoId);
 
-          const configuracion =
-            gruposDB[grupoId];
+      const gruposDB =
+        cargarGrupos();
 
-          if (!configuracion) {
-            return;
-          }
+      const configuracion =
+        gruposDB[grupoId];
+
+      if (!configuracion) {
+        return;
+      }
 
 
-          // =========================
-          // BIENVENIDA
-          // =========================
+      // =========================
+      // BIENVENIDA
+      // =========================
 
-          if (
-            action === "add" &&
-            configuracion.bienvenida
-          ) {
+      if (
+        action === "add" &&
+        configuracion.bienvenida
+      ) {
 
-            for (
-              const participante
-              of participants
-            ) {
+        for (
+          const participante
+          of participants
+        ) {
 
-              await sock.sendMessage(
-                grupoId,
-                {
-                  text:
+          await sock.sendMessage(
+            grupoId,
+            {
+              text:
 `🎉 ¡BIENVENIDO/A!
 
 👋 Hola @${participante.split("@")[0]}
 
 🤖 Bienvenido/a a este grupo.
-¡Esperamos que la pases muy bien!`,
-                  mentions: [
-                    participante
-                  ]
-                }
-              );
+¡Esperamos que la pases muy bien!
+
+📋 Usa .menu para ver los comandos.`,
+              mentions: [
+                participante
+              ]
             }
-          }
-
-
-          // =========================
-          // DESPEDIDA
-          // =========================
-
-          if (
-            action === "remove" &&
-            configuracion.despedida
-          ) {
-
-            for (
-              const participante
-              of participants
-            ) {
-
-              await sock.sendMessage(
-                grupoId,
-                {
-                  text:
-`👋 ¡Hasta luego!
-
-@${participante.split("@")[0]} ha salido del grupo.
-
-🤖 TitanBot`,
-                  mentions: [
-                    participante
-                  ]
-                }
-              );
-            }
-          }
-
-        } catch (error) {
-
-          console.log(
-            "Error bienvenida/despedida:",
-            error
           );
 
         }
 
       }
-    );
 
-  } catch (error) {
+
+      // =========================
+      // DESPEDIDA
+      // =========================
+
+      if (
+        action === "remove" &&
+        configuracion.despedida
+      ) {
+
+        for (
+          const participante
+          of participants
+        ) {
+
+          await sock.sendMessage(
+            grupoId,
+            {
+              text:
+`👋 ¡Hasta luego!
+
+@${participante.split("@")[0]} ha salido del grupo.
+
+🤖 TitanBot`,
+              mentions: [
+                participante
+              ]
+            }
+          );
+
+        }
+
+      }
+
+    } catch (error) {
+
+      console.log(
+        "❌ Error bienvenida/despedida:",
+        error
+      );
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// ERROR GENERAL
+// =====================================================
+
+process.on(
+  "uncaughtException",
+  (error) => {
 
     console.log(
-      "❌ Error iniciando TitanBot:",
+      "❌ Error no controlado:",
       error
     );
 
-    iniciando = false;
-
-    estado =
-      "🔴 Error iniciando el bot";
-
-    setTimeout(() => {
-
-      iniciarBot();
-
-    }, 5000);
   }
-}
+);
+
+process.on(
+  "unhandledRejection",
+  (error) => {
+
+    console.log(
+      "❌ Promesa rechazada:",
+      error
+    );
+
+  }
+);
 
 
 // =====================================================
