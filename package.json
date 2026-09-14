@@ -1,0 +1,14 @@
+{
+  "name": "titanbot",
+  "version": "1.0.0",
+  "description": "Bot para grupos de WhatsApp",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "latest",
+    "pino": "latest",
+    "qrcode-terminal": "latest"
+  }
+}
