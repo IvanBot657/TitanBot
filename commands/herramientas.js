@@ -1,8 +1,14 @@
-async function herramientas(sock, chat, comando, args) {
+async function herramientas(
+  sock,
+  chat,
+  comando,
+  args,
+  id
+) {
 
-  // ==============================
-  // MENÚ
-  // ==============================
+  // =========================
+  // MENÚ DE HERRAMIENTAS
+  // =========================
 
   if (comando === "herramientas") {
 
@@ -12,17 +18,22 @@ async function herramientas(sock, chat, comando, args) {
 
 🕐 .hora
 📅 .fecha
-🧮 .calculadora 5+5
-🔢 .numero
+🧮 .calculadora
 🆔 .id
-🤖 .botinfo`
-    });
+🤖 .botinfo
 
+Ejemplos:
+
+.calculadora 25+25
+.hora
+.fecha
+.id`
+    });
   }
 
-  // ==============================
+  // =========================
   // HORA
-  // ==============================
+  // =========================
 
   if (comando === "hora") {
 
@@ -33,6 +44,7 @@ async function herramientas(sock, chat, comando, args) {
       ahora.toLocaleTimeString(
         "es-CO",
         {
+          timeZone: "America/Bogota",
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit"
@@ -46,12 +58,11 @@ async function herramientas(sock, chat, comando, args) {
 🇨🇴 Colombia:
 ${hora}`
     });
-
   }
 
-  // ==============================
+  // =========================
   // FECHA
-  // ==============================
+  // =========================
 
   if (comando === "fecha") {
 
@@ -62,6 +73,7 @@ ${hora}`
       ahora.toLocaleDateString(
         "es-CO",
         {
+          timeZone: "America/Bogota",
           weekday: "long",
           year: "numeric",
           month: "long",
@@ -73,14 +85,13 @@ ${hora}`
       text:
 `📅 FECHA
 
-${fecha}`
+🇨🇴 ${fecha}`
     });
-
   }
 
-  // ==============================
+  // =========================
   // CALCULADORA
-  // ==============================
+  // =========================
 
   if (comando === "calculadora") {
 
@@ -93,30 +104,28 @@ ${fecha}`
         text:
 `🧮 CALCULADORA
 
-Ejemplo:
+Escribe una operación.
 
-.calculadora 5+5
+Ejemplos:
 
-También puedes usar:
-
+.calculadora 25+25
+.calculadora 100/4
 .calculadora 10*5
-.calculadora 20/4
-.calculadora 10-3`
+.calculadora 50-20`
       });
-
     }
 
-    // Solo permite números y operaciones básicas
+    // Solo permite números y operadores
     if (
-      !/^[0-9+\-*/().% ]+$/
-        .test(expresion)
+      !/^[0-9+\-*/().% ]+$/.test(
+        expresion
+      )
     ) {
 
       return sock.sendMessage(chat, {
         text:
-          "❌ Solo puedes utilizar números y operaciones matemáticas básicas."
+          "❌ La operación contiene caracteres no permitidos."
       });
-
     }
 
     try {
@@ -130,9 +139,7 @@ También puedes usar:
         typeof resultado !== "number" ||
         !Number.isFinite(resultado)
       ) {
-
         throw new Error();
-
       }
 
       return sock.sendMessage(chat, {
@@ -152,29 +159,26 @@ ${resultado}`
         text:
           "❌ No pude calcular esa operación."
       });
-
     }
-
   }
 
-  // ==============================
+  // =========================
   // ID
-  // ==============================
+  // =========================
 
   if (comando === "id") {
 
     return sock.sendMessage(chat, {
       text:
-`🆔 ID DEL CHAT
+`🆔 ID
 
-${chat}`
+${id}`
     });
-
   }
 
-  // ==============================
+  // =========================
   // INFORMACIÓN DEL BOT
-  // ==============================
+  // =========================
 
   if (comando === "botinfo") {
 
@@ -182,12 +186,21 @@ ${chat}`
       text:
 `🤖 TITANBOT
 
-📦 Versión: 2.5.0
-🟢 Estado: Online
-⚡ Sistema: WhatsApp
-🛠️ Categoría: Herramientas`
-    });
+📦 Versión:
+2.5.0
 
+🟢 Estado:
+Online
+
+⚡ Plataforma:
+WhatsApp
+
+🔧 Sistema:
+Baileys
+
+👨‍💻 Proyecto:
+TitanBot`
+    });
   }
 
   return false;
