@@ -1,32 +1,24 @@
 const config = require("../config");
 
-async function owner(
-  sock,
-  chat,
-  comando,
-  args,
-  id
-) {
+function obtenerNumero(id) {
+  return String(id || "")
+    .split("@")[0]
+    .split(":")[0]
+    .replace(/\D/g, "");
+}
 
-  // =========================
-  // COMPROBAR OWNER
-  // =========================
+function esOwner(id) {
+  const usuario = obtenerNumero(id);
+  const creador = obtenerNumero(config.creador);
 
-  const numeroUsuario =
-    String(id)
-      .split("@")[0]
-      .replace(/\D/g, "");
+  return usuario !== "" && usuario === creador;
+}
 
-  const numeroOwner =
-    String(config.creador)
-      .replace(/\D/g, "");
+async function owner(sock, chat, comando, args, id) {
 
-  const esOwner =
-    numeroUsuario === numeroOwner;
-
-  // =========================
-  // INFORMACIÓN DEL OWNER
-  // =========================
+  // ========================================
+  // OWNER PÚBLICO
+  // ========================================
 
   if (comando === "owner") {
 
@@ -34,103 +26,147 @@ async function owner(
       text:
 `👑 CREADOR DE TITANBOT
 
-🤖 Bot:
+🤖 ${config.nombre}
+
+📦 Versión:
+${config.version}
+
+👑 Número:
+${config.creador}
+
+━━━━━━━━━━━━━━━━━━
+
+⚡ TitanBot`
+    });
+  }
+
+
+  // ========================================
+  // COMPROBAR OWNER
+  // ========================================
+
+  if (
+    comando === "ownermenu" ||
+    comando === "botstatus" ||
+    comando === "reiniciar"
+  ) {
+
+    if (!esOwner(id)) {
+
+      return sock.sendMessage(chat, {
+        text:
+`❌ ACCESO DENEGADO
+
+Este comando es exclusivo
+del creador de TitanBot.`
+      });
+    }
+  }
+
+
+  // ========================================
+  // MENÚ OWNER
+  // ========================================
+
+  if (comando === "ownermenu") {
+
+    return sock.sendMessage(chat, {
+      text:
+`👑 TITANBOT OWNER
+
+🔐 COMANDOS PRIVADOS
+
+📊 .botstatus
+Ver estado del bot.
+
+🔄 .reiniciar
+Reiniciar el proceso.
+
+━━━━━━━━━━━━━━━━━━
+
+👑 Solo el creador puede
+utilizar estos comandos.`
+    });
+  }
+
+
+  // ========================================
+  // ESTADO DEL BOT
+  // ========================================
+
+  if (comando === "botstatus") {
+
+    const memoria =
+      process.memoryUsage();
+
+    const memoriaMB =
+      (memoria.rss / 1024 / 1024)
+        .toFixed(2);
+
+    const uptime =
+      Math.floor(
+        process.uptime()
+      );
+
+    const horas =
+      Math.floor(
+        uptime / 3600
+      );
+
+    const minutos =
+      Math.floor(
+        (uptime % 3600) / 60
+      );
+
+    const segundos =
+      uptime % 60;
+
+    return sock.sendMessage(chat, {
+      text:
+`📊 ESTADO DEL TITANBOT
+
+🟢 Estado:
+ONLINE
+
+🤖 Nombre:
 ${config.nombre}
 
 📦 Versión:
 ${config.version}
 
-👑 Creador:
-${config.creador}`
+⏱️ Tiempo activo:
+${horas}h ${minutos}m ${segundos}s
+
+💾 Memoria:
+${memoriaMB} MB
+
+🟢 Sistema:
+Funcionando correctamente`
     });
   }
 
-  // =========================
-  // MENÚ OWNER
-  // =========================
 
-  if (comando === "ownermenu") {
-
-    if (!esOwner) {
-      return sock.sendMessage(chat, {
-        text:
-          "❌ Este comando es exclusivo del creador."
-      });
-    }
-
-    return sock.sendMessage(chat, {
-      text:
-`👑 MENÚ OWNER
-
-🤖 ${config.nombre}
-📦 v${config.version}
-
-🛠️ COMANDOS
-
-.owner
-.ownermenu
-.botstatus
-.reiniciar`
-    });
-  }
-
-  // =========================
-  // ESTADO DEL BOT
-  // =========================
-
-  if (comando === "botstatus") {
-
-    if (!esOwner) {
-      return sock.sendMessage(chat, {
-        text:
-          "❌ Este comando es exclusivo del creador."
-      });
-    }
-
-    return sock.sendMessage(chat, {
-      text:
-`🤖 ESTADO DEL BOT
-
-🟢 Estado: ONLINE
-
-📦 Versión:
-${config.version}
-
-⚡ Plataforma:
-WhatsApp
-
-🔧 Sistema:
-Baileys
-
-👑 Owner:
-${config.creador}`
-    });
-  }
-
-  // =========================
+  // ========================================
   // REINICIAR
-  // =========================
+  // ========================================
 
   if (comando === "reiniciar") {
 
-    if (!esOwner) {
-      return sock.sendMessage(chat, {
-        text:
-          "❌ Este comando es exclusivo del creador."
-      });
-    }
-
     await sock.sendMessage(chat, {
       text:
-        "🔄 TitanBot se está reiniciando..."
+`🔄 REINICIANDO TITANBOT...
+
+⏳ El bot volverá a conectarse
+en unos segundos.`
     });
 
     setTimeout(() => {
       process.exit(0);
-    }, 1000);
+    }, 1500);
 
     return true;
   }
+
 
   return false;
 }
