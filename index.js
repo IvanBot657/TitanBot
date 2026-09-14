@@ -2435,6 +2435,10 @@ if (
 }
 
 return;
+
+} catch (error) {
+  console.error("❌ Error en ejecutarComando:", error);
+}
 }
 
 
