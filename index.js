@@ -46,82 +46,83 @@ const server = http.createServer(async (req, res) => {
 
   if (req.url === "/qr") {
 
-    res.writeHead(200, {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store"
-    });
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store"
+  });
 
-    res.end(`
+  res.end(`
 <!DOCTYPE html>
-
 <html lang="es">
-
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta charset="UTF-8">
+  <title>TitanBot QR</title>
 
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
 
-<title>TitanBot QR</title>
+    h1 {
+      margin-bottom: 10px;
+    }
 
-<style>
+    #estado {
+      margin: 15px;
+      font-size: 18px;
+    }
 
-body {
-  background: #111;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  padding: 25px;
-}
+    #qr {
+      width: 290px;
+      height: 290px;
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+      display: none;
+    }
 
-h1 {
-  color: #00ff88;
-}
-
-#qr {
-  width: 320px;
-  max-width: 90%;
-  background: white;
-  padding: 10px;
-  border-radius: 15px;
-  display: none;
-}
-
-#estado {
-  font-size: 20px;
-  margin: 20px;
-}
-
-</style>
-
+    #mensaje {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+  </style>
 </head>
 
 <body>
 
-<h1>🤖 TITANBOT V2.5</h1>
+  <h1>🤖 TITANBOT V2.5</h1>
 
-<div id="estado">
-🟡 Conectando...
-</div>
+  <div id="estado">
+    🟡 Cargando...
+  </div>
 
-<img id="qr">
+  <img id="qr" alt="Código QR">
 
-<p id="mensaje">
-⏳ Esperando código QR...
-</p>
+  <div id="mensaje">
+    ⏳ Buscando código QR...
+  </div>
 
 <script>
 
-async function actualizar() {
+async function actualizarQR() {
 
   try {
 
-    const respuesta =
-      await fetch("/qr-data?t=" + Date.now());
+    const respuesta = await fetch(
+      "/qr-data?t=" + Date.now(),
+      {
+        cache: "no-store"
+      }
+    );
 
-    const datos =
-      await respuesta.json();
+    const datos = await respuesta.json();
 
     document.getElementById("estado").textContent =
       datos.estado;
@@ -135,16 +136,20 @@ async function actualizar() {
     if (datos.qr) {
 
       imagen.src = datos.qr;
+
       imagen.style.display = "inline-block";
 
       mensaje.textContent =
-        "📱 Escanea este QR con WhatsApp";
+        "📱 Escanea este código con WhatsApp";
 
     } else {
 
       imagen.style.display = "none";
 
-      if (datos.estado.includes("Conectado")) {
+      if (
+        datos.estado &&
+        datos.estado.includes("conectado")
+      ) {
 
         mensaje.textContent =
           "✅ TitanBot está conectado";
@@ -155,30 +160,29 @@ async function actualizar() {
           "⏳ Esperando código QR...";
 
       }
-
     }
 
   } catch (error) {
 
+    console.log(error);
+
     document.getElementById("mensaje").textContent =
-      "⚠️ No se pudo consultar el servidor.";
+      "⚠️ Error cargando el QR";
 
   }
-
 }
 
-actualizar();
+actualizarQR();
 
-setInterval(actualizar, 2000);
+setInterval(actualizarQR, 1000);
 
 </script>
 
 </body>
-
 </html>
 `);
 
-    return;
+  return;
   }
 
   // ==============================
