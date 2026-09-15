@@ -153,15 +153,18 @@ Revisa los logs de Render y envíame lo que aparece después de:
 Tunelio:`
       });
 
-    } catch (error) {
+     } catch (error) {
 
-      console.log(error);
+  console.log("ERROR TUNELIO:");
+  console.log(error.response?.data || error.message);
 
-      await sock.sendMessage(chat, {
-        text:
-          "❌ Error al generar el audio."
-      });
-    }
+  await sock.sendMessage(chat, {
+    text:
+`❌ Error al generar el audio.
+
+${error.message}`
+  });
+}
 
     return true;
   }
