@@ -2,7 +2,6 @@ const axios = require("axios");
 
 async function buscarCancion(nombre) {
   try {
-
     const respuesta = await axios.get(
       `https://itunes.apple.com/search?term=${encodeURIComponent(nombre)}&limit=1`
     );
@@ -30,41 +29,47 @@ async function musica(
   const cmd =
     String(comando || "").toLowerCase();
 
+  // ==============================
+  // PLAY
+  // ==============================
+
+  if (cmd === "play") {
+
+    const busqueda = args.join(" ");
+
+    if (!busqueda) {
+
+      await sock.sendMessage(chat, {
+        text:
+`🎵 Escribe el nombre de una canción.
+
+Ejemplo:
+.play Believer`
+      });
+
       return true;
-  }
+    }
 
-  return false;
-}
+    const cancion =
+      await buscarCancion(busqueda);
 
- if (cmd === "play") {
+    if (!cancion) {
 
-  const busqueda = args.join(" ");
+      await sock.sendMessage(chat, {
+        text: "❌ No encontré resultados."
+      });
 
-  if (!busqueda) {
-
-    await sock.sendMessage(chat, {
-      text: "🎵 Escribe el nombre de una canción.\n\nEjemplo:\n.play Believer"
-    });
-
-    return true;
-  }
-
-  const cancion = await buscarCancion(busqueda);
-
-  if (!cancion) {
+      return true;
+    }
 
     await sock.sendMessage(chat, {
-      text: "❌ No encontré resultados."
-    });
-
-    return true;
-  }
-
-  await sock.sendMessage(chat, {
-    image: {
-      url: cancion.artworkUrl100.replace("100x100", "600x600")
-    },
-    caption:
+      image: {
+        url: cancion.artworkUrl100.replace(
+          "100x100",
+          "600x600"
+        )
+      },
+      caption:
 `🎵 *${cancion.trackName}*
 
 🎤 Artista: ${cancion.artistName}
@@ -72,7 +77,13 @@ async function musica(
 
 🔗 Vista previa:
 ${cancion.trackViewUrl}`
-  });
+    });
 
-  return true;
- }
+    return true;
+  }
+
+  return false;
+}
+
+module.exports = musica;
+module.exports.musica = musica;
