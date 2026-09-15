@@ -7,9 +7,13 @@ function cargarDB() {
     fs.writeFileSync(DB, "{}");
   }
 
-  return JSON.parse(
-    fs.readFileSync(DB, "utf8")
-  );
+  try {
+    return JSON.parse(
+      fs.readFileSync(DB, "utf8")
+    );
+  } catch {
+    return {};
+  }
 }
 
 function guardarDB(db) {
@@ -22,15 +26,34 @@ function guardarDB(db) {
 function crearUsuario(db, id) {
 
   if (!db[id]) {
-
     db[id] = {
       nombre: "Usuario",
       dinero: 500,
-      banco: 0
+      banco: 0,
+      inventario: {}
     };
-
   }
 
+  if (typeof db[id].dinero !== "number") {
+    db[id].dinero = 500;
+  }
+
+  if (typeof db[id].banco !== "number") {
+    db[id].banco = 0;
+  }
+
+  if (!db[id].inventario) {
+    db[id].inventario = {};
+  }
+}
+
+function agregarObjeto(usuario, objeto, cantidad = 1) {
+
+  if (!usuario.inventario[objeto]) {
+    usuario.inventario[objeto] = 0;
+  }
+
+  usuario.inventario[objeto] += cantidad;
 }
 
 async function economia(
@@ -38,45 +61,60 @@ async function economia(
   chat,
   comando,
   args,
-  id
-){
+  id,
+  msg
+) {
 
   const db = cargarDB();
 
   crearUsuario(db, id);
 
+  const usuario = db[id];
+
+  // ========================================
   // SALDO
+  // ========================================
+
   if (comando === "saldo") {
 
-    return sock.sendMessage(chat, 
-
-{
+    return sock.sendMessage(chat, {
       text:
 `💰 SALDO
 
-Efectivo: ${db[id].dinero}
-Banco: ${db[id].banco}`
+💵 Efectivo: ${usuario.dinero} TitanCoins
+🏦 Banco: ${usuario.banco} TitanCoins
+💎 Total: ${usuario.dinero + usuario.banco} TitanCoins`
     });
-
   }
 
+  // ========================================
   // DAILY
+  // ========================================
+
   if (comando === "daily") {
 
-    db[id].dinero += 500;
+    const recompensa = 500;
+
+    usuario.dinero += recompensa;
 
     guardarDB(db);
 
     return sock.sendMessage(chat, {
       text:
-`🎁 Daily reclamado
+`🎁 DAILY
 
-+500 TitanCoins`
+💰 Recibiste:
++${recompensa} TitanCoins
+
+💵 Saldo:
+${usuario.dinero} TitanCoins`
     });
-
   }
 
+  // ========================================
   // TRABAJAR
+  // ========================================
+
   if (comando === "trabajar") {
 
     const ganancia =
@@ -84,114 +122,355 @@ Banco: ${db[id].banco}`
         Math.random() * 500
       ) + 100;
 
-    db[id].dinero += ganancia;
+    usuario.dinero += ganancia;
 
     guardarDB(db);
 
     return sock.sendMessage(chat, {
       text:
-`💼 Trabajaste
+`💼 TRABAJO
 
-Ganaste ${ganancia} TitanCoins`
+👷 Trabajaste duro.
+
+💰 Ganaste:
++${ganancia} TitanCoins
+
+💵 Saldo:
+${usuario.dinero} TitanCoins`
     });
-
-  }  
-  
-// MINAR
-if (comando === "minar") {
-
-  const ganancia = Math.floor(Math.random() * 800) + 200;
-
-  db[id].dinero += ganancia;
-
-  guardarDB(db);
-
-  return sock.sendMessage(chat, {
-    text: `⛏️ Minaste y obtuviste ${ganancia} TitanCoins`
-  });
-
-}
-
-// PESCAR
-if (comando === "pescar") {
-
-  const ganancia = Math.floor(Math.random() * 600) + 100;
-
-  db[id].dinero += ganancia;
-
-  guardarDB(db);
-
-  return sock.sendMessage(chat, {
-    text: `🎣 Pescaste y ganaste ${ganancia} TitanCoins`
-  });
-
-}
-
-// CASINO
-if (comando === "casino") {
-
-  const gana = Math.random() < 0.5;
-
-  const cantidad = 500;
-
-  if (gana) {
-    db[id].dinero += cantidad;
-  } else {
-    db[id].dinero -= cantidad;
   }
 
-  guardarDB(db);
+  // ========================================
+  // MINAR
+  // ========================================
 
-return sock.sendMessage(chat, {
-  text: gana
-    ? `🎉 Ganaste ${cantidad} TitanCoins`
-    : `💸 Perdiste ${cantidad} TitanCoins`
-});
-  
-}
+  if (comando === "minar") {
 
-// APOSTAR
-if (comando === "apostar") {
+    const minerales = [
+      {
+        nombre: "Carbón",
+        valor: 100
+      },
+      {
+        nombre: "Hierro",
+        valor: 200
+      },
+      {
+        nombre: "Oro",
+        valor: 400
+      },
+      {
+        nombre: "Diamante",
+        valor: 800
+      }
+    ];
 
-  return sock.sendMessage(chat, {
-    text: "🎲 Usa: .apostar cantidad"
-  });
+    const mineral =
+      minerales[
+        Math.floor(
+          Math.random() *
+          minerales.length
+        )
+      ];
 
-}
+    agregarObjeto(
+      usuario,
+      mineral.nombre
+    );
 
-// TRANSFERIR
-if (comando === "transferir") {
+    usuario.dinero += mineral.valor;
 
-  return sock.sendMessage(chat, {
-    text: "💸 Sistema de transferencias en desarrollo"
-  });
+    guardarDB(db);
 
-}
+    return sock.sendMessage(chat, {
+      text:
+`⛏️ MINERÍA
 
-// INVENTARIO
-if (comando === "inventario") {
+Encontraste:
+💎 ${mineral.nombre}
 
-  return sock.sendMessage(chat, {
-    text: "🎒 Inventario vacío"
-  });
+💰 Valor:
++${mineral.valor} TitanCoins
 
-}
+🎒 También fue añadido a tu inventario.`
+    });
+  }
 
-// MERCADO
-if (comando === "mercado") {
+  // ========================================
+  // PESCAR
+  // ========================================
 
-  return sock.sendMessage(chat, {
-    text: `🏪 MERCADO
+  if (comando === "pescar") {
 
-🪵 Madera - 100
-⛏️ Pico - 500
-🎣 Caña - 700`
-  });
+    const peces = [
+      {
+        nombre: "Sardina",
+        valor: 100
+      },
+      {
+        nombre: "Trucha",
+        valor: 200
+      },
+      {
+        nombre: "Salmón",
+        valor: 350
+      },
+      {
+        nombre: "Pez Dorado",
+        valor: 700
+      }
+    ];
 
-}
+    const pez =
+      peces[
+        Math.floor(
+          Math.random() *
+          peces.length
+        )
+      ];
 
-return false;
+    agregarObjeto(
+      usuario,
+      pez.nombre
+    );
 
+    usuario.dinero += pez.valor;
+
+    guardarDB(db);
+
+    return sock.sendMessage(chat, {
+      text:
+`🎣 PESCA
+
+Capturaste:
+🐟 ${pez.nombre}
+
+💰 Valor:
++${pez.valor} TitanCoins
+
+🎒 Añadido a tu inventario.`
+    });
+  }
+
+  // ========================================
+  // TRANSFERIR
+  // ========================================
+
+  if (comando === "transferir") {
+
+    const cantidad =
+      parseInt(args[0]);
+
+    const mencionados =
+      msg?.message
+        ?.extendedTextMessage
+        ?.contextInfo
+        ?.mentionedJid || [];
+
+    const destino =
+      mencionados[0];
+
+    if (!destino) {
+
+      return sock.sendMessage(chat, {
+        text:
+`❌ Debes mencionar al usuario.
+
+Ejemplo:
+
+.transferir @usuario 500`
+      });
+    }
+
+    if (
+      !cantidad ||
+      cantidad <= 0
+    ) {
+
+      return sock.sendMessage(chat, {
+        text:
+"❌ Indica una cantidad válida."
+      });
+    }
+
+    if (
+      usuario.dinero < cantidad
+    ) {
+
+      return sock.sendMessage(chat, {
+        text:
+"❌ No tienes suficientes TitanCoins."
+      });
+    }
+
+    crearUsuario(
+      db,
+      destino
+    );
+
+    usuario.dinero -= cantidad;
+
+    db[destino].dinero += cantidad;
+
+    guardarDB(db);
+
+    return sock.sendMessage(chat, {
+      text:
+`💸 TRANSFERENCIA
+
+👤 Destinatario:
+@${destino.split("@")[0]}
+
+💰 Cantidad:
+${cantidad} TitanCoins
+
+✅ Transferencia realizada.`,
+      mentions: [
+        destino
+      ]
+    });
+  }
+
+  // ========================================
+  // INVENTARIO
+  // ========================================
+
+  if (comando === "inventario") {
+
+    const objetos =
+      Object.entries(
+        usuario.inventario
+      );
+
+    if (objetos.length === 0) {
+
+      return sock.sendMessage(chat, {
+        text:
+`🎒 INVENTARIO
+
+Tu inventario está vacío.`
+      });
+    }
+
+    let texto =
+      "🎒 INVENTARIO\n\n";
+
+    objetos.forEach(
+      ([nombre, cantidad]) => {
+
+        texto +=
+          `📦 ${nombre}: ${cantidad}\n`;
+
+      }
+    );
+
+    return sock.sendMessage(chat, {
+      text: texto
+    });
+  }
+
+  // ========================================
+  // MERCADO
+  // ========================================
+
+  if (comando === "mercado") {
+
+    return sock.sendMessage(chat, {
+      text:
+`🏪 MERCADO
+
+1️⃣ Madera — 100 TitanCoins
+2️⃣ Pico — 500 TitanCoins
+3️⃣ Caña — 700 TitanCoins
+
+🛒 Para comprar:
+
+.comprar madera
+
+.comprar pico
+
+.comprar caña`
+    });
+  }
+
+  // ========================================
+  // COMPRAR
+  // ========================================
+
+  if (comando === "comprar") {
+
+    const producto =
+      args[0]?.toLowerCase();
+
+    const tienda = {
+
+      madera: {
+        precio: 100,
+        nombre: "Madera"
+      },
+
+      pico: {
+        precio: 500,
+        nombre: "Pico"
+      },
+
+      caña: {
+        precio: 700,
+        nombre: "Caña"
+      }
+
+    };
+
+    if (!tienda[producto]) {
+
+      return sock.sendMessage(chat, {
+        text:
+`❌ Producto no encontrado.
+
+Usa:
+
+.mercado`
+      });
+    }
+
+    const item =
+      tienda[producto];
+
+    if (
+      usuario.dinero < item.precio
+    ) {
+
+      return sock.sendMessage(chat, {
+        text:
+"❌ No tienes suficientes TitanCoins."
+      });
+    }
+
+    usuario.dinero -=
+      item.precio;
+
+    agregarObjeto(
+      usuario,
+      item.nombre
+    );
+
+    guardarDB(db);
+
+    return sock.sendMessage(chat, {
+      text:
+`🛒 COMPRA
+
+📦 Producto:
+${item.nombre}
+
+💰 Precio:
+${item.precio} TitanCoins
+
+✅ Comprado correctamente.`
+    });
+  }
+
+  return false;
 }
 
 module.exports = economia;
