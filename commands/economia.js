@@ -144,12 +144,12 @@ if (comando === "casino") {
 
   guardarDB(db);
 
-  return sock.sendMessage(chat, {
-    text: gana
-      ? `🎰 ¡Ganaste ${cantidad} TitanCoins!`
-      : `🎰 Perdiste ${cantidad} TitanCoins`
-  });
-
+return sock.sendMessage(chat, {
+  text: gana
+    ? `🎉 Ganaste ${cantidad} TitanCoins`
+    : `💸 Perdiste ${cantidad} TitanCoins`
+});
+  
 }
 
 // APOSTAR
@@ -183,13 +183,14 @@ if (comando === "inventario") {
 if (comando === "mercado") {
 
   return sock.sendMessage(chat, {
-    text:
-`🏪 MERCADO
+    text: `🏪 MERCADO
 
 🪵 Madera - 100
 ⛏️ Pico - 500
 🎣 Caña - 700`
   });
+
+}
 
 return false;
 
