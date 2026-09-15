@@ -6,13 +6,13 @@ module.exports = {
 
   prefijo: ".",
 
-  creador: "573237210190",
+  creador: "573508138894",
 
   moneda: "TitanCoins",
 
   color: "#00ff88",
 
-  web:
+  web: "https://tu-web.com",
 
   soporte: "573508138894"
 
