@@ -1,174 +1,140 @@
-const config = require("../config");
+const OWNER = "573237210190";
 
-function obtenerNumero(id) {
-  return String(id || "")
-    .split("@")[0]
-    .split(":")[0]
-    .replace(/\D/g, "");
-}
+async function owner(
+  sock,
+  chat,
+  comando,
+  args,
+  id
+) {
 
-function esOwner(id) {
-  const usuario = obtenerNumero(id);
-  const creador = obtenerNumero(config.creador);
+  const numero =
+    id.split("@")[0];
 
-  return usuario !== "" && usuario === creador;
-}
-
-async function owner(sock, chat, comando, args, id) {
+  const esOwner =
+    numero === OWNER;
 
   // ========================================
-  // OWNER PÚBLICO
+  // SOLO OWNER
   // ========================================
 
-  if (comando === "owner") {
+  const comandosOwner = [
 
-    return sock.sendMessage(chat, {
-      text:
-`👑 CREADOR DE TITANBOT
+    "botstatus",
+    "broadcast",
+    "shutdown"
 
-🤖 ${config.nombre}
-
-📦 Versión:
-${config.version}
-
-👑 Número:
-${config.creador}
-
-━━━━━━━━━━━━━━━━━━
-
-⚡ TitanBot`
-    });
-  }
-
-
-  // ========================================
-  // COMPROBAR OWNER
-  // ========================================
+  ];
 
   if (
-    comando === "ownermenu" ||
-    comando === "botstatus" ||
-    comando === "reiniciar"
+    comandosOwner.includes(comando) &&
+    !esOwner
   ) {
 
-    if (!esOwner(id)) {
-
-      return sock.sendMessage(chat, {
-        text:
-`❌ ACCESO DENEGADO
-
-Este comando es exclusivo
-del creador de TitanBot.`
-      });
-    }
-  }
-
-
-  // ========================================
-  // MENÚ OWNER
-  // ========================================
-
-  if (comando === "ownermenu") {
-
     return sock.sendMessage(chat, {
+
       text:
-`👑 TITANBOT OWNER
+        "❌ Solo el Owner puede usar este comando."
 
-🔐 COMANDOS PRIVADOS
-
-📊 .botstatus
-Ver estado del bot.
-
-🔄 .reiniciar
-Reiniciar el proceso.
-
-━━━━━━━━━━━━━━━━━━
-
-👑 Solo el creador puede
-utilizar estos comandos.`
     });
+
   }
 
-
   // ========================================
-  // ESTADO DEL BOT
+  // BOTSTATUS
   // ========================================
 
   if (comando === "botstatus") {
 
     const memoria =
-      process.memoryUsage();
-
-    const memoriaMB =
-      (memoria.rss / 1024 / 1024)
-        .toFixed(2);
+      (
+        process.memoryUsage().rss /
+        1024 /
+        1024
+      ).toFixed(2);
 
     const uptime =
       Math.floor(
         process.uptime()
       );
 
-    const horas =
-      Math.floor(
-        uptime / 3600
-      );
-
-    const minutos =
-      Math.floor(
-        (uptime % 3600) / 60
-      );
-
-    const segundos =
-      uptime % 60;
-
     return sock.sendMessage(chat, {
+
       text:
-`📊 ESTADO DEL TITANBOT
+`🤖 TITANBOT V3.0
 
 🟢 Estado:
-ONLINE
+Online
 
-🤖 Nombre:
-${config.nombre}
+⏱️ Uptime:
+${uptime}s
 
-📦 Versión:
-${config.version}
+💾 RAM:
+${memoria} MB
 
-⏱️ Tiempo activo:
-${horas}h ${minutos}m ${segundos}s
+🚀 Sistema:
+Operativo`
 
-💾 Memoria:
-${memoriaMB} MB
-
-🟢 Sistema:
-Funcionando correctamente`
     });
+
   }
 
+  // ========================================
+  // BROADCAST
+  // ========================================
+
+  if (comando === "broadcast") {
+
+    const mensaje =
+      args.join(" ");
+
+    if (!mensaje) {
+
+      return sock.sendMessage(chat, {
+
+        text:
+`📢 Usa:
+
+.broadcast mensaje`
+
+      });
+
+    }
+
+    return sock.sendMessage(chat, {
+
+      text:
+`📢 BROADCAST
+
+Mensaje preparado:
+
+${mensaje}
+
+(En v3.0 básica solo se muestra al owner.)`
+
+    });
+
+  }
 
   // ========================================
-  // REINICIAR
+  // SHUTDOWN
   // ========================================
 
-  if (comando === "reiniciar") {
+  if (comando === "shutdown") {
 
     await sock.sendMessage(chat, {
-      text:
-`🔄 REINICIANDO TITANBOT...
 
-⏳ El bot volverá a conectarse
-en unos segundos.`
+      text:
+`🛑 TitanBot apagándose...`
+
     });
 
-    setTimeout(() => {
-      process.exit(0);
-    }, 1500);
+    process.exit(0);
 
-    return true;
   }
 
-
   return false;
+
 }
 
 module.exports = owner;
