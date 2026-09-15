@@ -70,6 +70,19 @@ async function inicio(
 ┃ • .8ball
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🎭 ROLEPLAY 〕━━━╮
+┃ • .abrazar
+┃ • .besar
+┃ • .golpear
+┃ • .patada
+┃ • .saludar
+┃ • .felicitar
+┃ • .reir
+┃ • .llorar
+┃ • .enojado
+┃ • .bailar
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🎌 ANIME 〕━━━╮
 ┃ • .anime
 ┃ • .animebuscar
