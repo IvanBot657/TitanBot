@@ -1,239 +1,245 @@
-const config = require("../config");
+async function herramientas(
+  sock,
+  chat,
+  comando,
+  args,
+  id
+) {
 
-async function herramientas(sock, chat, comando, args, id) {
-
-  // ========================================
-  // MENÚ DE HERRAMIENTAS
-  // ========================================
-
-  if (comando === "herramientas") {
-    return sock.sendMessage(chat, {
-      text:
-`🛠️ HERRAMIENTAS TITANBOT
-
-🕐 .hora
-Ver la hora actual.
-
-📅 .fecha
-Ver la fecha actual.
-
-🧮 .calculadora operación
-Hacer cálculos.
-
-🆔 .id
-Ver tu ID.
-
-🤖 .botinfo
-Información del bot.
-
-━━━━━━━━━━━━━━━━━━
-
-Ejemplo:
-
-.calculadora 25*4+10`
-    });
-  }
-
-
-  // ========================================
+  // ==========================
   // HORA
-  // ========================================
+  // ==========================
 
   if (comando === "hora") {
 
-    const ahora = new Date();
-
-    const hora = ahora.toLocaleTimeString(
-      "es-CO",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-        timeZone: "America/Bogota"
-      }
-    );
+    const hora =
+      new Date().toLocaleTimeString();
 
     return sock.sendMessage(chat, {
+
       text:
-`🕐 HORA ACTUAL
+`🕒 HORA
 
-🇨🇴 Colombia
+${hora}`
 
-⏰ ${hora}`
     });
+
   }
 
-
-  // ========================================
+  // ==========================
   // FECHA
-  // ========================================
+  // ==========================
 
   if (comando === "fecha") {
 
-    const ahora = new Date();
-
-    const fecha = ahora.toLocaleDateString(
-      "es-CO",
-      {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone: "America/Bogota"
-      }
-    );
+    const fecha =
+      new Date().toLocaleDateString();
 
     return sock.sendMessage(chat, {
+
       text:
-`📅 FECHA ACTUAL
+`📅 FECHA
 
-🇨🇴 Colombia
+${fecha}`
 
-📆 ${fecha}`
     });
+
   }
 
+  // ==========================
+  // ID
+  // ==========================
 
-  // ========================================
+  if (comando === "id") {
+
+    return sock.sendMessage(chat, {
+
+      text:
+`🆔 ID
+
+${id}`
+
+    });
+
+  }
+
+  // ==========================
+  // RANDOM
+  // ==========================
+
+  if (comando === "random") {
+
+    const min =
+      Number(args[0]);
+
+    const max =
+      Number(args[1]);
+
+    if (
+      isNaN(min) ||
+      isNaN(max)
+    ) {
+
+      return sock.sendMessage(chat, {
+
+        text:
+`🎲 Usa:
+
+.random 1 100`
+
+      });
+
+    }
+
+    const numero =
+      Math.floor(
+        Math.random() *
+        (max - min + 1)
+      ) + min;
+
+    return sock.sendMessage(chat, {
+
+      text:
+`🎲 RANDOM
+
+Resultado:
+
+${numero}`
+
+    });
+
+  }
+
+  // ==========================
   // CALCULADORA
-  // ========================================
+  // ==========================
 
   if (comando === "calculadora") {
 
-    if (args.length === 0) {
+    const operacion =
+      args.join("");
+
+    if (!operacion) {
+
       return sock.sendMessage(chat, {
+
         text:
-`🧮 CALCULADORA
+`🔢 Usa:
 
-Escribe una operación.
+.calculadora 5+5`
 
-Ejemplos:
-
-.calculadora 10+5
-
-.calculadora 20*3
-
-.calculadora 100/4
-
-.calculadora (10+5)*2`
       });
-    }
 
-    const expresion = args.join(" ");
-
-    // Solo permite números y operaciones básicas
-    if (!/^[0-9+\-*/().% ]+$/.test(expresion)) {
-      return sock.sendMessage(chat, {
-        text:
-`❌ OPERACIÓN NO VÁLIDA
-
-Solo puedes utilizar:
-
-🔢 Números
-➕ Suma
-➖ Resta
-✖️ Multiplicación
-➗ División
-% Porcentaje
-( ) Paréntesis`
-      });
     }
 
     try {
 
       const resultado =
-        Function(
-          `"use strict"; return (${expresion})`
-        )();
-
-      if (
-        typeof resultado !== "number" ||
-        !Number.isFinite(resultado)
-      ) {
-        throw new Error();
-      }
+        eval(operacion);
 
       return sock.sendMessage(chat, {
+
         text:
-`🧮 CALCULADORA
+`🔢 RESULTADO
 
-📥 Operación:
-${expresion}
-
-📤 Resultado:
 ${resultado}`
+
       });
 
     } catch {
 
       return sock.sendMessage(chat, {
+
         text:
-`❌ No pude calcular esa operación.
+"❌ Operación inválida."
 
-Ejemplo:
-
-.calculadora 25*4`
       });
+
     }
+
   }
 
+  // ==========================
+  // MAYUSCULAS
+  // ==========================
 
-  // ========================================
-  // ID
-  // ========================================
+  if (comando === "mayusculas") {
 
-  if (comando === "id") {
+    const texto =
+      args.join(" ");
+
+    if (!texto) {
+
+      return sock.sendMessage(chat, {
+
+        text:
+`🔤 Usa:
+
+.mayusculas hola mundo`
+
+      });
+
+    }
 
     return sock.sendMessage(chat, {
-      text:
-`🆔 TU ID
 
-${id}`
+      text:
+texto.toUpperCase()
+
     });
+
   }
 
+  // ==========================
+  // MINUSCULAS
+  // ==========================
 
-  // ========================================
-  // BOT INFO
-  // ========================================
+  if (comando === "minusculas") {
 
-  if (comando === "botinfo") {
+    const texto =
+      args.join(" ");
+
+    if (!texto) {
+
+      return sock.sendMessage(chat, {
+
+        text:
+`🔡 Usa:
+
+.minusculas HOLA MUNDO`
+
+      });
+
+    }
 
     return sock.sendMessage(chat, {
+
       text:
-`🤖 INFORMACIÓN DE TITANBOT
+texto.toLowerCase()
 
-╔════════════════════╗
-║    🤖 TITANBOT     ║
-╚════════════════════╝
-
-📦 Nombre:
-${config.nombre}
-
-🔢 Versión:
-${config.version}
-
-🟢 Estado:
-Online
-
-⚡ Plataforma:
-WhatsApp
-
-🔧 Sistema:
-Baileys
-
-👑 Creador:
-${config.creador}
-
-━━━━━━━━━━━━━━━━━━
-
-🚀 TitanBot v${config.version}`
     });
+
   }
 
+  // ==========================
+  // PING
+  // ==========================
+
+  if (comando === "ping") {
+
+    return sock.sendMessage(chat, {
+
+      text:
+`🏓 PONG
+
+🟢 TitanBot Online`
+
+    });
+
+  }
 
   return false;
+
 }
 
 module.exports = herramientas;
