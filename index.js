@@ -18,8 +18,8 @@ const juegos = require("./commands/juegos");
 const roleplay = require("./commands/roleplay");
 const diversion = require("./commands/diversion");
 const anime = require("./commands/anime");
-const grupos = require("./commands/grupos");
 const musica = require("./commands/musica");
+const grupos = require("./commands/grupos");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
@@ -1059,7 +1059,24 @@ ${resultadoXP.nivel}
 
             }
 
+            // =========================================
+            // MÚSICA 
+            // =========================================
 
+            if (!ejecutado) {
+              const resultado = await musica(
+                sock,
+                chat,
+                comando,
+                args,
+                id
+              );
+
+             if (resultado) {
+              ejecutado = true;
+             }
+           }
+             
             // =========================================
             // GRUPOS
             // =========================================
