@@ -1,3 +1,8 @@
+// ==========================================
+// TITANBOT v3.1
+// HERRAMIENTAS.JS
+// ==========================================
+
 async function herramientas(
   sock,
   chat,
@@ -5,241 +10,264 @@ async function herramientas(
   args,
   id
 ) {
+  const cmd = comando.toLowerCase();
 
-  // ==========================
+  // ========================================
+  // MENÚ DE HERRAMIENTAS
+  // ========================================
+
+  if (cmd === "herramientas" || cmd === "herramienta") {
+    await sock.sendMessage(chat, {
+      text:
+`╔══════════════════════════╗
+      🛠️ *HERRAMIENTAS*
+╚══════════════════════════╝
+
+🕐 .hora
+📅 .fecha
+🆔 .id
+🎲 .random
+🧮 .calculadora
+🔠 .mayusculas
+🔡 .minusculas
+🏓 .ping
+
+⚡ *TitanBot v3.1*`
+    });
+
+    return true;
+  }
+
+  // ========================================
   // HORA
-  // ==========================
+  // ========================================
 
-  if (comando === "hora") {
+  if (cmd === "hora") {
+    const ahora = new Date();
 
-    const hora =
-      new Date().toLocaleTimeString();
-
-    return sock.sendMessage(chat, {
-
-      text:
-`🕒 HORA
-
-${hora}`
-
+    const hora = ahora.toLocaleTimeString("es-CO", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+      timeZone: "America/Bogota"
     });
 
+    await sock.sendMessage(chat, {
+      text: `🕐 *HORA ACTUAL*\n\n🇨🇴 Colombia: ${hora}`
+    });
+
+    return true;
   }
 
-  // ==========================
+  // ========================================
   // FECHA
-  // ==========================
+  // ========================================
 
-  if (comando === "fecha") {
+  if (cmd === "fecha") {
+    const ahora = new Date();
 
-    const fecha =
-      new Date().toLocaleDateString();
-
-    return sock.sendMessage(chat, {
-
-      text:
-`📅 FECHA
-
-${fecha}`
-
+    const fecha = ahora.toLocaleDateString("es-CO", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone: "America/Bogota"
     });
 
+    await sock.sendMessage(chat, {
+      text: `📅 *FECHA ACTUAL*\n\n🇨🇴 ${fecha}`
+    });
+
+    return true;
   }
 
-  // ==========================
+  // ========================================
   // ID
-  // ==========================
+  // ========================================
 
-  if (comando === "id") {
-
-    return sock.sendMessage(chat, {
-
+  if (cmd === "id") {
+    await sock.sendMessage(chat, {
       text:
-`🆔 ID
+`🆔 *ID DEL CHAT*
 
+${chat}
+
+👤 Tu ID:
 ${id}`
-
     });
 
+    return true;
   }
 
-  // ==========================
+  // ========================================
   // RANDOM
-  // ==========================
+  // ========================================
 
-  if (comando === "random") {
+  if (cmd === "random") {
+    const minimo = parseInt(args[0]) || 1;
+    const maximo = parseInt(args[1]) || 100;
 
-    const min =
-      Number(args[0]);
-
-    const max =
-      Number(args[1]);
-
-    if (
-      isNaN(min) ||
-      isNaN(max)
-    ) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-`🎲 Usa:
-
-.random 1 100`
-
+    if (minimo >= maximo) {
+      await sock.sendMessage(chat, {
+        text: "❌ El primer número debe ser menor que el segundo."
       });
 
+      return true;
     }
 
     const numero =
-      Math.floor(
-        Math.random() *
-        (max - min + 1)
-      ) + min;
+      Math.floor(Math.random() * (maximo - minimo + 1)) + minimo;
 
-    return sock.sendMessage(chat, {
-
+    await sock.sendMessage(chat, {
       text:
-`🎲 RANDOM
+`🎲 *NÚMERO ALEATORIO*
 
-Resultado:
-
-${numero}`
-
+🔢 Resultado: *${numero}*`
     });
 
+    return true;
   }
 
-  // ==========================
+  // ========================================
   // CALCULADORA
-  // ==========================
+  // ========================================
 
-  if (comando === "calculadora") {
-
-    const operacion =
-      args.join("");
-
-    if (!operacion) {
-
-      return sock.sendMessage(chat, {
-
+  if (cmd === "calculadora" || cmd === "calc") {
+    if (!args.length) {
+      await sock.sendMessage(chat, {
         text:
-`🔢 Usa:
+`🧮 *CALCULADORA*
 
-.calculadora 5+5`
+Uso:
 
+.calculadora 10 + 5
+.calculadora 20 * 4
+.calculadora 100 / 5
+.calculadora 50 - 20`
       });
 
+      return true;
+    }
+
+    const expresion = args.join(" ");
+
+    // Solo permite números y operaciones matemáticas básicas
+    if (!/^[0-9+\-*/().%\s]+$/.test(expresion)) {
+      await sock.sendMessage(chat, {
+        text: "❌ Solo puedes utilizar números y operaciones matemáticas básicas."
+      });
+
+      return true;
     }
 
     try {
+      const resultado = Function(
+        `"use strict"; return (${expresion})`
+      )();
 
-      const resultado =
-        eval(operacion);
+      if (!Number.isFinite(resultado)) {
+        throw new Error("Resultado inválido");
+      }
 
-      return sock.sendMessage(chat, {
-
+      await sock.sendMessage(chat, {
         text:
-`🔢 RESULTADO
+`🧮 *CALCULADORA*
 
-${resultado}`
+📌 Operación:
+${expresion}
 
+✅ Resultado:
+*${resultado}*`
       });
 
-    } catch {
-
-      return sock.sendMessage(chat, {
-
-        text:
-"❌ Operación inválida."
-
+    } catch (error) {
+      await sock.sendMessage(chat, {
+        text: "❌ No pude calcular esa operación."
       });
-
     }
 
+    return true;
   }
 
-  // ==========================
-  // MAYUSCULAS
-  // ==========================
+  // ========================================
+  // MAYÚSCULAS
+  // ========================================
 
-  if (comando === "mayusculas") {
-
-    const texto =
-      args.join(" ");
-
-    if (!texto) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-`🔤 Usa:
-
-.mayusculas hola mundo`
-
+  if (cmd === "mayusculas" || cmd === "mayus") {
+    if (!args.length) {
+      await sock.sendMessage(chat, {
+        text: "❌ Escribe un texto.\n\nEjemplo:\n.mayusculas hola mundo"
       });
 
+      return true;
     }
 
-    return sock.sendMessage(chat, {
+    const texto = args.join(" ");
 
-      text:
-texto.toUpperCase()
-
+    await sock.sendMessage(chat, {
+      text: `🔠 *MAYÚSCULAS*\n\n${texto.toUpperCase()}`
     });
 
+    return true;
   }
 
-  // ==========================
-  // MINUSCULAS
-  // ==========================
+  // ========================================
+  // MINÚSCULAS
+  // ========================================
 
-  if (comando === "minusculas") {
-
-    const texto =
-      args.join(" ");
-
-    if (!texto) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-`🔡 Usa:
-
-.minusculas HOLA MUNDO`
-
+  if (cmd === "minusculas" || cmd === "minus") {
+    if (!args.length) {
+      await sock.sendMessage(chat, {
+        text: "❌ Escribe un texto.\n\nEjemplo:\n.minusculas HOLA MUNDO"
       });
 
+      return true;
     }
 
-    return sock.sendMessage(chat, {
+    const texto = args.join(" ");
 
-      text:
-texto.toLowerCase()
-
+    await sock.sendMessage(chat, {
+      text: `🔡 *MINÚSCULAS*\n\n${texto.toLowerCase()}`
     });
 
+    return true;
   }
 
-  // ==========================
+  // ========================================
   // PING
-  // ==========================
+  // ========================================
 
-  if (comando === "ping") {
+  if (cmd === "ping") {
+    const inicio = Date.now();
 
-    return sock.sendMessage(chat, {
-
-      text:
-`🏓 PONG
-
-🟢 TitanBot Online`
-
+    await sock.sendMessage(chat, {
+      text: "🏓 Calculando velocidad..."
     });
 
+    const velocidad = Date.now() - inicio;
+
+    await sock.sendMessage(chat, {
+      text:
+`🏓 *PONG*
+
+⚡ Velocidad: *${velocidad} ms*
+🟢 Estado: ONLINE`
+    });
+
+    return true;
   }
+
+  // ========================================
+  // NO ES DE ESTE MÓDULO
+  // ========================================
 
   return false;
-
 }
 
+// ==========================================
+// EXPORTACIÓN
+// ==========================================
+
 module.exports = herramientas;
+module.exports.herramientas = herramientas;
