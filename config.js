@@ -1,6 +1,19 @@
 module.exports = {
-  nombre: "Titan Bot",
-  version: "2.5.0",
+
+  nombre: "TitanBot",
+
+  version: "3.0.0",
+
   prefijo: ".",
-  creador: "573508138894"
+
+  creador: "573237210190",
+
+  moneda: "TitanCoins",
+
+  color: "#00ff88",
+
+  web:
+
+  soporte: "573508138894"
+
 };
