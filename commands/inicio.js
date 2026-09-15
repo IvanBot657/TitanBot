@@ -209,12 +209,12 @@ async function inicio(
     return true;
   }
 
-  // ==============================
-  // .ayuda
-  // ==============================
-  if (cmd === "ayuda" || cmd === "help") {
-    await sock.sendMessage(chat, {
-      text:
+// ==============================
+// .ayuda
+// ==============================
+if (cmd === "ayuda" || cmd === "help") {
+  await sock.sendMessage(chat, {
+    text:
 `📚 *AYUDA - ${config.nombre}*
 
 Usa:
@@ -229,4 +229,22 @@ Para comprobar si el bot está activo.
 Para ver información del bot.
 
 .version
-Para ver la versión actual.
+Para ver la versión actual.`
+  });
+
+  return true;
+}
+
+// ==============================
+// FIN DEL MÓDULO
+// ==============================
+
+return false;
+}
+
+// ==============================
+// EXPORTACIÓN
+// ==============================
+
+module.exports = inicio;
+module.exports.inicio = inicio;
