@@ -1,5 +1,3 @@
-console.log("Comando economía:", comando);
-
 const fs = require("fs");
 
 const DB = "./database/users.json";
