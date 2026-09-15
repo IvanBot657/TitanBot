@@ -1,7 +1,9 @@
 // =========================================
 // 🎭 TITANBOT - ROLEPLAY
-// 9 comandos + GIF + mención real
+// 9 COMANDOS + GIF + MENCIÓN REAL
 // =========================================
+
+const axios = require("axios");
 
 const API = "https://api.waifu.pics/sfw";
 
@@ -80,7 +82,7 @@ const acciones = {
 };
 
 // =========================================
-// OBTENER MENCIÓN REAL DE WHATSAPP
+// OBTENER MENCIÓN REAL
 // =========================================
 
 function obtenerMenciones(msg) {
@@ -97,30 +99,39 @@ function obtenerMenciones(msg) {
 }
 
 // =========================================
-// OBTENER GIF
+// OBTENER GIF CON AXIOS
 // =========================================
 
 async function obtenerGif(tipo) {
 
-  const respuesta = await fetch(
-    `${API}/${tipo}`
+  console.log(
+    `🎬 Consultando API: ${API}/${tipo}`
   );
 
-  if (!respuesta.ok) {
+  const respuesta = await axios.get(
+    `${API}/${tipo}`,
+    {
+      timeout: 15000,
+      headers: {
+        "User-Agent": "TITANBOT/3.1"
+      }
+    }
+  );
+
+  if (
+    !respuesta.data ||
+    !respuesta.data.url
+  ) {
     throw new Error(
-      `API respondió con código ${respuesta.status}`
+      "La API no devolvió una URL válida."
     );
   }
 
-  const datos = await respuesta.json();
+  console.log(
+    `✅ GIF encontrado: ${respuesta.data.url}`
+  );
 
-  if (!datos?.url) {
-    throw new Error(
-      "La API no devolvió una URL."
-    );
-  }
-
-  return datos.url;
+  return respuesta.data.url;
 }
 
 // =========================================
@@ -142,7 +153,7 @@ async function roleplay(
       .trim();
 
   // =======================================
-  // COMPROBAR SI ES UN COMANDO ROLEPLAY
+  // COMPROBAR COMANDO
   // =======================================
 
   const accion = acciones[cmd];
@@ -151,15 +162,19 @@ async function roleplay(
     return false;
   }
 
+  console.log(
+    `🎭 ROLEPLAY: ${cmd}`
+  );
+
   // =======================================
-  // BUSCAR MENCIÓN REAL
+  // OBTENER MENCIÓN
   // =======================================
 
   const mencionados =
     obtenerMenciones(msg);
 
   // =======================================
-  // SIN MENCIÓN
+  // SI NO HAY MENCIÓN
   // =======================================
 
   if (
@@ -175,41 +190,35 @@ Ejemplo:
 
 .${cmd} @usuario
 
-👉 Selecciona a la persona desde WhatsApp para hacer una mención real.`
+👉 Selecciona a la persona desde WhatsApp.`
     });
 
     return true;
   }
 
   // =======================================
-  // PERSONA MENCIONADA
+  // USUARIO MENCIONADO
   // =======================================
 
   const objetivo =
     mencionados[0];
 
+  console.log(
+    `👤 Objetivo: ${objetivo}`
+  );
+
   // =======================================
-  // CREAR TEXTO DE MENCIÓN
+  // TEXTO
   // =======================================
-  // WhatsApp se encargará de mostrar
-  // @Nombre en lugar del número.
 
   const texto =
 `${accion.emoji} ${accion.texto} @${objetivo.split("@")[0]}`;
 
   // =======================================
-  // OBTENER GIF
+  // OBTENER Y ENVIAR GIF
   // =======================================
 
   try {
-
-    console.log(
-      `🎭 ROLEPLAY: ${cmd}`
-    );
-
-    console.log(
-      `👤 Objetivo: ${objetivo}`
-    );
 
     await sock.sendMessage(chat, {
       text: "🎬 Preparando animación..."
@@ -218,13 +227,8 @@ Ejemplo:
     const gif =
       await obtenerGif(accion.api);
 
-    console.log(
-      "🎬 GIF:",
-      gif
-    );
-
     // =====================================
-    // ENVIAR GIF + MENCIÓN
+    // ENVIAR ANIMACIÓN
     // =====================================
 
     await sock.sendMessage(chat, {
@@ -243,12 +247,20 @@ Ejemplo:
 
     });
 
+    console.log(
+      `✅ ROLEPLAY ENVIADO: ${cmd}`
+    );
+
     return true;
 
   } catch (error) {
 
     console.log(
-      "❌ ERROR ROLEPLAY:",
+      "❌ ERROR ROLEPLAY:"
+    );
+
+    console.log(
+      error.response?.data ||
       error.message
     );
 
@@ -267,7 +279,6 @@ ${accion.emoji} ${accion.texto} @${objetivo.split("@")[0]}`,
 
     return true;
   }
-
 }
 
 // =========================================
