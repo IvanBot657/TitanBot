@@ -2,10 +2,6 @@ const fs = require("fs");
 
 const DB = "./database/users.json";
 
-// ==========================================
-// BASE DE DATOS
-// ==========================================
-
 function cargarUsuarios() {
 
   if (!fs.existsSync(DB)) {
@@ -19,6 +15,7 @@ function cargarUsuarios() {
   } catch {
     return {};
   }
+
 }
 
 function guardarUsuarios(db) {
@@ -27,12 +24,8 @@ function guardarUsuarios(db) {
     DB,
     JSON.stringify(db, null, 2)
   );
+
 }
-
-
-// ==========================================
-// OBTENER USUARIO
-// ==========================================
 
 function obtenerUsuario(db, id) {
 
@@ -40,155 +33,108 @@ function obtenerUsuario(db, id) {
 
     db[id] = {
 
-      dinero: 0,
-      banco: 0,
+      nombre: "Usuario",
 
       xp: 0,
+
       nivel: 1,
+
+      dinero: 500,
 
       mensajes: 0,
 
-      inventario: [],
+      logros: [],
 
-      ultimoDaily: 0,
-      ultimoTrabajo: 0,
-      ultimoMineria: 0,
-      ultimaPesca: 0,
-      ultimaXP: 0
+      fechaRegistro: Date.now()
 
     };
-  }
 
-  // Compatibilidad con usuarios antiguos
-
-  if (typeof db[id].dinero !== "number") {
-    db[id].dinero = 0;
-  }
-
-  if (typeof db[id].banco !== "number") {
-    db[id].banco = 0;
-  }
-
-  if (typeof db[id].xp !== "number") {
-    db[id].xp = 0;
-  }
-
-  if (typeof db[id].nivel !== "number") {
-    db[id].nivel = 1;
-  }
-
-  if (typeof db[id].mensajes !== "number") {
-    db[id].mensajes = 0;
-  }
-
-  if (!Array.isArray(db[id].inventario)) {
-    db[id].inventario = [];
-  }
-
-  if (typeof db[id].ultimaXP !== "number") {
-    db[id].ultimaXP = 0;
   }
 
   return db[id];
+
 }
 
+function xpNecesaria(nivel) {
 
-// ==========================================
-// GANAR XP
-// ==========================================
+  return nivel * 250;
 
-function ganarXP(id) {
+}
 
-  const db =
-    cargarUsuarios();
+function ganarXP(id, cantidad = 15) {
+
+  const db = cargarUsuarios();
 
   const user =
-    obtenerUsuario(
-      db,
-      id
-    );
+    obtenerUsuario(db, id);
 
-  const ahora =
-    Date.now();
+  if (user.nivel >= 100) {
 
-  // Máximo una recompensa de XP por minuto
+    guardarUsuarios(db);
 
-  if (
-    user.ultimaXP &&
-    ahora - user.ultimaXP < 60000
-  ) {
+    return {
+      subioNivel: false
+    };
 
-    return null;
   }
 
-  const xpGanada =
-    Math.floor(
-      Math.random() * 11
-    ) + 5;
+  user.xp += cantidad;
 
-  user.xp +=
-    xpGanada;
-
-  user.mensajes++;
-
-  user.ultimaXP =
-    ahora;
+  user.mensajes += 1;
 
   let subioNivel = false;
 
-  let nivelesSubidos = 0;
-
   let recompensaTotal = 0;
 
-
-  // ========================================
-  // SUBIR DE NIVEL
-  // ========================================
-
   while (
-    user.xp >=
-    user.nivel * 100
+    user.nivel < 100 &&
+    user.xp >= xpNecesaria(user.nivel)
   ) {
 
-    user.xp -=
-      user.nivel * 100;
+    user.xp -= xpNecesaria(
+      user.nivel
+    );
 
     user.nivel++;
 
     subioNivel = true;
 
-    nivelesSubidos++;
+    let recompensa = 250;
 
-    const recompensa =
-      user.nivel * 250;
+    if (user.nivel >= 5)
+      recompensa = 500;
 
-    user.dinero +=
-      recompensa;
+    if (user.nivel >= 10)
+      recompensa = 1000;
 
-    recompensaTotal +=
-      recompensa;
+    if (user.nivel >= 20)
+      recompensa = 2000;
+
+    if (user.nivel >= 50)
+      recompensa = 5000;
+
+    if (user.nivel >= 100)
+      recompensa = 10000;
+
+    user.dinero += recompensa;
+
+    recompensaTotal += recompensa;
+
   }
-
 
   guardarUsuarios(db);
 
-
   return {
 
-    xpGanada,
     subioNivel,
-    nivelesSubidos,
-    recompensaTotal,
+
     nivel: user.nivel,
-    xp: user.xp
+
+    recompensaTotal
 
   };
+
 }
-
-
-// ==========================================
-// COMANDO USUARIO
-// ==========================================
 
 async function usuario(
   sock,
@@ -198,324 +144,285 @@ async function usuario(
   id
 ) {
 
-  const db =
-    cargarUsuarios();
+  const db = cargarUsuarios();
 
   const user =
-    obtenerUsuario(
-      db,
-      id
-    );
+    obtenerUsuario(db, id);
 
 
-  // ========================================
-  // PERFIL
-  // ========================================
+  // ==========================
+  // REGISTRAR
+  // ==========================
 
-  if (comando === "perfil") {
+  if (comando === "registrar") {
+
+    if (
+      args.length === 0
+    ) {
+
+      return sock.sendMessage(
+        chat,
+        {
+          text:
+`👤 REGISTRO
+
+Usa:
+
+.registrar TuNombre`
+        }
+      );
+
+    }
+
+    const nombre =
+      args.join(" ");
+
+    user.nombre = nombre;
 
     guardarUsuarios(db);
 
-    return sock.sendMessage(chat, {
+    return sock.sendMessage(
+      chat,
+      {
+        text:
+`✅ REGISTRO COMPLETADO
 
-      text:
-`👤 PERFIL TITANBOT
+Nombre:
+${nombre}`
+      }
+    );
 
-🆔 ID:
-${id}
+  }
+
+
+  // ==========================
+  // PERFIL
+  // ==========================
+
+  if (comando === "perfil") {
+
+    const fecha =
+      new Date(
+        user.fechaRegistro
+      ).toLocaleDateString();
+
+    return sock.sendMessage(
+      chat,
+      {
+        text:
+`👤 PERFIL
+
+📝 Nombre:
+${user.nombre}
 
 ⭐ Nivel:
-${user.nivel}
+${user.nivel}/100
 
 ✨ XP:
-${user.xp}/${user.nivel * 100}
-
-💬 Mensajes:
-${user.mensajes}
+${user.xp}/${xpNecesaria(user.nivel)}
 
 💰 Dinero:
 ${user.dinero}
 
-🏦 Banco:
-${user.banco}
+📨 Mensajes:
+${user.mensajes}
 
-💎 Patrimonio:
-${user.dinero + user.banco}`
+🏅 Logros:
+${user.logros.length}
 
-    });
+📅 Registro:
+${fecha}`
+      }
+    );
+
   }
 
 
-  // ========================================
-  // REGISTRAR
-  // ========================================
-
-  if (comando === "registrar") {
-
-    const existe =
-      db[id] !== undefined;
-
-    if (existe) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-`✅ YA ESTÁS REGISTRADO
-
-👤 Nivel:
-${user.nivel}
-
-⭐ XP:
-${user.xp}
-
-💰 Dinero:
-${user.dinero}`
-
-      });
-    }
-
-    db[id] =
-      obtenerUsuario(
-        db,
-        id
-      );
-
-    guardarUsuarios(db);
-
-    return sock.sendMessage(chat, {
-
-      text:
-`✅ REGISTRO COMPLETADO
-
-👤 Bienvenido a TitanBot.
-
-⭐ Nivel: 1
-✨ XP: 0
-💰 Dinero: 0
-
-¡Empieza a usar el bot!`
-
-    });
-  }
-
-
-  // ========================================
+  // ==========================
   // NIVEL
-  // ========================================
+  // ==========================
 
   if (comando === "nivel") {
 
-    const necesario =
-      user.nivel * 100;
+    return sock.sendMessage(
+      chat,
+      {
+        text:
+`⭐ NIVEL
 
-    const porcentaje =
-      Math.floor(
-        (user.xp / necesario) * 100
-      );
+Nivel:
+${user.nivel}/100
 
-    return sock.sendMessage(chat, {
+XP:
+${user.xp}/${xpNecesaria(user.nivel)}`
+      }
+    );
 
-      text:
-`📈 NIVEL
-
-⭐ Nivel actual:
-${user.nivel}
-
-✨ XP:
-${user.xp}/${necesario}
-
-📊 Progreso:
-${porcentaje}%
-
-💬 Mensajes:
-${user.mensajes}`
-
-    });
   }
 
 
-  // ========================================
+  // ==========================
   // XP
-  // ========================================
+  // ==========================
 
   if (comando === "xp") {
 
-    const necesario =
-      user.nivel * 100;
-
-    return sock.sendMessage(chat, {
-
-      text:
+    return sock.sendMessage(
+      chat,
+      {
+        text:
 `✨ EXPERIENCIA
 
-⭐ Nivel:
-${user.nivel}
-
-✨ XP:
-${user.xp}/${necesario}
-
-🎯 Te faltan:
-${Math.max(
-  necesario - user.xp,
-  0
-)} XP para subir.`
-
-    });
-  }
-
-
-  // ========================================
-  // RANK
-  // ========================================
-
-  if (comando === "rank") {
-
-    const usuarios =
-      Object.entries(db)
-        .filter(([_, u]) =>
-          u &&
-          typeof u.nivel === "number" &&
-          typeof u.xp === "number"
-        )
-        .sort((a, b) => {
-
-          if (
-            b[1].nivel !==
-            a[1].nivel
-          ) {
-
-            return (
-              b[1].nivel -
-              a[1].nivel
-            );
-          }
-
-          return (
-            b[1].xp -
-            a[1].xp
-          );
-
-        });
-
-    const posicion =
-      usuarios.findIndex(
-        ([usuarioId]) =>
-          usuarioId === id
-      ) + 1;
-
-    return sock.sendMessage(chat, {
-
-      text:
-`🏆 TU RANK
-
-🥇 Posición:
-#${posicion}
-
-⭐ Nivel:
-${user.nivel}
-
-✨ XP:
+XP actual:
 ${user.xp}
 
-💰 Dinero:
-${user.dinero}`
+XP necesaria:
+${xpNecesaria(user.nivel)}`
+      }
+    );
 
-    });
   }
 
 
-  // ========================================
-  // TOP
-  // ========================================
+  // ==========================
+  // LOGROS
+  // ==========================
 
-  if (comando === "top") {
+  if (comando === "logros") {
 
-    const usuarios =
-      Object.entries(db)
-        .filter(([_, u]) =>
-          u &&
-          typeof u.nivel === "number" &&
-          typeof u.xp === "number"
-        )
-        .sort((a, b) => {
+    if (
+      user.logros.length === 0
+    ) {
 
-          if (
-            b[1].nivel !==
-            a[1].nivel
-          ) {
-
-            return (
-              b[1].nivel -
-              a[1].nivel
-            );
-          }
-
-          return (
-            b[1].xp -
-            a[1].xp
-          );
-
-        })
-        .slice(0, 10);
-
-
-    if (usuarios.length === 0) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-          "🏆 Todavía no hay usuarios en el ranking."
-
-      });
+      return sock.sendMessage(
+        chat,
+        {
+          text:
+"🏅 No tienes logros todavía."
+        }
+      );
 
     }
 
+    return sock.sendMessage(
+      chat,
+      {
+        text:
+`🏅 LOGROS
 
-    const lista =
-      usuarios
-        .map(
-          ([usuarioId, u], index) => {
+${user.logros.join("\n")}`
+      }
+    );
 
-            return `${index + 1}. @${usuarioId
-              .split("@")[0]
-            }
-
-⭐ Nivel: ${u.nivel}
-✨ XP: ${u.xp}`;
-
-          }
-        )
-        .join("\n\n");
-
-
-    const mentions =
-      usuarios.map(
-        ([usuarioId]) =>
-          usuarioId
-      );
-
-
-    return sock.sendMessage(chat, {
-
-      text:
-`🏆 TOP 10 TITANBOT
-
-${lista}`,
-
-      mentions
-
-    });
   }
 
 
+  // ==========================
+  // TOP
+  // ==========================
+
+  if (comando === "top") {
+
+    const ranking =
+      Object.entries(db)
+        .sort(
+          (a, b) =>
+            b[1].nivel -
+            a[1].nivel
+        )
+        .slice(0, 10);
+
+    let texto =
+      "🏆 TOP 10 NIVELES\n\n";
+
+    ranking.forEach(
+      (u, i) => {
+
+        texto +=
+          `${i + 1}. ${
+            u[1].nombre
+          } - Nivel ${
+            u[1].nivel
+          }\n`;
+
+      }
+    );
+
+    return sock.sendMessage(
+      chat,
+      {
+        text: texto
+      }
+    );
+
+  }
+
+
+  // ==========================
+  // RANK
+  // ==========================
+
+  if (comando === "rank") {
+
+    const ranking =
+      Object.entries(db)
+        .sort(
+          (a, b) =>
+            b[1].nivel -
+            a[1].nivel
+        );
+
+    const posicion =
+      ranking.findIndex(
+        u => u[0] === id
+      ) + 1;
+
+    return sock.sendMessage(
+      chat,
+      {
+        text:
+`🏆 TU POSICIÓN
+
+📊 Ranking:
+#${posicion}
+
+⭐ Nivel:
+${user.nivel}`
+      }
+    );
+
+  }
+
+
+  // ==========================
+  // MISIONES
+  // ==========================
+
+  if (comando === "misiones") {
+
+    return sock.sendMessage(
+      chat,
+      {
+        text:
+`🎯 MISIONES
+
+1️⃣ Enviar 50 mensajes
+Recompensa: 500 monedas
+
+2️⃣ Alcanzar nivel 10
+Recompensa: 1000 monedas
+
+3️⃣ Usar 20 comandos
+Recompensa: 750 monedas`
+      }
+    );
+
+  }
+
   return false;
+
 }
 
+usuario.ganarXP = ganarXP;
 
-module.exports = {
-  usuario,
-  obtenerUsuario,
-  cargarUsuarios,
-  guardarUsuarios,
-  ganarXP
-};
+module.exports = usuario;
