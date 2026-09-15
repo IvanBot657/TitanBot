@@ -1017,29 +1017,22 @@ ${resultadoXP.nivel}
             // GRUPOS
             // =========================================
 
-            if (!ejecutado) {
+             if (!ejecutado) {
+              const resultado = await grupos(
+                 sock,
+                 chat,
+                 comando,
+                 args,
+                 id,
+                 esGrupo,
+                 esAdmin,
+                 msg
+               );
 
-              const resultado =
-                await grupos(
-                  sock,
-                  chat,
-                  comando,
-                  args,
-                  id,
-                  esGrupo,
-                  esAdmin
-                );
-
-
-              if (
-                resultado !== false
-              ) {
-
-                ejecutado = true;
-
-              }
-
-            }
+               if (resultado) {
+                 ejecutado = true;
+                }
+             }
 
 
             // =========================================
