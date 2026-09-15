@@ -1,63 +1,69 @@
-const fs = require("fs");
+// ==========================================
+// TITANBOT v3.1
+// GRUPOS.JS
+// ==========================================
 
-const DB = "./database/groups.json";
+const fs = require("fs");
+const path = require("path");
+
+const databasePath = path.join(__dirname, "../database/groups.json");
 
 // ==========================================
 // BASE DE DATOS
 // ==========================================
 
 function cargarGrupos() {
-
-  if (!fs.existsSync(DB)) {
-    fs.writeFileSync(DB, "{}");
-  }
-
   try {
-    return JSON.parse(
-      fs.readFileSync(DB, "utf8")
-    );
-  } catch {
+    if (!fs.existsSync(databasePath)) {
+      fs.writeFileSync(databasePath, "{}");
+    }
+
+    const datos = fs.readFileSync(databasePath, "utf8");
+
+    if (!datos.trim()) return {};
+
+    return JSON.parse(datos);
+  } catch (error) {
+    console.log("❌ Error leyendo groups.json:", error);
     return {};
   }
-
 }
 
-function guardarGrupos(db) {
-
-  fs.writeFileSync(
-    DB,
-    JSON.stringify(db, null, 2)
-  );
-
-}
-
-function obtenerGrupo(db, id) {
-
-  if (!db[id]) {
-
-    db[id] = {
-
-      bienvenida: false,
-
-      despedida: false,
-
-      antilink: false,
-
-      antispam: false,
-
-      reglas:
-        "Respeta a todos los miembros."
-
-    };
-
+function guardarGrupos(grupos) {
+  try {
+    fs.writeFileSync(
+      databasePath,
+      JSON.stringify(grupos, null, 2)
+    );
+  } catch (error) {
+    console.log("❌ Error guardando groups.json:", error);
   }
-
-  return db[id];
-
 }
 
 // ==========================================
-// MODULO
+// OBTENER / CREAR GRUPO
+// ==========================================
+
+function obtenerGrupo(chat) {
+  const grupos = cargarGrupos();
+
+  if (!grupos[chat]) {
+    grupos[chat] = {
+      reglas: "No hay reglas configuradas.",
+      bienvenida: false,
+      despedida: false,
+      antilink: false,
+      antispam: false
+    };
+
+    guardarGrupos(grupos);
+  }
+
+  return grupos[chat];
+}
+
+// ==========================================
+// FUNCIÓN PRINCIPAL
 // ==========================================
 
 async function grupos(
@@ -70,350 +76,414 @@ async function grupos(
   esAdmin
 ) {
 
-  const db = cargarGrupos();
-
-  const grupo =
-    obtenerGrupo(db, chat);
+  const cmd = comando.toLowerCase();
 
   // ========================================
-  // SOLO GRUPOS
+  // COMPROBAR SI ES GRUPO
   // ========================================
 
   const comandosGrupo = [
-
     "admins",
     "tagall",
+    "todos",
+    "miembros",
+    "idgrupo",
     "reglas",
     "bienvenida",
     "despedida",
     "antilink",
-    "antispam"
-
+    "antispam",
+    "grupomenu"
   ];
 
-  if (
-    comandosGrupo.includes(comando) &&
-    !esGrupo
-  ) {
-
-    return sock.sendMessage(chat, {
-
-      text:
-        "❌ Este comando solo funciona en grupos."
-
+  if (comandosGrupo.includes(cmd) && !esGrupo) {
+    await sock.sendMessage(chat, {
+      text: "❌ Este comando solamente funciona en grupos."
     });
 
+    return true;
+  }
+
+  // ========================================
+  // MENÚ DE GRUPO
+  // ========================================
+
+  if (cmd === "grupomenu" || cmd === "grupo") {
+
+    await sock.sendMessage(chat, {
+      text:
+`╔══════════════════════════╗
+       👥 *MENÚ DE GRUPO*
+╚══════════════════════════╝
+
+👑 *Administración*
+• .admins
+• .tagall
+• .miembros
+• .idgrupo
+
+📜 *Información*
+• .reglas
+
+⚙️ *Configuración*
+• .bienvenida on/off
+• .despedida on/off
+• .antilink on/off
+• .antispam on/off
+
+⚡ *TitanBot v3.1*`
+    });
+
+    return true;
   }
 
   // ========================================
   // ADMINS
   // ========================================
 
-  if (comando === "admins") {
+  if (cmd === "admins") {
 
-    const metadata =
-      await sock.groupMetadata(chat);
+    if (!esGrupo) {
+      await sock.sendMessage(chat, {
+        text: "❌ Este comando solamente funciona en grupos."
+      });
 
-    const admins =
-      metadata.participants.filter(
-        p => p.admin
+      return true;
+    }
+
+    try {
+
+      const metadata = await sock.groupMetadata(chat);
+
+      const admins = metadata.participants.filter(
+        participante =>
+          participante.admin === "admin" ||
+          participante.admin === "superadmin"
       );
 
-    const menciones =
-      admins.map(a => a.id);
+      let texto = "👑 *ADMINISTRADORES*\n\n";
 
-    let texto =
-      "👮 ADMINISTRADORES\n\n";
+      admins.forEach((admin, index) => {
+        texto += `${index + 1}. @${admin.id.split("@")[0]}\n`;
+      });
 
-    admins.forEach((a, i) => {
+      await sock.sendMessage(chat, {
+        text: texto,
+        mentions: admins.map(admin => admin.id)
+      });
 
-      texto +=
-        `${i + 1}. @${a.id.split("@")[0]}\n`;
+    } catch (error) {
 
-    });
-
-    return sock.sendMessage(chat, {
-
-      text: texto,
-
-      mentions: menciones
-
-    });
-
-  }
-
-  // ========================================
-  // TAGALL
-  // ========================================
-
-  if (comando === "tagall") {
-
-    if (!esAdmin) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-          "❌ Solo administradores."
-
+      await sock.sendMessage(chat, {
+        text: "❌ No pude obtener la lista de administradores."
       });
 
     }
 
-    const metadata =
-      await sock.groupMetadata(chat);
+    return true;
+  }
 
-    const miembros =
-      metadata.participants.map(
-        p => p.id
-      );
+  // ========================================
+  // MIEMBROS
+  // ========================================
 
-    let texto =
-      "📢 MENCIÓN GENERAL\n\n";
+  if (cmd === "miembros") {
 
-    miembros.forEach((m, i) => {
+    try {
 
-      texto +=
-        `${i + 1}. @${m.split("@")[0]}\n`;
+      const metadata = await sock.groupMetadata(chat);
 
+      await sock.sendMessage(chat, {
+        text:
+`👥 *MIEMBROS DEL GRUPO*
+
+📌 Nombre: ${metadata.subject}
+👤 Miembros: ${metadata.participants.length}`
+      });
+
+    } catch (error) {
+
+      await sock.sendMessage(chat, {
+        text: "❌ No pude obtener la información del grupo."
+      });
+
+    }
+
+    return true;
+  }
+
+  // ========================================
+  // ID DEL GRUPO
+  // ========================================
+
+  if (cmd === "idgrupo") {
+
+    await sock.sendMessage(chat, {
+      text: `🆔 *ID DEL GRUPO*\n\n${chat}`
     });
 
-    return sock.sendMessage(chat, {
-
-      text: texto,
-
-      mentions: miembros
-
-    });
-
+    return true;
   }
 
   // ========================================
   // REGLAS
   // ========================================
 
-  if (comando === "reglas") {
+  if (cmd === "reglas") {
 
-    return sock.sendMessage(chat, {
+    const grupo = obtenerGrupo(chat);
 
+    await sock.sendMessage(chat, {
       text:
-`📜 REGLAS
+`📜 *REGLAS DEL GRUPO*
 
-${grupo.reglas}`
+${grupo.reglas}
 
+⚡ TitanBot v3.1`
     });
 
+    return true;
+  }
+
+  // ========================================
+  // TAGALL
+  // ========================================
+
+  if (cmd === "tagall" || cmd === "todos") {
+
+    if (!esAdmin) {
+      await sock.sendMessage(chat, {
+        text: "❌ Solo los administradores pueden usar este comando."
+      });
+
+      return true;
+    }
+
+    try {
+
+      const metadata = await sock.groupMetadata(chat);
+
+      const participantes = metadata.participants;
+
+      let texto = "📢 *ATENCIÓN GRUPO*\n\n";
+
+      participantes.forEach(usuario => {
+        texto += `@${usuario.id.split("@")[0]} `;
+      });
+
+      await sock.sendMessage(chat, {
+        text,
+        mentions: participantes.map(usuario => usuario.id)
+      });
+
+    } catch (error) {
+
+      await sock.sendMessage(chat, {
+        text: "❌ No pude mencionar a los miembros."
+      });
+
+    }
+
+    return true;
   }
 
   // ========================================
   // BIENVENIDA
   // ========================================
 
-  if (comando === "bienvenida") {
+  if (cmd === "bienvenida") {
 
     if (!esAdmin) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-          "❌ Solo administradores."
-
+      await sock.sendMessage(chat, {
+        text: "❌ Solo los administradores pueden cambiar esta configuración."
       });
 
+      return true;
     }
 
-    const opcion =
-      args[0]?.toLowerCase();
+    const opcion = args[0]?.toLowerCase();
 
-    if (
-      opcion !== "on" &&
-      opcion !== "off"
-    ) {
+    if (!["on", "off"].includes(opcion)) {
 
-      return sock.sendMessage(chat, {
-
+      await sock.sendMessage(chat, {
         text:
-          "Usa:\n.bienvenida on\n.bienvenida off"
+`⚙️ Uso:
 
+.bienvenida on
+.bienvenida off`
       });
 
+      return true;
     }
 
-    grupo.bienvenida =
-      opcion === "on";
+    const grupos = cargarGrupos();
 
-    guardarGrupos(db);
+    if (!grupos[chat]) {
+      grupos[chat] = {};
+    }
 
-    return sock.sendMessage(chat, {
+    grupos[chat].bienvenida = opcion === "on";
 
-      text:
-`👋 Bienvenida ${
-  grupo.bienvenida
-    ? "activada"
-    : "desactivada"
-}`
+    guardarGrupos(grupos);
 
+    await sock.sendMessage(chat, {
+      text: `👋 Bienvenida: ${opcion === "on" ? "🟢 ACTIVADA" : "🔴 DESACTIVADA"}`
     });
 
+    return true;
   }
 
   // ========================================
   // DESPEDIDA
   // ========================================
 
-  if (comando === "despedida") {
+  if (cmd === "despedida") {
 
     if (!esAdmin) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-          "❌ Solo administradores."
-
+      await sock.sendMessage(chat, {
+        text: "❌ Solo los administradores pueden cambiar esta configuración."
       });
 
+      return true;
     }
 
-    const opcion =
-      args[0]?.toLowerCase();
+    const opcion = args[0]?.toLowerCase();
 
-    if (
-      opcion !== "on" &&
-      opcion !== "off"
-    ) {
+    if (!["on", "off"].includes(opcion)) {
 
-      return sock.sendMessage(chat, {
-
+      await sock.sendMessage(chat, {
         text:
-          "Usa:\n.despedida on\n.despedida off"
+`⚙️ Uso:
 
+.despedida on
+.despedida off`
       });
 
+      return true;
     }
 
-    grupo.despedida =
-      opcion === "on";
+    const grupos = cargarGrupos();
 
-    guardarGrupos(db);
+    if (!grupos[chat]) {
+      grupos[chat] = {};
+    }
 
-    return sock.sendMessage(chat, {
+    grupos[chat].despedida = opcion === "on";
 
-      text:
-`👋 Despedida ${
-  grupo.despedida
-    ? "activada"
-    : "desactivada"
-}`
+    guardarGrupos(grupos);
 
+    await sock.sendMessage(chat, {
+      text: `👋 Despedida: ${opcion === "on" ? "🟢 ACTIVADA" : "🔴 DESACTIVADA"}`
     });
 
+    return true;
   }
 
   // ========================================
   // ANTILINK
   // ========================================
 
-  if (comando === "antilink") {
+  if (cmd === "antilink") {
 
     if (!esAdmin) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-          "❌ Solo administradores."
-
+      await sock.sendMessage(chat, {
+        text: "❌ Solo los administradores pueden cambiar esta configuración."
       });
 
+      return true;
     }
 
-    const opcion =
-      args[0]?.toLowerCase();
+    const opcion = args[0]?.toLowerCase();
 
-    if (
-      opcion !== "on" &&
-      opcion !== "off"
-    ) {
+    if (!["on", "off"].includes(opcion)) {
 
-      return sock.sendMessage(chat, {
-
+      await sock.sendMessage(chat, {
         text:
-          "Usa:\n.antilink on\n.antilink off"
+`🔗 Uso:
 
+.antilink on
+.antilink off`
       });
 
+      return true;
     }
 
-    grupo.antilink =
-      opcion === "on";
+    const grupos = cargarGrupos();
 
-    guardarGrupos(db);
+    if (!grupos[chat]) {
+      grupos[chat] = {};
+    }
 
-    return sock.sendMessage(chat, {
+    grupos[chat].antilink = opcion === "on";
 
-      text:
-`🔗 Antilink ${
-  grupo.antilink
-    ? "activado"
-    : "desactivado"
-}`
+    guardarGrupos(grupos);
 
+    await sock.sendMessage(chat, {
+      text: `🔗 Antilink: ${opcion === "on" ? "🟢 ACTIVADO" : "🔴 DESACTIVADO"}`
     });
 
+    return true;
   }
 
   // ========================================
   // ANTISPAM
   // ========================================
 
-  if (comando === "antispam") {
+  if (cmd === "antispam") {
 
     if (!esAdmin) {
-
-      return sock.sendMessage(chat, {
-
-        text:
-          "❌ Solo administradores."
-
+      await sock.sendMessage(chat, {
+        text: "❌ Solo los administradores pueden cambiar esta configuración."
       });
 
+      return true;
     }
 
-    const opcion =
-      args[0]?.toLowerCase();
+    const opcion = args[0]?.toLowerCase();
 
-    if (
-      opcion !== "on" &&
-      opcion !== "off"
-    ) {
+    if (!["on", "off"].includes(opcion)) {
 
-      return sock.sendMessage(chat, {
-
+      await sock.sendMessage(chat, {
         text:
-          "Usa:\n.antispam on\n.antispam off"
+`🚫 Uso:
 
+.antispam on
+.antispam off`
       });
 
+      return true;
     }
 
-    grupo.antispam =
-      opcion === "on";
+    const grupos = cargarGrupos();
 
-    guardarGrupos(db);
+    if (!grupos[chat]) {
+      grupos[chat] = {};
+    }
 
-    return sock.sendMessage(chat, {
+    grupos[chat].antispam = opcion === "on";
 
-      text:
-`🚫 Antispam ${
-  grupo.antispam
-    ? "activado"
-    : "desactivado"
-}`
+    guardarGrupos(grupos);
 
+    await sock.sendMessage(chat, {
+      text: `🚫 Antispam: ${opcion === "on" ? "🟢 ACTIVADO" : "🔴 DESACTIVADO"}`
     });
 
+    return true;
   }
 
-  return false;
+  // ========================================
+  // NO ES COMANDO DE ESTE MÓDULO
+  // ========================================
 
+  return false;
 }
 
+// ==========================================
+// EXPORTACIÓN
+// ==========================================
+
 module.exports = grupos;
+module.exports.grupos = grupos;
+module.exports.cargarGrupos = cargarGrupos;
+module.exports.guardarGrupos = guardarGrupos;
+module.exports.obtenerGrupo = obtenerGrupo;
