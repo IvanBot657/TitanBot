@@ -2,6 +2,10 @@ const fs = require("fs");
 
 const DB = "./database/users.json";
 
+// ========================================
+// CARGAR BASE DE DATOS
+// ========================================
+
 function cargarUsuarios() {
   if (!fs.existsSync(DB)) {
     fs.writeFileSync(DB, "{}");
@@ -11,10 +15,15 @@ function cargarUsuarios() {
     return JSON.parse(
       fs.readFileSync(DB, "utf8")
     );
-  } catch {
+  } catch (error) {
+    console.log("❌ Error leyendo users.json:", error);
     return {};
   }
 }
+
+// ========================================
+// GUARDAR BASE DE DATOS
+// ========================================
 
 function guardarUsuarios(db) {
   fs.writeFileSync(
@@ -23,9 +32,16 @@ function guardarUsuarios(db) {
   );
 }
 
-function usuario(id, db = cargarUsuarios()) {
+// ========================================
+// CREAR / OBTENER USUARIO
+// ========================================
+
+function obtenerUsuario(id) {
+
+  const db = cargarUsuarios();
 
   if (!db[id]) {
+
     db[id] = {
       nombre: "Usuario",
       registrado: false,
@@ -42,11 +58,6 @@ function usuario(id, db = cargarUsuarios()) {
   return db[id];
 }
 
-function obtenerUsuario(id) {
-  const db = cargarUsuarios();
-  return usuario(id, db);
-}
-
 // ========================================
 // GANAR XP
 // ========================================
@@ -54,7 +65,21 @@ function obtenerUsuario(id) {
 function ganarXP(id) {
 
   const db = cargarUsuarios();
-  const user = usuario(id, db);
+
+  if (!db[id]) {
+
+    db[id] = {
+      nombre: "Usuario",
+      registrado: false,
+      xp: 0,
+      nivel: 1,
+      dinero: 500,
+      banco: 0,
+      inventario: {}
+    };
+  }
+
+  const user = db[id];
 
   const xpGanada =
     Math.floor(
@@ -89,8 +114,7 @@ function ganarXP(id) {
 
   return {
     xpGanada,
-    subioNivel:
-      nivelesSubidos > 0,
+    subioNivel: nivelesSubidos > 0,
     nivelesSubidos,
     recompensaTotal,
     nivel: user.nivel,
@@ -99,10 +123,11 @@ function ganarXP(id) {
 }
 
 // ========================================
-// COMANDOS
+// FUNCIÓN PRINCIPAL
+// COMPATIBLE CON TU INDEX.JS
 // ========================================
 
-async function ejecutarUsuario(
+async function usuario(
   sock,
   chat,
   comando,
@@ -111,65 +136,114 @@ async function ejecutarUsuario(
 ) {
 
   const db = cargarUsuarios();
-  const user = usuario(id, db);
 
-  // PERFIL
-  if (comando === "perfil") {
+  // Crear usuario si no existe
+  if (!db[id]) {
 
-    return sock.sendMessage(chat, {
-      text:
-`👤 PERFIL
+    db[id] = {
+      nombre: "Usuario",
+      registrado: false,
+      xp: 0,
+      nivel: 1,
+      dinero: 500,
+      banco: 0,
+      inventario: {}
+    };
 
-📛 Nombre: ${user.nombre}
-⭐ Nivel: ${user.nivel}
-✨ XP: ${user.xp}
-💰 TitanCoins: ${user.dinero}
-🏦 Banco: ${user.banco}`
-    });
+    guardarUsuarios(db);
   }
 
+  const user = db[id];
+
+  // ========================================
   // REGISTRAR
+  // ========================================
+
   if (comando === "registrar") {
 
     if (user.registrado) {
 
-      return sock.sendMessage(chat, {
+      await sock.sendMessage(chat, {
         text:
-"✅ Ya estás registrado en TitanBot."
+`✅ Ya estás registrado.
+
+👤 Nombre: ${user.nombre}
+⭐ Nivel: ${user.nivel}`
       });
+
+      return true;
     }
 
     user.registrado = true;
 
-    if (
-      args.length > 0
-    ) {
-      user.nombre =
-        args.join(" ");
+    if (args && args.length > 0) {
+      user.nombre = args.join(" ");
     }
+
+    user.dinero += 500;
 
     guardarUsuarios(db);
 
-    return sock.sendMessage(chat, {
+    await sock.sendMessage(chat, {
       text:
 `🎉 REGISTRO COMPLETADO
 
 👤 Nombre: ${user.nombre}
 
 🎁 Recompensa:
-500 TitanCoins
++500 TitanCoins
+
+⭐ Nivel: 1
 
 ¡Bienvenido a TitanBot!`
     });
+
+    return true;
   }
 
+  // ========================================
+  // PERFIL
+  // ========================================
+
+  if (comando === "perfil") {
+
+    await sock.sendMessage(chat, {
+      text:
+`👤 PERFIL
+
+📛 Nombre: ${user.nombre}
+
+⭐ Nivel: ${user.nivel}
+
+✨ XP:
+${user.xp}/${user.nivel * 100}
+
+💰 TitanCoins:
+${user.dinero}
+
+🏦 Banco:
+${user.banco}`
+    });
+
+    return true;
+  }
+
+  // ========================================
   // NIVEL
+  // ========================================
+
   if (comando === "nivel") {
 
     const necesario =
       user.nivel * 100;
 
-    return sock.sendMessage(chat, {
+    const falta =
+      Math.max(
+        0,
+        necesario - user.xp
+      );
+
+    await sock.sendMessage(chat, {
       text:
 `⭐ NIVEL
 
@@ -181,26 +255,38 @@ ${user.nivel}
 ✨ XP:
 ${user.xp}/${necesario}
 
-📈 Te faltan:
-${necesario - user.xp} XP`
+📈 Falta:
+${falta} XP`
     });
+
+    return true;
   }
 
+  // ========================================
   // XP
+  // ========================================
+
   if (comando === "xp") {
 
-    return sock.sendMessage(chat, {
+    await sock.sendMessage(chat, {
       text:
 `✨ EXPERIENCIA
 
 👤 ${user.nombre}
 
 ⭐ Nivel: ${user.nivel}
-✨ XP: ${user.xp}/${user.nivel * 100}`
+
+✨ XP:
+${user.xp}/${user.nivel * 100}`
     });
+
+    return true;
   }
 
+  // ========================================
   // RANK
+  // ========================================
+
   if (comando === "rank") {
 
     const usuarios =
@@ -218,9 +304,9 @@ ${necesario - user.xp} XP`
           usuarioId === id
       ) + 1;
 
-    return sock.sendMessage(chat, {
+    await sock.sendMessage(chat, {
       text:
-`🏆 RANKING
+`🏆 TU RANK
 
 👤 ${user.nombre}
 
@@ -233,9 +319,14 @@ ${user.nivel}
 ✨ XP:
 ${user.xp}`
     });
+
+    return true;
   }
 
+  // ========================================
   // TOP
+  // ========================================
+
   if (comando === "top") {
 
     const usuarios =
@@ -248,7 +339,9 @@ ${user.xp}`
     );
 
     let texto =
-      "🏆 TOP TITANBOT\n\n";
+`🏆 TOP TITANBOT
+
+`;
 
     usuarios
       .slice(0, 10)
@@ -264,19 +357,35 @@ ${user.xp}`
         }
       );
 
-    return sock.sendMessage(chat, {
+    await sock.sendMessage(chat, {
       text: texto
     });
+
+    return true;
   }
+
+  // ========================================
+  // NO ES COMANDO DE USUARIO
+  // ========================================
 
   return false;
 }
 
-module.exports = {
-  usuario,
-  obtenerUsuario,
-  cargarUsuarios,
-  guardarUsuarios,
-  ganarXP,
-  ejecutarUsuario
-};
+// ========================================
+// EXPORTACIONES
+// ========================================
+
+// IMPORTANTE:
+// Exportamos usuario directamente porque
+// tu index.js hace:
+//
+// await usuario(...)
+
+module.exports = usuario;
+
+// Funciones adicionales
+module.exports.usuario = usuario;
+module.exports.obtenerUsuario = obtenerUsuario;
+module.exports.cargarUsuarios = cargarUsuarios;
+module.exports.guardarUsuarios = guardarUsuarios;
+module.exports.ganarXP = ganarXP;
