@@ -16,6 +16,7 @@ async function musica(
 
   const cmd =
     String(comando || "").toLowerCase();
+  console.log("🎵 MUSICA CMD:", cmd);
 
   // ==============================
   // PLAY
