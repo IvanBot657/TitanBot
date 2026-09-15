@@ -83,6 +83,19 @@ async function inicio(
 ┃ • .bailar
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🎉 DIVERSIÓN 〕━━━╮
+┃ • .ship
+┃ • .compatibilidad
+┃ • .gay
+┃ • .crush
+┃ • .suerte
+┃ • .frase
+┃ • .chiste
+┃ • .verdad
+┃ • .reto
+┃ • .8ball
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🎌 ANIME 〕━━━╮
 ┃ • .anime
 ┃ • .animebuscar
