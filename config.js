@@ -16,5 +16,5 @@ module.exports = {
 
   soporte: "573508138894",
 
-  tunelioKey: "tnl_9Lig…r16Q"
+  tunelioKey: "tnl_9zaB0QcTMoyO3PFDhxSh2eKqEsWQkKNXEA9whmrupLc"
 };
