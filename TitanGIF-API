@@ -1,1 +1,39 @@
+const express = require("express");
+const cors = require("cors");
 
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+const PORT = process.env.PORT || 3000;
+
+// Página principal
+app.get("/", (req, res) => {
+  res.json({
+    ok: true,
+    nombre: "TitanGIF-API",
+    mensaje: "API funcionando correctamente 🚀"
+  });
+});
+
+// Prueba de GIF
+app.get("/gif", (req, res) => {
+  res.json({
+    ok: true,
+    gif: null,
+    mensaje: "Endpoint GIF funcionando"
+  });
+});
+
+// Estado de la API
+app.get("/status", (req, res) => {
+  res.json({
+    online: true,
+    servicio: "TitanGIF-API"
+  });
+});
+
+app.listen(PORT, () => {
+  console.log(`TitanGIF-API funcionando en el puerto ${PORT}`);
+});
