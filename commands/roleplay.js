@@ -128,7 +128,4 @@ async function roleplay(sock, m, comando, args = []) {
   }
 }
 
-module.exports = {
-  comandos,
-  roleplay,
-};
+module.exports = roleplay;
