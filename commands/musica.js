@@ -1,18 +1,5 @@
 const axios = require("axios");
-
-async function buscarCancion(nombre) {
-  try {
-    const respuesta = await axios.get(
-      `https://itunes.apple.com/search?term=${encodeURIComponent(nombre)}&limit=1`
-    );
-
-    return respuesta.data.results[0];
-
-  } catch (error) {
-    console.log(error);
-    return null;
-  }
-}
+const yts = require("yt-search");
 
 // ==============================
 // MÚSICA - TITANBOT v3.1
@@ -50,34 +37,46 @@ Ejemplo:
       return true;
     }
 
-    const cancion =
-      await buscarCancion(busqueda);
+    try {
 
-    if (!cancion) {
+      const resultado =
+        await yts(busqueda);
+
+      const video =
+        resultado.videos[0];
+
+      if (!video) {
+
+        await sock.sendMessage(chat, {
+          text: "❌ No encontré resultados."
+        });
+
+        return true;
+      }
 
       await sock.sendMessage(chat, {
-        text: "❌ No encontré resultados."
+        image: {
+          url: video.thumbnail
+        },
+        caption:
+`🎵 *${video.title}*
+
+📺 Canal: ${video.author.name}
+⏱️ Duración: ${video.timestamp}
+
+🔗 YouTube:
+${video.url}`
       });
 
-      return true;
+    } catch (error) {
+
+      console.log(error);
+
+      await sock.sendMessage(chat, {
+        text:
+          "❌ Error al buscar la canción."
+      });
     }
-
-    await sock.sendMessage(chat, {
-      image: {
-        url: cancion.artworkUrl100.replace(
-          "100x100",
-          "600x600"
-        )
-      },
-      caption:
-`🎵 *${cancion.trackName}*
-
-🎤 Artista: ${cancion.artistName}
-💿 Álbum: ${cancion.collectionName}
-
-🔗 Vista previa:
-${cancion.trackViewUrl}`
-    });
 
     return true;
   }
