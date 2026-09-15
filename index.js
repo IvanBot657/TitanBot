@@ -1073,13 +1073,11 @@ ${resultadoXP.nivel}
               );
 
              if (resultado) {
-              ejecutado = true;
+               ejecutado = true;
+               }
              }
-           }
 
-           module.exports = musica;
-           module.exports.musica = musica;
-             
+            
             // =========================================
             // GRUPOS
             // =========================================
