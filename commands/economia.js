@@ -1,3 +1,5 @@
+console.log("Comando economía:", comando);
+
 const fs = require("fs");
 
 const DB = "./database/users.json";
@@ -39,7 +41,7 @@ async function economia(
   comando,
   args,
   id
-) {
+){
 
   const db = cargarDB();
 
@@ -48,7 +50,9 @@ async function economia(
   // SALDO
   if (comando === "saldo") {
 
-    return sock.sendMessage(chat, {
+    return sock.sendMessage(chat, 
+
+{
       text:
 `💰 SALDO
 
@@ -93,11 +97,7 @@ Banco: ${db[id].banco}`
 Ganaste ${ganancia} TitanCoins`
     });
 
-  }
-
-  return false;
-
-}
+  }  
   
 // MINAR
 if (comando === "minar") {
@@ -190,6 +190,8 @@ if (comando === "mercado") {
 ⛏️ Pico - 500
 🎣 Caña - 700`
   });
+
+return false;
 
 }
 
