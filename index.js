@@ -19,6 +19,7 @@ const roleplay = require("./commands/roleplay");
 const diversion = require("./commands/diversion");
 const anime = require("./commands/anime");
 const grupos = require("./commands/grupos");
+const musica = require("./commands/musica");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
