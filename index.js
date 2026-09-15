@@ -989,28 +989,25 @@ ${resultadoXP.nivel}
 
             }
 
-            // =========================================
-            // 🎭 ROLEPLAY
-            // =========================================
-            
-            if (!ejecutado) {
+           // =========================================
+           // 🎭 ROLEPLAY
+          // =========================================
 
-             const resultado = await roleplay(
-               await roleplay(
-                 sock,
-                 chat,
-                 comando,
-                 args,
-                 id,
-                 msg
-               );
+          if (!ejecutado) {
+           const resultado = await roleplay(
+             sock,
+             chat,
+             comando,
+             args,
+             id,
+             msg
+          );
 
-            if (resultado) {
-              ejecutado = true;
-            }
-
-          }
-
+       if (resultado) {
+       ejecutado = true;
+      }
+ 
+    }  
 
             // =========================================
             // DIVERSIÓN
