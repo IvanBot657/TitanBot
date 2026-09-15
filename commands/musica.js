@@ -3,7 +3,7 @@ const yts = require("yt-search");
 const config = require("../config");
 
 // ==============================
-// MÚSICA - TITANBOT v3.1
+// 🎵 MÚSICA - TITANBOT v3.2
 // ==============================
 
 async function musica(
@@ -14,12 +14,12 @@ async function musica(
   id
 ) {
 
-  const cmd =
-    String(comando || "").toLowerCase();
+  const cmd = String(comando || "").toLowerCase();
+
   console.log("🎵 MUSICA CMD:", cmd);
 
   // ==============================
-  // PLAY
+  // ▶️ PLAY
   // ==============================
 
   if (cmd === "play") {
@@ -27,10 +27,11 @@ async function musica(
     const busqueda = args.join(" ");
 
     if (!busqueda) {
-
       await sock.sendMessage(chat, {
         text:
-`🎵 Escribe el nombre de una canción.
+`🎵 *MÚSICA*
+
+Escribe el nombre de una canción.
 
 Ejemplo:
 .play Believer`
@@ -41,14 +42,10 @@ Ejemplo:
 
     try {
 
-      const resultado =
-        await yts(busqueda);
-
-      const video =
-        resultado.videos[0];
+      const resultado = await yts(busqueda);
+      const video = resultado.videos[0];
 
       if (!video) {
-
         await sock.sendMessage(chat, {
           text: "❌ No encontré resultados."
         });
@@ -72,11 +69,10 @@ ${video.url}`
 
     } catch (error) {
 
-      console.log(error);
+      console.log("ERROR PLAY:", error);
 
       await sock.sendMessage(chat, {
-        text:
-          "❌ Error al buscar la canción."
+        text: "❌ Error al buscar la canción."
       });
     }
 
@@ -84,7 +80,7 @@ ${video.url}`
   }
 
   // ==============================
-  // MP3
+  // 🎵 MP3
   // ==============================
 
   if (cmd === "mp3") {
@@ -92,10 +88,11 @@ ${video.url}`
     const busqueda = args.join(" ");
 
     if (!busqueda) {
-
       await sock.sendMessage(chat, {
         text:
-`🎵 Escribe el nombre de una canción.
+`🎵 *MP3*
+
+Escribe el nombre de una canción.
 
 Ejemplo:
 .mp3 Believer`
@@ -106,18 +103,18 @@ Ejemplo:
 
     try {
 
+      // ------------------------------
+      // BUSCAR
+      // ------------------------------
+
       await sock.sendMessage(chat, {
-        text: "🔍 Buscando canción..."
+        text: "🔍 Buscando..."
       });
 
-      const resultado =
-        await yts(busqueda);
-
-      const video =
-        resultado.videos[0];
+      const resultado = await yts(busqueda);
+      const video = resultado.videos[0];
 
       if (!video) {
-
         await sock.sendMessage(chat, {
           text: "❌ No encontré resultados."
         });
@@ -125,46 +122,118 @@ Ejemplo:
         return true;
       }
 
-      await sock.sendMessage(chat, {
-        text: "⏳ Generando audio..."
-      });
-
-      const respuesta =
-        await axios.get(
-          `https://tunelio.dev/create?quality=mp3&url=${encodeURIComponent(video.url)}`,
-          {
-            headers: {
-              Authorization:
-                `Bearer ${config.tunelioKey}`
-            }
-          }
-        );
-
-      console.log("Tunelio:", respuesta.data);
+      // ------------------------------
+      // SOLICITUD A TUNELIO
+      // ------------------------------
 
       await sock.sendMessage(chat, {
         text:
-`🎵 ${video.title}
+`🎵 *${video.title}*
 
-✅ Solicitud enviada a Tunelio.
-
-Revisa los logs de Render y envíame lo que aparece después de:
-
-Tunelio:`
+⏳ Procesando audio...`
       });
 
-     } catch (error) {
+      const respuesta = await axios.get(
+        `https://tunelio.dev/create?quality=mp3&url=${encodeURIComponent(video.url)}`,
+        {
+          headers: {
+            Authorization:
+              `Bearer ${config.tunelioKey}`
+          },
+          timeout: 60000
+        }
+      );
 
-  console.log("ERROR TUNELIO:");
-  console.log(error.response?.data || error.message);
+      console.log("Tunelio:", respuesta.data);
 
-  await sock.sendMessage(chat, {
-    text:
-`❌ Error al generar el audio.
+      const datos = respuesta.data;
 
-${error.message}`
-  });
-}
+      // ------------------------------
+      // ERROR DE TUNELIO
+      // ------------------------------
+
+      if (!datos || datos.status !== "ok") {
+
+        console.log("❌ TUNELIO NO DEVOLVIÓ AUDIO");
+
+        await sock.sendMessage(chat, {
+          text:
+`❌ No se pudo generar el audio.
+
+Estado:
+${datos?.status || "desconocido"}`
+        });
+
+        return true;
+      }
+
+      // ------------------------------
+      // COMPROBAR URL
+      // ------------------------------
+
+      if (!datos.url) {
+
+        await sock.sendMessage(chat, {
+          text:
+`❌ Tunelio respondió correctamente,
+pero no entregó una URL de audio.`
+        });
+
+        return true;
+      }
+
+      console.log("🎵 URL DE AUDIO RECIBIDA");
+      console.log(datos.url);
+
+      // ------------------------------
+      // ENVIAR AUDIO
+      // ------------------------------
+
+      await sock.sendMessage(chat, {
+        audio: {
+          url: datos.url
+        },
+        mimetype: "audio/mpeg",
+        fileName:
+          datos.filename ||
+          "TITANBOT-Audio.mp3"
+      });
+
+      console.log("✅ AUDIO ENVIADO A WHATSAPP");
+
+      // ------------------------------
+      // INFORMACIÓN FINAL
+      // ------------------------------
+
+      await sock.sendMessage(chat, {
+        text:
+`✅ *AUDIO ENVIADO*
+
+🎵 ${datos.filename || video.title}
+
+📦 Tamaño: ${datos.file_size_str || "Desconocido"}
+
+⚡ TITANBOT`
+      });
+
+    } catch (error) {
+
+      console.log("❌ ERROR TUNELIO:");
+
+      console.log(
+        error.response?.data ||
+        error.message
+      );
+
+      await sock.sendMessage(chat, {
+        text:
+`❌ *ERROR AL GENERAR AUDIO*
+
+${error.response?.data?.status ||
+ error.response?.data?.message ||
+ error.message}`
+      });
+    }
 
     return true;
   }
