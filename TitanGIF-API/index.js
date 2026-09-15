@@ -10,7 +10,9 @@ const PORT = process.env.PORT || 10000;
 
 const gifs = {
 
-  abrazar: [],
+  abrazar: [
+  "https://media.tenor.com/7I3H1QZ7zJAAAAAC/anime-hug.gif"
+],
   saludo: [],
   felicitar: [],
   reir: [],
