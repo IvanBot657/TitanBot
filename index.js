@@ -15,6 +15,8 @@ const inicio = require("./commands/inicio");
 const usuario = require("./commands/usuario");
 const economia = require("./commands/economia");
 const juegos = require("./commands/juegos");
+const roleplay = require("./commands/roleplay");
+const diversion = require("./commands/diversion");
 const anime = require("./commands/anime");
 const grupos = require("./commands/grupos");
 const herramientas = require("./commands/herramientas");
@@ -986,6 +988,50 @@ ${resultadoXP.nivel}
 
             }
 
+            // =========================================
+            // 🎭 ROLEPLAY
+            // =========================================
+            
+            if (!ejecutado) {
+
+             const resultado =
+               await roleplay(
+                 sock,
+                 chat,
+                 comando,
+                 args,
+                 id,
+                 msg
+               );
+
+            if (resultado) {
+              ejecutado = true;
+            }
+
+          }
+
+
+            // =========================================
+            // DIVERSIÓN
+            // =========================================
+
+            if (!ejecutado) {
+
+             const resultado =
+               await diversion(
+                 sock,
+                 chat,
+                 comando,
+                 args,
+                 id,
+                 msg
+               );
+
+            if (resultado) {
+            ejecutado = true;
+          }
+
+        }
 
             // =========================================
             // ANIME
