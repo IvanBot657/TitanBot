@@ -83,11 +83,24 @@ async function inicio(
 ╭━━━〔 👥 GRUPOS 〕━━━╮
 ┃ • .admins
 ┃ • .tagall
+┃ • .hidetag
 ┃ • .reglas
 ┃ • .bienvenida
 ┃ • .despedida
 ┃ • .antilink
 ┃ • .antispam
+┃ • .promote
+┃ • .demote
+┃ • .kick
+┃ • .add
+┃ • .mute
+┃ • .unmute
+┃ • .linkgrupo
+┃ • .setnombre
+┃ • .setdescripcion
+┃ • .grupo
+┃ • .cerrar
+┃ • .abrir
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━〔 🛠️ HERRAMIENTAS 〕━━━╮
