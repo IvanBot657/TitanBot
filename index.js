@@ -16,6 +16,7 @@ const usuario = require("./commands/usuario");
 const economia = require("./commands/economia");
 const juegos = require("./commands/juegos");
 const roleplay = require("./commands/roleplay");
+const diversion = require("./commands/diversion");
 const anime = require("./commands/anime");
 const musica = require("./commands/musica");
 const grupos = require("./commands/grupos");
