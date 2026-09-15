@@ -1,5 +1,5 @@
 // ==============================
-// DIVERSIÓN - TITANBOT v3.1
+// ROLEPLAY - TITANBOT v3.1
 // ==============================
 
 async function diversion(
