@@ -1,4 +1,13 @@
-const OWNER = "573237210190";
+// ==========================================
+// TITANBOT v3.1
+// OWNER.JS
+// ==========================================
+
+const config = require("../config");
+
+// ==========================================
+// FUNCIÓN PRINCIPAL
+// ==========================================
 
 async function owner(
   sock,
@@ -7,134 +16,191 @@ async function owner(
   args,
   id
 ) {
-
-  const numero =
-    id.split("@")[0];
-
-  const esOwner =
-    numero === OWNER;
+  const cmd = comando.toLowerCase();
 
   // ========================================
-  // SOLO OWNER
+  // COMPROBAR OWNER
+  // ========================================
+
+  const numeroUsuario = id.split("@")[0];
+  const numeroOwner = String(config.creador).replace(/\D/g, "");
+
+  const esOwner =
+    numeroUsuario === numeroOwner ||
+    numeroUsuario.endsWith(numeroOwner);
+
+  // ========================================
+  // COMANDOS DEL OWNER
   // ========================================
 
   const comandosOwner = [
-
+    "owner",
+    "ownermenu",
     "botstatus",
     "broadcast",
     "shutdown"
-
   ];
 
-  if (
-    comandosOwner.includes(comando) &&
-    !esOwner
-  ) {
-
-    return sock.sendMessage(chat, {
-
-      text:
-        "❌ Solo el Owner puede usar este comando."
-
-    });
-
+  // Si no es un comando de este módulo
+  if (!comandosOwner.includes(cmd)) {
+    return false;
   }
 
   // ========================================
-  // BOTSTATUS
+  // SEGURIDAD
   // ========================================
 
-  if (comando === "botstatus") {
-
-    const memoria =
-      (
-        process.memoryUsage().rss /
-        1024 /
-        1024
-      ).toFixed(2);
-
-    const uptime =
-      Math.floor(
-        process.uptime()
-      );
-
-    return sock.sendMessage(chat, {
-
+  if (!esOwner) {
+    await sock.sendMessage(chat, {
       text:
-`🤖 TITANBOT V3.0
+`❌ *ACCESO DENEGADO*
 
-🟢 Estado:
-Online
-
-⏱️ Uptime:
-${uptime}s
-
-💾 RAM:
-${memoria} MB
-
-🚀 Sistema:
-Operativo`
-
+Este comando solamente puede utilizarlo el propietario del bot.`
     });
 
+    return true;
+  }
+
+  // ========================================
+  // MENÚ OWNER
+  // ========================================
+
+  if (cmd === "owner" || cmd === "ownermenu") {
+    await sock.sendMessage(chat, {
+      text:
+`╔══════════════════════════╗
+       👑 *OWNER MENU*
+╚══════════════════════════╝
+
+🤖 *${config.nombre}*
+
+⚙️ Comandos disponibles:
+
+• .botstatus
+• .broadcast
+• .shutdown
+
+👑 Acceso: Propietario
+⚡ Versión: ${config.version}`
+    });
+
+    return true;
+  }
+
+  // ========================================
+  // BOT STATUS
+  // ========================================
+
+  if (cmd === "botstatus") {
+    await sock.sendMessage(chat, {
+      text:
+`📊 *ESTADO DEL BOT*
+
+🤖 Nombre: ${config.nombre}
+⚡ Versión: ${config.version}
+🟢 Estado: ONLINE
+📡 Conexión: ACTIVA
+
+👑 Owner: Verificado`
+    });
+
+    return true;
   }
 
   // ========================================
   // BROADCAST
   // ========================================
 
-  if (comando === "broadcast") {
+  if (cmd === "broadcast") {
 
-    const mensaje =
-      args.join(" ");
-
-    if (!mensaje) {
-
-      return sock.sendMessage(chat, {
-
+    if (!args.length) {
+      await sock.sendMessage(chat, {
         text:
-`📢 Usa:
+`📢 *BROADCAST*
 
-.broadcast mensaje`
+Uso:
 
+.broadcast Tu mensaje
+
+⚠️ Envía el mensaje a los chats que el bot tenga disponibles.`
       });
 
+      return true;
     }
 
-    return sock.sendMessage(chat, {
+    const mensaje = args.join(" ");
 
-      text:
-`📢 BROADCAST
+    try {
+      const chats = await sock.groupFetchAllParticipating();
 
-Mensaje preparado:
+      const grupos = Object.keys(chats);
+
+      let enviados = 0;
+
+      for (const grupo of grupos) {
+        try {
+          await sock.sendMessage(grupo, {
+            text:
+`📢 *MENSAJE DEL BOT*
 
 ${mensaje}
 
-(En v3.0 básica solo se muestra al owner.)`
+🤖 ${config.nombre}`
+          });
 
-    });
+          enviados++;
+        } catch (error) {
+          console.log(
+            `❌ No se pudo enviar a ${grupo}`
+          );
+        }
+      }
 
+      await sock.sendMessage(chat, {
+        text:
+`✅ *BROADCAST TERMINADO*
+
+📨 Grupos encontrados: ${grupos.length}
+📤 Enviados: ${enviados}`
+      });
+
+    } catch (error) {
+
+      console.log("❌ Error en broadcast:", error);
+
+      await sock.sendMessage(chat, {
+        text: "❌ No se pudo realizar el broadcast."
+      });
+    }
+
+    return true;
   }
 
   // ========================================
   // SHUTDOWN
   // ========================================
 
-  if (comando === "shutdown") {
-
+  if (cmd === "shutdown") {
     await sock.sendMessage(chat, {
-
       text:
-`🛑 TitanBot apagándose...`
+`⚠️ *APAGANDO ${config.nombre}*
 
+🔴 El bot se está deteniendo...`
     });
 
-    process.exit(0);
+    setTimeout(() => {
+      process.exit(0);
+    }, 1500);
 
+    return true;
   }
 
-  return false;
-
+  return true;
 }
 
+// ==========================================
+// EXPORTACIÓN
+// ==========================================
+
 module.exports = owner;
+module.exports.owner = owner;
