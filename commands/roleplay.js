@@ -3,7 +3,6 @@
 // 9 comandos + GIF + mención real
 // =========================================
 
-// APIs de imágenes animadas
 const API = "https://api.waifu.pics/sfw";
 
 // =========================================
@@ -81,7 +80,7 @@ const acciones = {
 };
 
 // =========================================
-// OBTENER CONTEXTO DE LA MENCIÓN
+// OBTENER MENCIÓN REAL DE WHATSAPP
 // =========================================
 
 function obtenerMenciones(msg) {
@@ -95,7 +94,6 @@ function obtenerMenciones(msg) {
     msg?.message?.listResponseMessage?.contextInfo;
 
   return contextInfo?.mentionedJid || [];
-
 }
 
 // =========================================
@@ -110,7 +108,7 @@ async function obtenerGif(tipo) {
 
   if (!respuesta.ok) {
     throw new Error(
-      `La API respondió ${respuesta.status}`
+      `API respondió con código ${respuesta.status}`
     );
   }
 
@@ -118,12 +116,11 @@ async function obtenerGif(tipo) {
 
   if (!datos?.url) {
     throw new Error(
-      "La API no devolvió ninguna imagen."
+      "La API no devolvió una URL."
     );
   }
 
   return datos.url;
-
 }
 
 // =========================================
@@ -145,7 +142,7 @@ async function roleplay(
       .trim();
 
   // =======================================
-  // COMPROBAR COMANDO
+  // COMPROBAR SI ES UN COMANDO ROLEPLAY
   // =======================================
 
   const accion = acciones[cmd];
@@ -155,14 +152,14 @@ async function roleplay(
   }
 
   // =======================================
-  // BUSCAR MENCIÓN REAL DE WHATSAPP
+  // BUSCAR MENCIÓN REAL
   // =======================================
 
   const mencionados =
     obtenerMenciones(msg);
 
   // =======================================
-  // SI NO MENCIONÓ A NADIE
+  // SIN MENCIÓN
   // =======================================
 
   if (
@@ -178,34 +175,41 @@ Ejemplo:
 
 .${cmd} @usuario
 
-👉 Selecciona a la persona desde WhatsApp para que sea una mención real.`
+👉 Selecciona a la persona desde WhatsApp para hacer una mención real.`
     });
 
     return true;
   }
 
   // =======================================
-  // PRIMER USUARIO MENCIONADO
+  // PERSONA MENCIONADA
   // =======================================
 
   const objetivo =
     mencionados[0];
 
   // =======================================
-  // TEXTO DE LA MENCIÓN
+  // CREAR TEXTO DE MENCIÓN
   // =======================================
-
-  const numero =
-    objetivo.split("@")[0];
+  // WhatsApp se encargará de mostrar
+  // @Nombre en lugar del número.
 
   const texto =
-`${accion.emoji} ${accion.texto} @${numero}`;
+`${accion.emoji} ${accion.texto} @${objetivo.split("@")[0]}`;
 
   // =======================================
   // OBTENER GIF
   // =======================================
 
   try {
+
+    console.log(
+      `🎭 ROLEPLAY: ${cmd}`
+    );
+
+    console.log(
+      `👤 Objetivo: ${objetivo}`
+    );
 
     await sock.sendMessage(chat, {
       text: "🎬 Preparando animación..."
@@ -214,8 +218,13 @@ Ejemplo:
     const gif =
       await obtenerGif(accion.api);
 
+    console.log(
+      "🎬 GIF:",
+      gif
+    );
+
     // =====================================
-    // ENVIAR GIF
+    // ENVIAR GIF + MENCIÓN
     // =====================================
 
     await sock.sendMessage(chat, {
@@ -243,16 +252,12 @@ Ejemplo:
       error.message
     );
 
-    // =====================================
-    // MENSAJE DE ERROR
-    // =====================================
-
     await sock.sendMessage(chat, {
 
       text:
 `❌ No pude cargar la animación.
 
-${accion.emoji} ${accion.texto} @${numero}`,
+${accion.emoji} ${accion.texto} @${objetivo.split("@")[0]}`,
 
       mentions: [
         objetivo
