@@ -1,80 +1,51 @@
 // =========================================
 // 🎭 TITANBOT - ROLEPLAY
-// 9 COMANDOS + GIF + MENCIÓN REAL
-// =========================================
-
-const axios = require("axios");
-
-const API = "https://api.waifu.pics/sfw";
-
-// =========================================
-// ACCIONES
+// 9 comandos + mención real de WhatsApp
 // =========================================
 
 const acciones = {
 
   abrazar: {
-    api: "hug",
     emoji: "🫂",
     texto: "Yo abrazo a"
   },
 
   saludo: {
-    api: "wave",
     emoji: "👋",
     texto: "Yo saludo a"
   },
 
   felicitar: {
-    api: "happy",
     emoji: "🎉",
     texto: "Yo felicito a"
   },
 
   reir: {
-    api: "laugh",
-    emoji: "😂",
-    texto: "Yo río con"
-  },
-
-  "reír": {
-    api: "laugh",
     emoji: "😂",
     texto: "Yo río con"
   },
 
   llorar: {
-    api: "cry",
     emoji: "😭",
     texto: "Yo lloro con"
   },
 
   enojado: {
-    api: "angry",
-    emoji: "😡",
-    texto: "Yo me enojo con"
-  },
-
-  enojar: {
-    api: "angry",
     emoji: "😡",
     texto: "Yo me enojo con"
   },
 
   bailar: {
-    api: "dance",
     emoji: "💃",
     texto: "Yo bailo con"
   },
 
   golpear: {
-    api: "punch",
     emoji: "👊",
     texto: "Yo golpeo a"
   },
 
   patada: {
-    api: "kick",
     emoji: "🦵",
     texto: "Yo doy una patada a"
   }
@@ -82,60 +53,38 @@ const acciones = {
 };
 
 // =========================================
-// OBTENER MENCIÓN REAL
+// 🔎 BUSCAR MENCIÓN REAL
 // =========================================
 
 function obtenerMenciones(msg) {
 
-  const contextInfo =
-    msg?.message?.extendedTextMessage?.contextInfo ||
-    msg?.message?.imageMessage?.contextInfo ||
-    msg?.message?.videoMessage?.contextInfo ||
-    msg?.message?.documentMessage?.contextInfo ||
-    msg?.message?.buttonsResponseMessage?.contextInfo ||
-    msg?.message?.listResponseMessage?.contextInfo;
+  const mensajes = [
+    msg?.message?.extendedTextMessage,
+    msg?.message?.imageMessage,
+    msg?.message?.videoMessage,
+    msg?.message?.documentMessage
+  ];
 
-  return contextInfo?.mentionedJid || [];
-}
+  for (const mensaje of mensajes) {
 
-// =========================================
-// OBTENER GIF CON AXIOS
-// =========================================
+    const menciones =
+      mensaje?.contextInfo?.mentionedJid;
 
-async function obtenerGif(tipo) {
-
-  console.log(
-    `🎬 Consultando API: ${API}/${tipo}`
-  );
-
-  const respuesta = await axios.get(
-    `${API}/${tipo}`,
-    {
-      timeout: 15000,
-      headers: {
-        "User-Agent": "TITANBOT/3.1"
-      }
+    if (
+      Array.isArray(menciones) &&
+      menciones.length > 0
+    ) {
+      return menciones;
     }
-  );
 
-  if (
-    !respuesta.data ||
-    !respuesta.data.url
-  ) {
-    throw new Error(
-      "La API no devolvió una URL válida."
-    );
   }
 
-  console.log(
-    `✅ GIF encontrado: ${respuesta.data.url}`
-  );
+  return [];
 
-  return respuesta.data.url;
 }
 
 // =========================================
-// ROLEPLAY
+// 🎭 ROLEPLAY
 // =========================================
 
 async function roleplay(
@@ -153,10 +102,11 @@ async function roleplay(
       .trim();
 
   // =======================================
-  // COMPROBAR COMANDO
+  // COMPROBAR SI ES ROLEPLAY
   // =======================================
 
-  const accion = acciones[cmd];
+  const accion =
+    acciones[cmd];
 
   if (!accion) {
     return false;
@@ -174,7 +124,7 @@ async function roleplay(
     obtenerMenciones(msg);
 
   // =======================================
-  // SI NO HAY MENCIÓN
+  // SIN MENCIÓN
   // =======================================
 
   if (
@@ -190,22 +140,18 @@ Ejemplo:
 
 .${cmd} @usuario
 
-👉 Selecciona a la persona desde WhatsApp.`
+👉 Selecciona a la persona directamente desde WhatsApp.`
     });
 
     return true;
   }
 
   // =======================================
-  // USUARIO MENCIONADO
+  // PERSONA MENCIONADA
   // =======================================
 
   const objetivo =
     mencionados[0];
-
-  console.log(
-    `👤 Objetivo: ${objetivo}`
-  );
 
   // =======================================
   // TEXTO
@@ -214,71 +160,29 @@ Ejemplo:
   const texto =
 `${accion.emoji} ${accion.texto} @${objetivo.split("@")[0]}`;
 
+  console.log(
+    `👤 Persona mencionada: ${objetivo}`
+  );
+
   // =======================================
-  // OBTENER Y ENVIAR GIF
+  // POR AHORA MOSTRAMOS EL TEXTO
   // =======================================
+  //
+  // El GIF lo conectaremos después
+  // con TitanGIF-API.
+  //
 
-  try {
+  await sock.sendMessage(chat, {
 
-    await sock.sendMessage(chat, {
-      text: "🎬 Preparando animación..."
-    });
+    text: texto,
 
-    const gif =
-      await obtenerGif(accion.api);
+    mentions: [
+      objetivo
+    ]
 
-    // =====================================
-    // ENVIAR ANIMACIÓN
-    // =====================================
+  });
 
-    await sock.sendMessage(chat, {
-
-      video: {
-        url: gif
-      },
-
-      gifPlayback: true,
-
-      caption: texto,
-
-      mentions: [
-        objetivo
-      ]
-
-    });
-
-    console.log(
-      `✅ ROLEPLAY ENVIADO: ${cmd}`
-    );
-
-    return true;
-
-  } catch (error) {
-
-    console.log(
-      "❌ ERROR ROLEPLAY:"
-    );
-
-    console.log(
-      error.response?.data ||
-      error.message
-    );
-
-    await sock.sendMessage(chat, {
-
-      text:
-`❌ No pude cargar la animación.
-
-${accion.emoji} ${accion.texto} @${objetivo.split("@")[0]}`,
-
-      mentions: [
-        objetivo
-      ]
-
-    });
-
-    return true;
-  }
+  return true;
 }
 
 // =========================================
