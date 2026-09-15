@@ -1,3 +1,8 @@
+// ==========================================
+// TITANBOT v3.1
+// INICIO.JS
+// ==========================================
+
 const config = require("../config");
 
 async function inicio(
@@ -9,187 +14,219 @@ async function inicio(
   esGrupo,
   esAdmin
 ) {
+  const cmd = comando.toLowerCase();
 
-  // =========================
-  // MENU
-  // =========================
-
-  if (comando === "menu") {
-
-    return sock.sendMessage(chat, {
+  // ==============================
+  // .menu
+  // ==============================
+  if (cmd === "menu" || cmd === "menú") {
+    await sock.sendMessage(chat, {
       text:
-`╔══════════════════════╗
-║      🤖 TITANBOT     ║
-║       v${config.version}       ║
-╚══════════════════════╝
+`╔══════════════════════════╗
+        🤖 *${config.nombre}*
+          ⚡ v3.1.0
+╚══════════════════════════╝
 
-👤 USUARIO
-.registrar
-.perfil
-.nivel
-.xp
-.rank
-.top
-.misiones
+👋 *MENÚ PRINCIPAL*
 
-💰 ECONOMÍA
-.saldo
-.daily
-.trabajar
-.minar
-.pescar
-.casino
-.apostar
-.transferir
-.inventario
-.mercado
+╭━━━〔 🏠 INICIO 〕━━━╮
+┃ • .menu
+┃ • .ping
+┃ • .info
+┃ • .version
+┃ • .owner
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-🎲 JUEGOS
-.dado
-.moneda
-.slot
-.trivia
-.ruleta
+╭━━━〔 👤 USUARIO 〕━━━╮
+┃ • .registrar
+┃ • .perfil
+┃ • .nivel
+┃ • .xp
+┃ • .rank
+┃ • .top
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-🎌 ANIME
-.anime
-.personaje
-.manga
-.waifu
+╭━━━〔 💰 ECONOMÍA 〕━━━╮
+┃ • .saldo
+┃ • .daily
+┃ • .trabajar
+┃ • .minar
+┃ • .pescar
+┃ • .inventario
+┃ • .mercado
+┃ • .comprar
+┃ • .transferir
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-👥 GRUPOS
-.admins
-.tagall
-.reglas
-.antilink
-.antispam
+╭━━━〔 🎮 JUEGOS 〕━━━╮
+┃ • .juegos
+┃ • .dado
+┃ • .moneda
+┃ • .adivina
+┃ • .ppt
+┃ • .trivia
+┃ • .numero
+┃ • .suerte
+┃ • .8ball
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-🛠️ HERRAMIENTAS
-.hora
-.fecha
-.calculadora
-.id
-.qr
+╭━━━〔 🎌 ANIME 〕━━━╮
+┃ • .anime
+┃ • .animebuscar
+┃ • .animeinfo
+┃ • .personaje
+┃ • .manga
+┃ • .waifu
+┃ • .husbando
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-⚙️ AJUSTES
-.bienvenida
-.despedida
-.configgrupo
+╭━━━〔 👥 GRUPOS 〕━━━╮
+┃ • .admins
+┃ • .tagall
+┃ • .reglas
+┃ • .bienvenida
+┃ • .despedida
+┃ • .antilink
+┃ • .antispam
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-👑 OWNER
-.botstatus
-.reiniciar
-.broadcast
+╭━━━〔 🛠️ HERRAMIENTAS 〕━━━╮
+┃ • .hora
+┃ • .fecha
+┃ • .id
+┃ • .random
+┃ • .calculadora
+┃ • .mayusculas
+┃ • .minusculas
+┃ • .ping
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-╔══════════════════════╗
-║ 🟢 TitanBot Online   ║
-╚══════════════════════╝`
+╭━━━〔 ⚙️ AJUSTES 〕━━━╮
+┃ • .configgrupo
+┃ • .estadogrupo
+┃ • .bienvenidaestado
+┃ • .despedidaestado
+┃ • .antilinkestado
+┃ • .antispamestado
+╰━━━━━━━━━━━━━━━━━━━━╯
+
+╭━━━〔 👑 OWNER 〕━━━╮
+┃ • .botstatus
+┃ • .broadcast
+┃ • .shutdown
+╰━━━━━━━━━━━━━━━━━━━━╯
+
+⚡ *${config.nombre}*
+🚀 *Sistema v3.1.0*`
     });
+
+    return true;
   }
 
-
-  // =========================
-  // PING
-  // =========================
-
-  if (comando === "ping") {
-
-    return sock.sendMessage(chat, {
-      text:
-`🏓 PONG
-
-🤖 Bot:
-${config.nombre}
-
-📦 Versión:
-${config.version}
-
-🟢 Estado:
-Online`
+  // ==============================
+  // .ping
+  // ==============================
+  if (cmd === "ping") {
+    await sock.sendMessage(chat, {
+      text: `🏓 *PONG!*\n\n🤖 ${config.nombre}\n⚡ Bot activo\n🚀 Versión: ${config.version}`
     });
+
+    return true;
   }
 
-
-  // =========================
-  // INFO
-  // =========================
-
-  if (comando === "info") {
-
-    return sock.sendMessage(chat, {
+  // ==============================
+  // .info
+  // ==============================
+  if (cmd === "info") {
+    await sock.sendMessage(chat, {
       text:
-`🤖 INFORMACIÓN
+`╔════════════════════╗
+      🤖 *${config.nombre}*
+╚════════════════════╝
 
-Nombre:
-${config.nombre}
+📌 *Información del bot*
 
-Versión:
-${config.version}
-
-Prefijo:
-${config.prefijo}
-
-Moneda:
-${config.moneda}
-
-Creador:
-${config.creador}`
-    });
-  }
-
-
-  // =========================
-  // VERSION
-  // =========================
-
-  if (comando === "version") {
-
-    return sock.sendMessage(chat, {
-      text:
-`📦 TitanBot
-
-Versión actual:
-
-${config.version}`
-    });
-  }
-
-
-  // =========================
-  // OWNER
-  // =========================
-
-  if (comando === "owner") {
-
-    return sock.sendMessage(chat, {
-      text:
-`👑 OWNER
-
-Contacto:
-
-${config.creador}`
-    });
-  }
-
-
-  // =========================
-  // BOT
-  // =========================
-
-  if (comando === "bot") {
-
-    return sock.sendMessage(chat, {
-      text:
-`🤖 TITANBOT
-
-🟢 Estado: Online
-📦 Versión: ${config.version}
+⚡ Versión: ${config.version}
 💰 Moneda: ${config.moneda}
-⚡ Prefijo: ${config.prefijo}`
+🔧 Prefijo: ${config.prefijo}
+🌐 Web: ${config.web}
+
+📡 Estado: 🟢 Online
+`
     });
+
+    return true;
   }
 
-  return false;
-}
+  // ==============================
+  // .version
+  // ==============================
+  if (cmd === "version") {
+    await sock.sendMessage(chat, {
+      text:
+`🤖 *${config.nombre}*
 
-module.exports = inicio;
+📦 Versión actual:
+*${config.version}*
+
+🟢 Estado: Funcionando
+⚡ Sistema: TitanBot v3.1`
+    });
+
+    return true;
+  }
+
+  // ==============================
+  // .owner
+  // ==============================
+  if (cmd === "owner") {
+    await sock.sendMessage(chat, {
+      text:
+`👑 *CREADOR DE ${config.nombre}*
+
+📞 Contacto:
++${config.creador}
+
+🤖 Bot: ${config.nombre}
+⚡ Versión: ${config.version}`
+    });
+
+    return true;
+  }
+
+  // ==============================
+  // .bot
+  // ==============================
+  if (cmd === "bot") {
+    await sock.sendMessage(chat, {
+      text:
+`🤖 *${config.nombre}*
+
+🟢 El bot está funcionando correctamente.
+⚡ Versión: ${config.version}`
+    });
+
+    return true;
+  }
+
+  // ==============================
+  // .ayuda
+  // ==============================
+  if (cmd === "ayuda" || cmd === "help") {
+    await sock.sendMessage(chat, {
+      text:
+`📚 *AYUDA - ${config.nombre}*
+
+Usa:
+
+.menu
+Para ver todos los comandos.
+
+.ping
+Para comprobar si el bot está activo.
+
+.info
+Para ver información del bot.
+
+.version
+Para ver la versión actual.
