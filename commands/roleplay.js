@@ -1,250 +1,237 @@
-// ==============================
-// ROLEPLAY - TITANBOT v3.1
-// ==============================
+const axios = require("axios");
 
-function obtenerMencion(msg) {
+// ==========================================
+// 🎭 TITANBOT - ROLEPLAY
+// ==========================================
+
+const acciones = {
+  abrazar: {
+    emoji: "🫂",
+    texto: "abraza"
+  },
+
+  besar: {
+    emoji: "💋",
+    texto: "le da un beso a"
+  },
+
+  golpear: {
+    emoji: "👊",
+    texto: "golpea a"
+  },
+
+  patada: {
+    emoji: "🦵",
+    texto: "le da una patada a"
+  },
+
+  saludo: {
+    emoji: "👋",
+    texto: "saluda a"
+  },
+
+  felicitar: {
+    emoji: "🎉",
+    texto: "felicita a"
+  },
+
+  reir: {
+    emoji: "😂",
+    texto: "se ríe con"
+  },
+
+  llorar: {
+    emoji: "😭",
+    texto: "llora con"
+  },
+
+  enojado: {
+    emoji: "😠",
+    texto: "se enoja con"
+  },
+
+  bailar: {
+    emoji: "💃",
+    texto: "baila con"
+  }
+};
+
+// ==========================================
+// 🖼️ OBTENER IMAGEN
+// ==========================================
+
+async function obtenerImagen() {
   try {
-    const mensaje =
-      msg?.message?.extendedTextMessage;
 
-    const contexto =
-      mensaje?.contextInfo;
+    const respuesta = await axios.get(
+      "https://api.waifu.pics/sfw/hug",
+      {
+        timeout: 15000
+      }
+    );
 
-    if (
-      contexto?.mentionedJid &&
-      contexto.mentionedJid.length > 0
-    ) {
-      return contexto.mentionedJid[0];
-    }
+    return respuesta.data?.url || null;
 
-    return null;
+  } catch (error) {
 
-  } catch {
+    console.log(
+      "❌ ERROR IMAGEN ROLEPLAY:",
+      error.message
+    );
+
     return null;
   }
 }
+
+// ==========================================
+// 🎭 ROLEPLAY
+// ==========================================
 
 async function roleplay(
   sock,
   chat,
   comando,
-  args,
+  args = [],
   id,
-  msg
+  msg = null
 ) {
 
-  const cmd =
-    String(comando || "").toLowerCase();
+  const cmd = String(comando || "")
+    .toLowerCase()
+    .replace(".", "")
+    .trim();
 
-  const usuario =
-    obtenerMencion(msg);
+  // Comprobar acción
+  if (!acciones[cmd]) {
+    return false;
+  }
 
-  // ==============================
-  // ABRAZAR
-  // ==============================
+  const accion = acciones[cmd];
 
-  if (cmd === "abrazar") {
+  // ========================================
+  // 📌 DETECTAR @ REAL
+  // ========================================
 
-    if (!usuario) {
-      await sock.sendMessage(chat, {
-        text:
-          "🤗 Menciona a alguien.\n\nEjemplo:\n.abrazar @usuario"
-      });
+  let mentionedJid = [];
 
-      return true;
+  try {
+
+    const contextInfo =
+      msg?.message?.extendedTextMessage?.contextInfo ||
+      msg?.message?.imageMessage?.contextInfo ||
+      msg?.message?.videoMessage?.contextInfo ||
+      msg?.message?.conversation?.contextInfo;
+
+    mentionedJid =
+      contextInfo?.mentionedJid || [];
+
+  } catch (error) {
+
+    console.log(
+      "❌ ERROR MENCIONES:",
+      error.message
+    );
+  }
+
+  // ========================================
+  // ❌ SIN @
+  // ========================================
+
+  if (!mentionedJid.length) {
+
+    await sock.sendMessage(chat, {
+      text:
+`❌ *Debes mencionar a una persona.*
+
+Ejemplo:
+
+${cmd} @usuario
+
+🎭 Usa una mención real de WhatsApp.`
+    });
+
+    return true;
+  }
+
+  // ========================================
+  // 👤 OBTENER PERSONA MENCIONADA
+  // ========================================
+
+  const objetivo = mentionedJid[0];
+
+  const numero =
+    objetivo.split("@")[0];
+
+  const nombre =
+    `@${numero}`;
+
+  // ========================================
+  // 👤 USUARIO QUE EJECUTA
+  // ========================================
+
+  let autor = "Alguien";
+
+  try {
+
+    const participant =
+      msg?.key?.participant ||
+      msg?.key?.remoteJid;
+
+    if (participant) {
+      autor = `@${participant.split("@")[0]}`;
     }
 
-    await sock.sendMessage(chat, {
-      text:
-        `🤗 @${id.split("@")[0]} abrazó a @${usuario.split("@")[0]}`,
-      mentions: [id, usuario]
-    });
+  } catch {}
 
-    return true;
-  }
+  // ========================================
+  // 🖼️ OBTENER IMAGEN
+  // ========================================
 
-  // ==============================
-  // BESAR
-  // ==============================
+  const imagen = await obtenerImagen();
 
-  if (cmd === "besar") {
+  // ========================================
+  // 📝 TEXTO
+  // ========================================
 
-    if (!usuario) {
-      await sock.sendMessage(chat, {
-        text:
-          "💋 Menciona a alguien.\n\nEjemplo:\n.besar @usuario"
-      });
+  const texto =
+`${accion.emoji} ${autor} ${accion.texto} ${nombre}`;
 
-      return true;
-    }
+  // ========================================
+  // 📤 ENVIAR
+  // ========================================
+
+  if (imagen) {
 
     await sock.sendMessage(chat, {
-      text:
-        `💋 @${id.split("@")[0]} besó a @${usuario.split("@")[0]}`,
-      mentions: [id, usuario]
+      image: {
+        url: imagen
+      },
+      caption:
+`${texto}
+
+🎭 *TITANBOT ROLEPLAY*`,
+      mentions: [
+        objetivo
+      ]
     });
 
-    return true;
-  }
-
-  // ==============================
-  // GOLPEAR
-  // ==============================
-
-  if (cmd === "golpear") {
-
-    if (!usuario) {
-      await sock.sendMessage(chat, {
-        text:
-          "🥊 Menciona a alguien.\n\nEjemplo:\n.golpear @usuario"
-      });
-
-      return true;
-    }
+  } else {
 
     await sock.sendMessage(chat, {
-      text:
-        `🥊 @${id.split("@")[0]} golpeó a @${usuario.split("@")[0]}`,
-      mentions: [id, usuario]
+      text: texto,
+      mentions: [
+        objetivo
+      ]
     });
-
-    return true;
   }
 
-  // ==============================
-  // PATADA
-  // ==============================
-
-  if (cmd === "patada") {
-
-    if (!usuario) {
-      await sock.sendMessage(chat, {
-        text:
-          "🦵 Menciona a alguien.\n\nEjemplo:\n.patada @usuario"
-      });
-
-      return true;
-    }
-
-    await sock.sendMessage(chat, {
-      text:
-        `🦵 @${id.split("@")[0]} le dio una patada a @${usuario.split("@")[0]}`,
-      mentions: [id, usuario]
-    });
-
-    return true;
-  }
-
-  // ==============================
-  // SALUDAR
-  // ==============================
-
-  if (cmd === "saludar") {
-
-    if (!usuario) {
-      await sock.sendMessage(chat, {
-        text:
-          "👋 Menciona a alguien.\n\nEjemplo:\n.saludar @usuario"
-      });
-
-      return true;
-    }
-
-    await sock.sendMessage(chat, {
-      text:
-        `👋 @${id.split("@")[0]} saludó a @${usuario.split("@")[0]}`,
-      mentions: [id, usuario]
-    });
-
-    return true;
-  }
-
-  // ==============================
-  // FELICITAR
-  // ==============================
-
-  if (cmd === "felicitar") {
-
-    if (!usuario) {
-      await sock.sendMessage(chat, {
-        text:
-          "🎉 Menciona a alguien.\n\nEjemplo:\n.felicitar @usuario"
-      });
-
-      return true;
-    }
-
-    await sock.sendMessage(chat, {
-      text:
-        `🎉 @${id.split("@")[0]} felicitó a @${usuario.split("@")[0]}`,
-      mentions: [id, usuario]
-    });
-
-    return true;
-  }
-
-  // ==============================
-  // REIR
-  // ==============================
-
-  if (cmd === "reir") {
-
-    await sock.sendMessage(chat, {
-      text:
-        `😂 @${id.split("@")[0]} está riéndose sin parar.`,
-      mentions: [id]
-    });
-
-    return true;
-  }
-
-  // ==============================
-  // LLORAR
-  // ==============================
-
-  if (cmd === "llorar") {
-
-    await sock.sendMessage(chat, {
-      text:
-        `😭 @${id.split("@")[0]} está llorando.`,
-      mentions: [id]
-    });
-
-    return true;
-  }
-
-  // ==============================
-  // ENOJADO
-  // ==============================
-
-  if (cmd === "enojado") {
-
-    await sock.sendMessage(chat, {
-      text:
-        `😡 @${id.split("@")[0]} está muy enojado.`,
-      mentions: [id]
-    });
-
-    return true;
-  }
-
-  // ==============================
-  // BAILAR
-  // ==============================
-
-  if (cmd === "bailar") {
-
-    await sock.sendMessage(chat, {
-      text:
-        `💃 @${id.split("@")[0]} está bailando.`,
-      mentions: [id]
-    });
-
-    return true;
-  }
-
-  return false;
+  return true;
 }
+
+// ==========================================
+// 📦 EXPORTAR
+// ==========================================
 
 module.exports = roleplay;
 module.exports.roleplay = roleplay;
+module.exports.acciones = acciones;
