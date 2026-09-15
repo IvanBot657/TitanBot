@@ -1,4 +1,3 @@
-const config = require("../config");
 const fs = require("fs");
 const path = require("path");
 
@@ -14,9 +13,7 @@ function cargarGrupos() {
       fs.writeFileSync(DB_PATH, "{}");
     }
 
-    return JSON.parse(
-      fs.readFileSync(DB_PATH, "utf8")
-    );
+    return JSON.parse(fs.readFileSync(DB_PATH, "utf8"));
   } catch (error) {
     console.error("Error cargando grupos:", error);
     return {};
@@ -61,24 +58,67 @@ async function botEsAdmin(sock, chat) {
   try {
     const metadata = await sock.groupMetadata(chat);
 
-    const botNumero = sock.user.id
-      .split(":")[0]
-      .split("@")[0];
+    const botId = sock.user?.id;
 
-    const bot = metadata.participants.find(
-      participante =>
-        participante.id.split("@")[0] === botNumero
+    if (!botId) {
+      console.log("❌ No se pudo obtener el ID del bot.");
+      return false;
+    }
+
+    const limpiarId = (id) => {
+      if (!id) return null;
+
+      return String(id)
+        .split(":")[0]
+        .split("@")[0];
+    };
+
+    const botNumero = limpiarId(botId);
+    const botLid = limpiarId(sock.user?.lid);
+
+    console.log("🤖 ID bot:", botId);
+    console.log("📱 Número bot:", botNumero);
+    console.log("🆔 LID bot:", botLid);
+
+    const bot = metadata.participants.find((participante) => {
+      const participanteId =
+        limpiarId(participante.id);
+
+      const participanteLid =
+        limpiarId(participante.lid);
+
+      return (
+        participanteId === botNumero ||
+        participanteId === botLid ||
+        participanteLid === botNumero ||
+        participanteLid === botLid
+      );
+    });
+
+    if (!bot) {
+      console.log(
+        "❌ No se encontró al bot entre los participantes."
+      );
+
+      return false;
+    }
+
+    console.log(
+      "🤖 Estado administrativo:",
+      bot.admin
     );
 
-    return !!(
-      bot &&
-      (
-        bot.admin === "admin" ||
-        bot.admin === "superadmin"
-      )
+    return (
+      bot.admin === "admin" ||
+      bot.admin === "superadmin"
     );
+
   } catch (error) {
-    console.error("Error comprobando admin del bot:", error);
+    console.error(
+      "❌ Error comprobando admin del bot:",
+      error
+    );
+
     return false;
   }
 }
@@ -95,7 +135,8 @@ function obtenerMencion(msg) {
       msg?.message?.videoMessage ||
       msg?.message?.documentMessage;
 
-    const contexto = mensaje?.contextInfo;
+    const contexto =
+      mensaje?.contextInfo;
 
     if (
       contexto?.mentionedJid &&
@@ -105,6 +146,7 @@ function obtenerMencion(msg) {
     }
 
     return null;
+
   } catch {
     return null;
   }
@@ -124,7 +166,8 @@ async function grupos(
   esAdmin,
   msg
 ) {
-  const cmd = String(comando || "").toLowerCase();
+  const cmd =
+    String(comando || "").toLowerCase();
 
   const comandosGrupo = [
     "admins",
@@ -166,7 +209,8 @@ async function grupos(
     return true;
   }
 
-  const grupo = obtenerGrupo(chat);
+  const grupo =
+    obtenerGrupo(chat);
 
   // ==============================
   // ADMINS
@@ -208,7 +252,9 @@ async function grupos(
       await sock.groupMetadata(chat);
 
     const mentions =
-      metadata.participants.map(p => p.id);
+      metadata.participants.map(
+        p => p.id
+      );
 
     let texto =
       "📢 *TODOS LOS MIEMBROS*\n\n";
@@ -246,7 +292,9 @@ async function grupos(
       await sock.groupMetadata(chat);
 
     const mentions =
-      metadata.participants.map(p => p.id);
+      metadata.participants.map(
+        p => p.id
+      );
 
     const texto =
       args.length > 0
@@ -254,7 +302,7 @@ async function grupos(
         : "📢 Mensaje para todos.";
 
     await sock.sendMessage(chat, {
-      text: texto,
+      text,
       mentions
     });
 
@@ -311,9 +359,15 @@ ${grupo.reglas}`
     grupo.bienvenida =
       opcion === "on";
 
-    const gruposDB = cargarGrupos();
-    gruposDB[chat] = grupo;
-    guardarGrupos(gruposDB);
+    const gruposDB =
+      cargarGrupos();
+
+    gruposDB[chat] =
+      grupo;
+
+    guardarGrupos(
+      gruposDB
+    );
 
     await sock.sendMessage(chat, {
       text: grupo.bienvenida
@@ -359,9 +413,15 @@ ${grupo.reglas}`
     grupo.despedida =
       opcion === "on";
 
-    const gruposDB = cargarGrupos();
-    gruposDB[chat] = grupo;
-    guardarGrupos(gruposDB);
+    const gruposDB =
+      cargarGrupos();
+
+    gruposDB[chat] =
+      grupo;
+
+    guardarGrupos(
+      gruposDB
+    );
 
     await sock.sendMessage(chat, {
       text: grupo.despedida
@@ -407,9 +467,15 @@ ${grupo.reglas}`
     grupo.antilink =
       opcion === "on";
 
-    const gruposDB = cargarGrupos();
-    gruposDB[chat] = grupo;
-    guardarGrupos(gruposDB);
+    const gruposDB =
+      cargarGrupos();
+
+    gruposDB[chat] =
+      grupo;
+
+    guardarGrupos(
+      gruposDB
+    );
 
     await sock.sendMessage(chat, {
       text: grupo.antilink
@@ -455,9 +521,15 @@ ${grupo.reglas}`
     grupo.antispam =
       opcion === "on";
 
-    const gruposDB = cargarGrupos();
-    gruposDB[chat] = grupo;
-    guardarGrupos(gruposDB);
+    const gruposDB =
+      cargarGrupos();
+
+    gruposDB[chat] =
+      grupo;
+
+    guardarGrupos(
+      gruposDB
+    );
 
     await sock.sendMessage(chat, {
       text: grupo.antispam
@@ -1019,9 +1091,15 @@ ${chat}`
 
     grupo.advertencias[numero]++;
 
-    const gruposDB = cargarGrupos();
-    gruposDB[chat] = grupo;
-    guardarGrupos(gruposDB);
+    const gruposDB =
+      cargarGrupos();
+
+    gruposDB[chat] =
+      grupo;
+
+    guardarGrupos(
+      gruposDB
+    );
 
     const cantidad =
       grupo.advertencias[numero];
@@ -1037,10 +1115,6 @@ ${chat}`
 
     return true;
   }
-
-  // ==============================
-  // COMANDO NO ENCONTRADO
-  // ==============================
 
   return false;
 }
