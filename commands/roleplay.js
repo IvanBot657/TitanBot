@@ -1,91 +1,134 @@
-const axios = require("axios");
-
-// ==========================================
+// =========================================
 // 🎭 TITANBOT - ROLEPLAY
-// ==========================================
+// 9 comandos + GIF + mención real
+// =========================================
+
+// APIs de imágenes animadas
+const API = "https://api.waifu.pics/sfw";
+
+// =========================================
+// ACCIONES
+// =========================================
 
 const acciones = {
+
   abrazar: {
+    api: "hug",
     emoji: "🫂",
-    texto: "abraza"
-  },
-
-  besar: {
-    emoji: "💋",
-    texto: "le da un beso a"
-  },
-
-  golpear: {
-    emoji: "👊",
-    texto: "golpea a"
-  },
-
-  patada: {
-    emoji: "🦵",
-    texto: "le da una patada a"
+    texto: "Yo abrazo a"
   },
 
   saludo: {
+    api: "wave",
     emoji: "👋",
-    texto: "saluda a"
+    texto: "Yo saludo a"
   },
 
   felicitar: {
+    api: "happy",
     emoji: "🎉",
-    texto: "felicita a"
+    texto: "Yo felicito a"
   },
 
   reir: {
+    api: "laugh",
     emoji: "😂",
-    texto: "se ríe con"
+    texto: "Yo río con"
+  },
+
+  "reír": {
+    api: "laugh",
+    emoji: "😂",
+    texto: "Yo río con"
   },
 
   llorar: {
+    api: "cry",
     emoji: "😭",
-    texto: "llora con"
+    texto: "Yo lloro con"
   },
 
   enojado: {
-    emoji: "😠",
-    texto: "se enoja con"
+    api: "angry",
+    emoji: "😡",
+    texto: "Yo me enojo con"
+  },
+
+  enojar: {
+    api: "angry",
+    emoji: "😡",
+    texto: "Yo me enojo con"
   },
 
   bailar: {
+    api: "dance",
     emoji: "💃",
-    texto: "baila con"
+    texto: "Yo bailo con"
+  },
+
+  golpear: {
+    api: "punch",
+    emoji: "👊",
+    texto: "Yo golpeo a"
+  },
+
+  patada: {
+    api: "kick",
+    emoji: "🦵",
+    texto: "Yo doy una patada a"
   }
+
 };
 
-// ==========================================
-// 🖼️ OBTENER IMAGEN
-// ==========================================
+// =========================================
+// OBTENER CONTEXTO DE LA MENCIÓN
+// =========================================
 
-async function obtenerImagen() {
-  try {
+function obtenerMenciones(msg) {
 
-    const respuesta = await axios.get(
-      "https://api.waifu.pics/sfw/hug",
-      {
-        timeout: 15000
-      }
-    );
+  const contextInfo =
+    msg?.message?.extendedTextMessage?.contextInfo ||
+    msg?.message?.imageMessage?.contextInfo ||
+    msg?.message?.videoMessage?.contextInfo ||
+    msg?.message?.documentMessage?.contextInfo ||
+    msg?.message?.buttonsResponseMessage?.contextInfo ||
+    msg?.message?.listResponseMessage?.contextInfo;
 
-    return respuesta.data?.url || null;
+  return contextInfo?.mentionedJid || [];
 
-  } catch (error) {
-
-    console.log(
-      "❌ ERROR IMAGEN ROLEPLAY:",
-      error.message
-    );
-
-    return null;
-  }
 }
 
-// ==========================================
-// 🎭 ROLEPLAY
-// ==========================================
+// =========================================
+// OBTENER GIF
+// =========================================
+
+async function obtenerGif(tipo) {
+
+  const respuesta = await fetch(
+    `${API}/${tipo}`
+  );
+
+  if (!respuesta.ok) {
+    throw new Error(
+      `La API respondió ${respuesta.status}`
+    );
+  }
+
+  const datos = await respuesta.json();
+
+  if (!datos?.url) {
+    throw new Error(
+      "La API no devolvió ninguna imagen."
+    );
+  }
+
+  return datos.url;
+
+}
+
+// =========================================
+// ROLEPLAY
+// =========================================
 
 async function roleplay(
   sock,
@@ -96,142 +139,135 @@ async function roleplay(
   msg = null
 ) {
 
-  const cmd = String(comando || "")
-    .toLowerCase()
-    .replace(".", "")
-    .trim();
+  const cmd =
+    String(comando || "")
+      .toLowerCase()
+      .trim();
 
-  // Comprobar acción
-  if (!acciones[cmd]) {
-    return false;
-  }
+  // =======================================
+  // COMPROBAR COMANDO
+  // =======================================
 
   const accion = acciones[cmd];
 
-  // ========================================
-  // 📌 DETECTAR @ REAL
-  // ========================================
-
-  let mentionedJid = [];
-
-  try {
-
-    const contextInfo =
-      msg?.message?.extendedTextMessage?.contextInfo ||
-      msg?.message?.imageMessage?.contextInfo ||
-      msg?.message?.videoMessage?.contextInfo ||
-      msg?.message?.conversation?.contextInfo;
-
-    mentionedJid =
-      contextInfo?.mentionedJid || [];
-
-  } catch (error) {
-
-    console.log(
-      "❌ ERROR MENCIONES:",
-      error.message
-    );
+  if (!accion) {
+    return false;
   }
 
-  // ========================================
-  // ❌ SIN @
-  // ========================================
+  // =======================================
+  // BUSCAR MENCIÓN REAL DE WHATSAPP
+  // =======================================
 
-  if (!mentionedJid.length) {
+  const mencionados =
+    obtenerMenciones(msg);
+
+  // =======================================
+  // SI NO MENCIONÓ A NADIE
+  // =======================================
+
+  if (
+    !mencionados ||
+    mencionados.length === 0
+  ) {
 
     await sock.sendMessage(chat, {
       text:
-`❌ *Debes mencionar a una persona.*
+`❌ Debes mencionar a una persona.
 
 Ejemplo:
 
-${cmd} @usuario
+.${cmd} @usuario
 
-🎭 Usa una mención real de WhatsApp.`
+👉 Selecciona a la persona desde WhatsApp para que sea una mención real.`
     });
 
     return true;
   }
 
-  // ========================================
-  // 👤 OBTENER PERSONA MENCIONADA
-  // ========================================
+  // =======================================
+  // PRIMER USUARIO MENCIONADO
+  // =======================================
 
-  const objetivo = mentionedJid[0];
+  const objetivo =
+    mencionados[0];
+
+  // =======================================
+  // TEXTO DE LA MENCIÓN
+  // =======================================
 
   const numero =
     objetivo.split("@")[0];
 
-  const nombre =
-    `@${numero}`;
+  const texto =
+`${accion.emoji} ${accion.texto} @${numero}`;
 
-  // ========================================
-  // 👤 USUARIO QUE EJECUTA
-  // ========================================
-
-  let autor = "Alguien";
+  // =======================================
+  // OBTENER GIF
+  // =======================================
 
   try {
 
-    const participant =
-      msg?.key?.participant ||
-      msg?.key?.remoteJid;
+    await sock.sendMessage(chat, {
+      text: "🎬 Preparando animación..."
+    });
 
-    if (participant) {
-      autor = `@${participant.split("@")[0]}`;
-    }
+    const gif =
+      await obtenerGif(accion.api);
 
-  } catch {}
-
-  // ========================================
-  // 🖼️ OBTENER IMAGEN
-  // ========================================
-
-  const imagen = await obtenerImagen();
-
-  // ========================================
-  // 📝 TEXTO
-  // ========================================
-
-  const texto =
-`${accion.emoji} ${autor} ${accion.texto} ${nombre}`;
-
-  // ========================================
-  // 📤 ENVIAR
-  // ========================================
-
-  if (imagen) {
+    // =====================================
+    // ENVIAR GIF
+    // =====================================
 
     await sock.sendMessage(chat, {
-      image: {
-        url: imagen
+
+      video: {
+        url: gif
       },
-      caption:
-`${texto}
 
-🎭 *TITANBOT ROLEPLAY*`,
+      gifPlayback: true,
+
+      caption: texto,
+
       mentions: [
         objetivo
       ]
+
     });
 
-  } else {
+    return true;
+
+  } catch (error) {
+
+    console.log(
+      "❌ ERROR ROLEPLAY:",
+      error.message
+    );
+
+    // =====================================
+    // MENSAJE DE ERROR
+    // =====================================
 
     await sock.sendMessage(chat, {
-      text: texto,
+
+      text:
+`❌ No pude cargar la animación.
+
+${accion.emoji} ${accion.texto} @${numero}`,
+
       mentions: [
         objetivo
       ]
+
     });
+
+    return true;
   }
 
-  return true;
 }
 
-// ==========================================
-// 📦 EXPORTAR
-// ==========================================
+// =========================================
+// EXPORTAR
+// =========================================
 
 module.exports = roleplay;
 module.exports.roleplay = roleplay;
-module.exports.acciones = acciones;
