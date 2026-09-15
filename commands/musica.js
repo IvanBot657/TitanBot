@@ -1,5 +1,20 @@
 const axios = require("axios");
 
+async function buscarCancion(nombre) {
+  try {
+
+    const respuesta = await axios.get(
+      `https://itunes.apple.com/search?term=${encodeURIComponent(nombre)}&limit=1`
+    );
+
+    return respuesta.data.results[0];
+
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
 // ==============================
 // MÚSICA - TITANBOT v3.1
 // ==============================
