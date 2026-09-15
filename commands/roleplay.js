@@ -9,22 +9,19 @@ const acciones = {
   golpear: ["👊", "le dio un golpe de juego a"],
   empujar: ["🫷", "empujó de juego a"],
   ayudar: ["🤝", "ayudó a"],
-  cuidar: ["🛡️", "cuidó a"],
+  cuidar: ["🛡️", "cuidó a"]
 };
 
-async function roleplay(sock, m, comando, args = []) {
+async function roleplay(sock, chat, comando, args = [], id, msg) {
   try {
-    // Compatibilidad por si index.js manda los argumentos en otro orden
-    if (!sock || !m || !m.key) {
-      console.error("❌ roleplay recibió parámetros incorrectos");
-      return true;
+    if (!sock || !chat) {
+      console.error("❌ Datos incorrectos para roleplay");
+      return false;
     }
 
-    const chat = m.key.remoteJid;
-
-    if (!chat) return true;
-
-    comando = String(comando || "").toLowerCase().replace(".", "");
+    comando = String(comando || "")
+      .toLowerCase()
+      .replace(".", "");
 
     const accion = acciones[comando];
 
@@ -32,21 +29,22 @@ async function roleplay(sock, m, comando, args = []) {
 
     let objetivo = null;
 
-    const contexto =
-      m.message?.extendedTextMessage?.contextInfo;
+    // Buscar persona mencionada
+    const mencionados =
+      msg?.message?.extendedTextMessage?.contextInfo?.mentionedJid;
 
-    // Si respondió a un mensaje
-    if (contexto?.participant) {
-      objetivo = contexto.participant;
+    if (mencionados?.length) {
+      objetivo = mencionados[0];
     }
 
-    // Si mencionó a alguien
-    if (contexto?.mentionedJid?.length) {
-      objetivo = contexto.mentionedJid[0];
+    // Buscar persona a la que se respondió
+    if (!objetivo) {
+      objetivo =
+        msg?.message?.extendedTextMessage?.contextInfo?.participant;
     }
 
-    // Si escribió un número
-    if (!objetivo && Array.isArray(args) && args.length) {
+    // Buscar número escrito
+    if (!objetivo && Array.isArray(args) && args.length > 0) {
       const numero = String(args[0]).replace(/\D/g, "");
 
       if (numero.length >= 7) {
@@ -60,9 +58,10 @@ async function roleplay(sock, m, comando, args = []) {
         {
           text:
             `❌ Menciona a alguien para usar *.${comando}*\n\n` +
-            `Ejemplo:\n.${comando} @usuario`,
+            `Ejemplo:\n` +
+            `.${comando} @usuario`
         },
-        { quoted: m }
+        { quoted: msg }
       );
 
       return true;
@@ -70,16 +69,13 @@ async function roleplay(sock, m, comando, args = []) {
 
     const numero = objetivo.split("@")[0];
 
-    const texto =
-      `${accion[0]} @${numero} ${accion[1]} 😎`;
-
     await sock.sendMessage(
       chat,
       {
-        text: texto,
-        mentions: [objetivo],
+        text: `${accion[0]} @${numero} ${accion[1]} 😎`,
+        mentions: [objetivo]
       },
-      { quoted: m }
+      { quoted: msg }
     );
 
     return true;
