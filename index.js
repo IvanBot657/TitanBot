@@ -995,7 +995,7 @@ ${resultadoXP.nivel}
             
             if (!ejecutado) {
 
-             const resultado =
+             const resultado = await roleplay(
                await roleplay(
                  sock,
                  chat,
