@@ -1,87 +1,53 @@
 // commands/roleplay.js
-// TitanBot - Comandos de Roleplay
 
-const comandos = {
-  abrazar: {
-    emoji: "🤗",
-    texto: "le dio un abrazo a",
-  },
-  besar: {
-    emoji: "💋",
-    texto: "le dio un beso a",
-  },
-  saludar: {
-    emoji: "👋",
-    texto: "saludó a",
-  },
-  felicitar: {
-    emoji: "🎉",
-    texto: "felicitó a",
-  },
-  molestar: {
-    emoji: "😈",
-    texto: "molestó a",
-  },
-  golpear: {
-    emoji: "👊",
-    texto: "golpeó a",
-  },
-  empujar: {
-    emoji: "🫷",
-    texto: "empujó a",
-  },
-  ayudar: {
-    emoji: "🤝",
-    texto: "ayudó a",
-  },
-  cuidar: {
-    emoji: "🛡️",
-    texto: "cuidó a",
-  },
-  felicitar2: {
-    emoji: "🥳",
-    texto: "celebró con",
-  },
+const acciones = {
+  abrazar: ["🤗", "abrazó"],
+  besar: ["😊", "saludó con cariño a"],
+  saludar: ["👋", "saludó a"],
+  felicitar: ["🎉", "felicitó a"],
+  molestar: ["😈", "molestó a"],
+  golpear: ["👊", "le dio un golpe de juego a"],
+  empujar: ["🫷", "empujó de juego a"],
+  ayudar: ["🤝", "ayudó a"],
+  cuidar: ["🛡️", "cuidó a"],
 };
-
-function obtenerNombre(m, jid) {
-  if (!jid) return "alguien";
-
-  const numero = jid.split("@")[0];
-
-  if (
-    m?.pushName &&
-    m.key?.participant === jid
-  ) {
-    return m.pushName;
-  }
-
-  return `@${numero}`;
-}
 
 async function roleplay(sock, m, comando, args = []) {
   try {
-    const accion = comandos[comando];
+    // Compatibilidad por si index.js manda los argumentos en otro orden
+    if (!sock || !m || !m.key) {
+      console.error("❌ roleplay recibió parámetros incorrectos");
+      return true;
+    }
+
+    const chat = m.key.remoteJid;
+
+    if (!chat) return true;
+
+    comando = String(comando || "").toLowerCase().replace(".", "");
+
+    const accion = acciones[comando];
 
     if (!accion) return false;
 
-    let objetivo;
+    let objetivo = null;
 
-    // Persona mencionada
-    if (m.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length) {
-      objetivo =
-        m.message.extendedTextMessage.contextInfo.mentionedJid[0];
+    const contexto =
+      m.message?.extendedTextMessage?.contextInfo;
+
+    // Si respondió a un mensaje
+    if (contexto?.participant) {
+      objetivo = contexto.participant;
     }
 
-    // Persona a la que se respondió
-    if (!objetivo) {
-      objetivo =
-        m.message?.extendedTextMessage?.contextInfo?.participant;
+    // Si mencionó a alguien
+    if (contexto?.mentionedJid?.length) {
+      objetivo = contexto.mentionedJid[0];
     }
 
-    // Número escrito después del comando
-    if (!objetivo && args.length > 0) {
-      const numero = args[0].replace(/\D/g, "");
+    // Si escribió un número
+    if (!objetivo && Array.isArray(args) && args.length) {
+      const numero = String(args[0]).replace(/\D/g, "");
 
       if (numero.length >= 7) {
         objetivo = `${numero}@s.whatsapp.net`;
@@ -90,12 +56,11 @@ async function roleplay(sock, m, comando, args = []) {
 
     if (!objetivo) {
       await sock.sendMessage(
-        m.key.remoteJid,
+        chat,
         {
           text:
-            `❌ Debes mencionar a alguien.\n\n` +
-            `Ejemplo:\n` +
-            `.${comando} @usuario`,
+            `❌ Menciona a alguien para usar *.${comando}*\n\n` +
+            `Ejemplo:\n.${comando} @usuario`,
         },
         { quoted: m }
       );
@@ -103,17 +68,13 @@ async function roleplay(sock, m, comando, args = []) {
       return true;
     }
 
-    const nombre =
-      objetivo === m.key.participant
-        ? "sí mismo"
-        : obtenerNombre(m, objetivo);
+    const numero = objetivo.split("@")[0];
 
     const texto =
-      `${accion.emoji} @${objetivo.split("@")[0]} ${accion.texto} ` +
-      `${nombre}.`;
+      `${accion[0]} @${numero} ${accion[1]} 😎`;
 
     await sock.sendMessage(
-      m.key.remoteJid,
+      chat,
       {
         text: texto,
         mentions: [objetivo],
@@ -122,6 +83,7 @@ async function roleplay(sock, m, comando, args = []) {
     );
 
     return true;
+
   } catch (error) {
     console.error("❌ Error en roleplay:", error);
     return true;
