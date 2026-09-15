@@ -89,19 +89,26 @@ async function inicio(
 ┃ • .despedida
 ┃ • .antilink
 ┃ • .antispam
-┃ • .promote
-┃ • .demote
-┃ • .kick
-┃ • .add
+╰━━━━━━━━━━━━━━━━━━━━╯
+
+╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
+┃ • .promote @usuario
+┃ • .demote @usuario
+┃ • .kick @usuario
+┃ • .add número
 ┃ • .mute
 ┃ • .unmute
+┃ • .warn @usuario
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+
+╭━━━〔 ⚙️ CONFIGURACIÓN DEL GRUPO 〕━━━╮
 ┃ • .linkgrupo
 ┃ • .setnombre
 ┃ • .setdescripcion
 ┃ • .grupo
 ┃ • .cerrar
 ┃ • .abrir
-╰━━━━━━━━━━━━━━━━━━━━╯
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━〔 🛠️ HERRAMIENTAS 〕━━━╮
 ┃ • .hora
