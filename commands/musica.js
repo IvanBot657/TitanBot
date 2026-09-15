@@ -30,116 +30,49 @@ async function musica(
   const cmd =
     String(comando || "").toLowerCase();
 
-  if (cmd === "play") {
-
-    const busqueda =
-      args.join(" ");
-
-    await sock.sendMessage(chat, {
-      text:
-`🎵 PLAY
-
-Buscando:
-${busqueda || "Sin nombre"}
-
-⚠️ Sistema de música en desarrollo.`
-    });
-
-    return true;
-  }
-
-  if (cmd === "lyrics") {
-
-    await sock.sendMessage(chat, {
-      text:
-"🎶 Letras no disponibles por ahora."
-    });
-
-    return true;
-  }
-
-  if (cmd === "playlist") {
-
-    await sock.sendMessage(chat, {
-      text:
-"🎧 Playlist de TitanBot próximamente."
-    });
-
-    return true;
-  }
-
-  if (cmd === "cancionrandom") {
-
-    await sock.sendMessage(chat, {
-      text:
-"🎵 Canción aleatoria: Believer - Imagine Dragons"
-    });
-
-    return true;
-  }
-
-  if (cmd === "artista") {
-
-    await sock.sendMessage(chat, {
-      text:
-"🎤 Función artista en desarrollo."
-    });
-
-    return true;
-  }
-
-  if (cmd === "album") {
-
-    await sock.sendMessage(chat, {
-      text:
-"💿 Función álbum en desarrollo."
-    });
-
-    return true;
-  }
-
-  if (cmd === "topmusic") {
-
-    await sock.sendMessage(chat, {
-      text:
-"🏆 Top Music próximamente."
-    });
-
-    return true;
-  }
-
-  if (cmd === "genero") {
-
-    await sock.sendMessage(chat, {
-      text:
-"🎼 Géneros disponibles próximamente."
-    });
-
-    return true;
-  }
-
-  if (cmd === "musica") {
-
-    await sock.sendMessage(chat, {
-      text:
-"🎵 Módulo de música activo."
-    });
-
-    return true;
-  }
-
-  if (cmd === "recomendacion") {
-
-    await sock.sendMessage(chat, {
-      text:
-"🎧 Recomendación: Believer - Imagine Dragons"
-    });
-
-    return true;
+      return true;
   }
 
   return false;
 }
 
-module.exports = musica;
-module.exports.musica = musica;
+ if (cmd === "play") {
+
+  const busqueda = args.join(" ");
+
+  if (!busqueda) {
+
+    await sock.sendMessage(chat, {
+      text: "🎵 Escribe el nombre de una canción.\n\nEjemplo:\n.play Believer"
+    });
+
+    return true;
+  }
+
+  const cancion = await buscarCancion(busqueda);
+
+  if (!cancion) {
+
+    await sock.sendMessage(chat, {
+      text: "❌ No encontré resultados."
+    });
+
+    return true;
+  }
+
+  await sock.sendMessage(chat, {
+    image: {
+      url: cancion.artworkUrl100.replace("100x100", "600x600")
+    },
+    caption:
+`🎵 *${cancion.trackName}*
+
+🎤 Artista: ${cancion.artistName}
+💿 Álbum: ${cancion.collectionName}
+
+🔗 Vista previa:
+${cancion.trackViewUrl}`
+  });
+
+  return true;
+ }
