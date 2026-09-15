@@ -106,6 +106,19 @@ async function inicio(
 ┃ • .husbando
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🎵 MÚSICA 〕━━━╮
+┃ • .play
+┃ • .lyrics
+┃ • .playlist
+┃ • .cancionrandom
+┃ • .artista
+┃ • .album
+┃ • .topmusic
+┃ • .genero
+┃ • .musica
+┃ • .recomendacion
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 👥 GRUPOS 〕━━━╮
 ┃ • .admins
 ┃ • .tagall
