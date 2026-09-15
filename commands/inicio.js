@@ -1,66 +1,36 @@
 const config = require("../config");
 
-async function inicio(sock, chat, comando) {
+async function inicio(
+  sock,
+  chat,
+  comando,
+  args,
+  id,
+  esGrupo,
+  esAdmin
+) {
 
-  if (comando === "ping") {
-    return sock.sendMessage(chat, {
-      text: "🏓 Pong!\n⚡ TitanBot está funcionando."
-    });
-  }
-
-  if (comando === "info") {
-    return sock.sendMessage(chat, {
-      text:
-`🤖 ${config.nombre}
-
-📦 Versión: ${config.version}
-🟢 Estado: Online
-⚡ Sistema: WhatsApp`
-    });
-  }
-
-  if (comando === "version") {
-    return sock.sendMessage(chat, {
-      text: `📦 ${config.nombre} v${config.version}`
-    });
-  }
-
-  if (comando === "owner") {
-    return sock.sendMessage(chat, {
-      text:
-`👑 CREADOR
-
-🤖 ${config.nombre}
-📦 Versión: ${config.version}
-
-👑 Número:
-${config.creador}`
-    });
-  }
+  // =========================
+  // MENU
+  // =========================
 
   if (comando === "menu") {
 
     return sock.sendMessage(chat, {
       text:
-`╔════════════════════════════╗
-║       🤖 TITANBOT         ║
-║          V2.5.0           ║
-╚════════════════════════════╝
-
-🎮 INICIO
-.ping
-.info
-.owner
-.version
-.menu
+`╔══════════════════════╗
+║      🤖 TITANBOT     ║
+║       v${config.version}       ║
+╚══════════════════════╝
 
 👤 USUARIO
-.perfil
 .registrar
+.perfil
 .nivel
 .xp
 .rank
 .top
+.misiones
 
 💰 ECONOMÍA
 .saldo
@@ -68,65 +38,154 @@ ${config.creador}`
 .trabajar
 .minar
 .pescar
-.depositar
-.retirar
-.inventario
-.tienda
-.comprar
+.casino
+.apostar
 .transferir
+.inventario
+.mercado
 
 🎲 JUEGOS
 .dado
 .moneda
-.8ball
-.suerte
-.numero
-.adivina
-.ppt
-.dados
-.juegos
+.slot
+.trivia
+.ruleta
 
 🎌 ANIME
 .anime
-.animeinfo
 .personaje
+.manga
+.waifu
 
 👥 GRUPOS
-.grupo
 .admins
 .tagall
-.miembros
-.idgrupo
 .reglas
-.grupomenu
+.antilink
+.antispam
 
 🛠️ HERRAMIENTAS
-.herramientas
 .hora
 .fecha
 .calculadora
 .id
-.botinfo
+.qr
 
 ⚙️ AJUSTES
-.ajustes
-.estado
-.prefijo
+.bienvenida
+.despedida
 .configgrupo
-.bienvenida on/off
-.despedida on/off
 
 👑 OWNER
-.owner
-.ownermenu
 .botstatus
 .reiniciar
+.broadcast
 
-╔════════════════════════════╗
-║ 🤖 ${config.nombre}
-║ 📦 v${config.version}
-║ 🟢 ONLINE
-╚════════════════════════════╝`
+╔══════════════════════╗
+║ 🟢 TitanBot Online   ║
+╚══════════════════════╝`
+    });
+  }
+
+
+  // =========================
+  // PING
+  // =========================
+
+  if (comando === "ping") {
+
+    return sock.sendMessage(chat, {
+      text:
+`🏓 PONG
+
+🤖 Bot:
+${config.nombre}
+
+📦 Versión:
+${config.version}
+
+🟢 Estado:
+Online`
+    });
+  }
+
+
+  // =========================
+  // INFO
+  // =========================
+
+  if (comando === "info") {
+
+    return sock.sendMessage(chat, {
+      text:
+`🤖 INFORMACIÓN
+
+Nombre:
+${config.nombre}
+
+Versión:
+${config.version}
+
+Prefijo:
+${config.prefijo}
+
+Moneda:
+${config.moneda}
+
+Creador:
+${config.creador}`
+    });
+  }
+
+
+  // =========================
+  // VERSION
+  // =========================
+
+  if (comando === "version") {
+
+    return sock.sendMessage(chat, {
+      text:
+`📦 TitanBot
+
+Versión actual:
+
+${config.version}`
+    });
+  }
+
+
+  // =========================
+  // OWNER
+  // =========================
+
+  if (comando === "owner") {
+
+    return sock.sendMessage(chat, {
+      text:
+`👑 OWNER
+
+Contacto:
+
+${config.creador}`
+    });
+  }
+
+
+  // =========================
+  // BOT
+  // =========================
+
+  if (comando === "bot") {
+
+    return sock.sendMessage(chat, {
+      text:
+`🤖 TITANBOT
+
+🟢 Estado: Online
+📦 Versión: ${config.version}
+💰 Moneda: ${config.moneda}
+⚡ Prefijo: ${config.prefijo}`
     });
   }
 
