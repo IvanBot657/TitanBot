@@ -1,117 +1,160 @@
 // commands/eventos.js
 // TitanBot - Sistema de Eventos del Grupo
+// Almacenamiento: PostgreSQL
 
-const fs = require("fs");
-const path = require("path");
+const { Pool } = require("pg");
 
-const DB_DIR = path.join(__dirname, "..", "database");
-const EVENTOS_DB = path.join(DB_DIR, "eventos.json");
-
-// Crear carpeta/database si no existe
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
+if (!process.env.DATABASE_URL) {
+  console.error("❌ DATABASE_URL no está configurada.");
 }
 
-if (!fs.existsSync(EVENTOS_DB)) {
-  fs.writeFileSync(EVENTOS_DB, JSON.stringify({}, null, 2));
-}
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL
+    ? { rejectUnauthorized: false }
+    : false
+});
 
-// ================================
-// FUNCIONES DE BASE DE DATOS
-// ================================
+// ========================================
+// INICIALIZAR BASE DE DATOS
+// ========================================
 
-function cargarEventos() {
-  try {
-    return JSON.parse(fs.readFileSync(EVENTOS_DB, "utf8"));
-  } catch (error) {
-    console.error("❌ Error cargando eventos:", error);
-    return {};
+let baseInicializada = false;
+
+async function inicializarBaseDatos() {
+  if (baseInicializada) return;
+
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL no está configurada.");
   }
-}
 
-function guardarEventos(db) {
-  try {
-    fs.writeFileSync(
-      EVENTOS_DB,
-      JSON.stringify(db, null, 2)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS eventos (
+      id TEXT PRIMARY KEY,
+      chat TEXT NOT NULL,
+      nombre TEXT NOT NULL,
+      fecha TEXT NOT NULL,
+      descripcion TEXT DEFAULT '',
+      creador TEXT,
+      creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-  } catch (error) {
-    console.error("❌ Error guardando eventos:", error);
-  }
+  `);
+
+  baseInicializada = true;
+
+  console.log("✅ Base de datos de eventos lista.");
 }
 
-// ================================
+// ========================================
 // CREAR EVENTO
-// ================================
+// ========================================
 
-function crearEvento(chat, nombre, fecha, descripcion = "") {
-  const db = cargarEventos();
+async function crearEvento(
+  chat,
+  nombre,
+  fecha,
+  descripcion = "",
+  creador = ""
+) {
+  await inicializarBaseDatos();
 
-  if (!db[chat]) {
-    db[chat] = [];
-  }
+  const id =
+    Date.now().toString() +
+    Math.floor(Math.random() * 1000);
 
-  const evento = {
-    id: Date.now().toString(),
-    nombre,
-    fecha,
-    descripcion,
-    creado: new Date().toISOString()
-  };
-
-  db[chat].push(evento);
-
-  guardarEventos(db);
-
-  return evento;
-}
-
-// ================================
-// OBTENER EVENTOS
-// ================================
-
-function obtenerEventos(chat) {
-  const db = cargarEventos();
-
-  return db[chat] || [];
-}
-
-// ================================
-// ELIMINAR EVENTO
-// ================================
-
-function eliminarEvento(chat, id) {
-  const db = cargarEventos();
-
-  if (!db[chat]) {
-    return false;
-  }
-
-  const cantidadAntes = db[chat].length;
-
-  db[chat] = db[chat].filter(
-    evento => evento.id !== id
+  const resultado = await pool.query(
+    `
+    INSERT INTO eventos
+    (id, chat, nombre, fecha, descripcion, creador)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *;
+    `,
+    [
+      id,
+      chat,
+      nombre,
+      fecha,
+      descripcion,
+      creador
+    ]
   );
 
-  if (db[chat].length === cantidadAntes) {
-    return false;
-  }
-
-  guardarEventos(db);
-
-  return true;
+  return resultado.rows[0];
 }
 
-// ================================
-// FORMATO DE EVENTOS
-// ================================
+// ========================================
+// OBTENER EVENTOS
+// ========================================
+
+async function obtenerEventos(chat) {
+  await inicializarBaseDatos();
+
+  const resultado = await pool.query(
+    `
+    SELECT *
+    FROM eventos
+    WHERE chat = $1
+    ORDER BY creado ASC;
+    `,
+    [chat]
+  );
+
+  return resultado.rows;
+}
+
+// ========================================
+// OBTENER UN EVENTO
+// ========================================
+
+async function obtenerEvento(chat, id) {
+  await inicializarBaseDatos();
+
+  const resultado = await pool.query(
+    `
+    SELECT *
+    FROM eventos
+    WHERE chat = $1 AND id = $2
+    LIMIT 1;
+    `,
+    [chat, id]
+  );
+
+  return resultado.rows[0] || null;
+}
+
+// ========================================
+// ELIMINAR EVENTO
+// ========================================
+
+async function eliminarEvento(chat, id) {
+  await inicializarBaseDatos();
+
+  const resultado = await pool.query(
+    `
+    DELETE FROM eventos
+    WHERE chat = $1 AND id = $2
+    RETURNING *;
+    `,
+    [chat, id]
+  );
+
+  return resultado.rowCount > 0;
+}
+
+// ========================================
+// FORMATEAR EVENTOS
+// ========================================
 
 function formatearEventos(eventos) {
   if (!eventos.length) {
-    return "📅 *EVENTOS DEL GRUPO*\n\nNo hay eventos registrados.";
+    return (
+      "📅 *EVENTOS DEL GRUPO*\n\n" +
+      "No hay eventos registrados."
+    );
   }
 
-  let texto = "📅 *EVENTOS DEL GRUPO*\n\n";
+  let texto =
+    "📅 *EVENTOS DEL GRUPO*\n\n";
 
   eventos.forEach((evento, index) => {
     texto +=
@@ -119,18 +162,20 @@ function formatearEventos(eventos) {
       `📆 Fecha: ${evento.fecha}\n`;
 
     if (evento.descripcion) {
-      texto += `📝 ${evento.descripcion}\n`;
+      texto +=
+        `📝 ${evento.descripcion}\n`;
     }
 
-    texto += `🆔 ID: ${evento.id}\n\n`;
+    texto +=
+      `🆔 ID: ${evento.id}\n\n`;
   });
 
   return texto.trim();
 }
 
-// ================================
+// ========================================
 // COMANDO PRINCIPAL
-// ================================
+// ========================================
 
 async function eventos(
   sock,
@@ -140,6 +185,10 @@ async function eventos(
 ) {
   try {
     if (!m?.key?.remoteJid) {
+      console.error(
+        "❌ Eventos recibió un mensaje inválido."
+      );
+
       return true;
     }
 
@@ -150,7 +199,8 @@ async function eventos(
       await sock.sendMessage(
         chat,
         {
-          text: "❌ Este sistema solo funciona en grupos."
+          text:
+            "❌ Este sistema solo funciona en grupos."
         },
         { quoted: m }
       );
@@ -158,27 +208,38 @@ async function eventos(
       return true;
     }
 
-    // ============================
-    // EVENTOS
-    // ============================
+    comando = String(comando || "")
+      .toLowerCase()
+      .replace(/^\./, "");
+
+    // ====================================
+    // EVENTO / EVENTOS
+    // ====================================
 
     if (
       comando === "evento" ||
       comando === "eventos"
     ) {
-      const accion = args[0]?.toLowerCase();
+      const accion = String(
+        args[0] || ""
+      ).toLowerCase();
 
-      // ----------------------------
+      // ==================================
       // LISTAR
-      // ----------------------------
+      // ==================================
 
-      if (!accion || accion === "lista") {
-        const lista = obtenerEventos(chat);
+      if (
+        !accion ||
+        accion === "lista"
+      ) {
+        const lista =
+          await obtenerEventos(chat);
 
         await sock.sendMessage(
           chat,
           {
-            text: formatearEventos(lista)
+            text:
+              formatearEventos(lista)
           },
           { quoted: m }
         );
@@ -186,9 +247,9 @@ async function eventos(
         return true;
       }
 
-      // ----------------------------
+      // ==================================
       // CREAR
-      // ----------------------------
+      // ==================================
 
       if (accion === "crear") {
         if (args.length < 3) {
@@ -210,28 +271,38 @@ async function eventos(
 
         const nombre = args[1];
         const fecha = args[2];
+
         const descripcion = args
           .slice(3)
           .join(" ");
 
-        crearEvento(
-          chat,
-          nombre,
-          fecha,
-          descripcion
-        );
+        const creador =
+          m.key.participant ||
+          "";
+
+        const evento =
+          await crearEvento(
+            chat,
+            nombre,
+            fecha,
+            descripcion,
+            creador
+          );
 
         await sock.sendMessage(
           chat,
           {
             text:
               "✅ *EVENTO CREADO*\n\n" +
-              `🎉 Nombre: *${nombre}*\n` +
-              `📆 Fecha: *${fecha}*\n` +
-              (descripcion
-                ? `📝 ${descripcion}\n`
-                : "") +
-              "\n💾 Evento guardado correctamente."
+              `🎉 Nombre: *${evento.nombre}*\n` +
+              `📆 Fecha: *${evento.fecha}*\n` +
+              (
+                evento.descripcion
+                  ? `📝 ${evento.descripcion}\n`
+                  : ""
+              ) +
+              `🆔 ID: *${evento.id}*\n\n` +
+              "💾 Guardado en PostgreSQL."
           },
           { quoted: m }
         );
@@ -239,9 +310,70 @@ async function eventos(
         return true;
       }
 
-      // ----------------------------
-      // BORRAR
-      // ----------------------------
+      // ==================================
+      // INFO
+      // ==================================
+
+      if (accion === "info") {
+        const id = args[1];
+
+        if (!id) {
+          await sock.sendMessage(
+            chat,
+            {
+              text:
+                "❌ Debes indicar el ID del evento.\n\n" +
+                "Ejemplo:\n" +
+                ".evento info 123456"
+            },
+            { quoted: m }
+          );
+
+          return true;
+        }
+
+        const evento =
+          await obtenerEvento(
+            chat,
+            id
+          );
+
+        if (!evento) {
+          await sock.sendMessage(
+            chat,
+            {
+              text:
+                "❌ No encontré ese evento."
+            },
+            { quoted: m }
+          );
+
+          return true;
+        }
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "📅 *INFORMACIÓN DEL EVENTO*\n\n" +
+              `🎉 Nombre: *${evento.nombre}*\n` +
+              `📆 Fecha: *${evento.fecha}*\n` +
+              (
+                evento.descripcion
+                  ? `📝 ${evento.descripcion}\n`
+                  : ""
+              ) +
+              `🆔 ID: *${evento.id}*`
+          },
+          { quoted: m }
+        );
+
+        return true;
+      }
+
+      // ==================================
+      // BORRAR / ELIMINAR
+      // ==================================
 
       if (
         accion === "borrar" ||
@@ -263,16 +395,17 @@ async function eventos(
           return true;
         }
 
-        const eliminado = eliminarEvento(
-          chat,
-          id
-        );
+        const eliminado =
+          await eliminarEvento(
+            chat,
+            id
+          );
 
         await sock.sendMessage(
           chat,
           {
             text: eliminado
-              ? "🗑️ Evento eliminado correctamente."
+              ? "🗑️ Evento eliminado correctamente de PostgreSQL."
               : "❌ No encontré un evento con ese ID."
           },
           { quoted: m }
@@ -281,9 +414,9 @@ async function eventos(
         return true;
       }
 
-      // ----------------------------
+      // ==================================
       // AYUDA
-      // ----------------------------
+      // ==================================
 
       if (accion === "ayuda") {
         await sock.sendMessage(
@@ -291,17 +424,21 @@ async function eventos(
           {
             text:
               "📅 *SISTEMA DE EVENTOS*\n\n" +
+
               "📋 *.eventos*\n" +
               "Ver los eventos del grupo.\n\n" +
 
               "➕ *.evento crear Nombre Fecha Descripción*\n" +
               "Crear un evento.\n\n" +
 
+              "🔎 *.evento info ID*\n" +
+              "Ver información del evento.\n\n" +
+
               "🗑️ *.evento borrar ID*\n" +
               "Eliminar un evento.\n\n" +
 
-              "💡 Ejemplo:\n" +
-              "*.evento crear Reunión 25/10 Reunión del grupo*"
+              "💡 *Ejemplo:*\n" +
+              ".evento crear Reunión 25/10 Reunión del grupo"
           },
           { quoted: m }
         );
@@ -309,26 +446,46 @@ async function eventos(
         return true;
       }
 
-      // Comando no reconocido
       return false;
     }
 
     return false;
 
   } catch (error) {
-    console.error("❌ Error en eventos:", error);
+    console.error(
+      "❌ Error en eventos:",
+      error
+    );
+
+    try {
+      await sock.sendMessage(
+        m.key.remoteJid,
+        {
+          text:
+            "❌ Ocurrió un error al procesar el evento."
+        },
+        { quoted: m }
+      );
+    } catch (_) {}
 
     return true;
   }
 }
 
-// ================================
-// EXPORTAR
-// ================================
+// ========================================
+// EXPORTACIONES
+// ========================================
 
 module.exports = eventos;
 
-// También exportamos funciones
-module.exports.crearEvento = crearEvento;
-module.exports.obtenerEventos = obtenerEventos;
-module.exports.eliminarEvento = eliminarEvento;
+module.exports.crearEvento =
+  crearEvento;
+
+module.exports.obtenerEventos =
+  obtenerEventos;
+
+module.exports.obtenerEvento =
+  obtenerEvento;
+
+module.exports.eliminarEvento =
+  eliminarEvento;
