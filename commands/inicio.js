@@ -130,6 +130,23 @@ async function inicio(
 ┃ • .antispam
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+━〔 📅 EVENTOS DEL GRUPO 〕━━━╮
+┃ • .evento
+┃ • .evento crear
+┃ • .evento lista
+┃ • .evento info
+┃ • .evento participar
+┃ • .evento borrar
+┃ • .evento ayuda
+┃
+┃ 📊 ENCUESTAS
+┃ • .encuesta
+┃ • .votar
+┃
+┃ 🎉 SORTEOS
+┃ • .sorteo
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
 ┃ • .promote @usuario
 ┃ • .demote @usuario
