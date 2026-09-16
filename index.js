@@ -1122,20 +1122,28 @@ ${resultadoXP.nivel}
             // STICKER
            // ========================================
 
-            if (!ejecutado) {
-             const resultado = await sticker(
-                sock,
-                msg,
-                comando,
-                args
-              );
+           if (!ejecutado) {
+            const comandosSticker = [
+              "sticker",
+              "stickertexto",
+              "toimg",
+              "take"
+           ];
 
-              if (resultado !== false) {
-               ejecutado = true;
+           if (comandosSticker.includes(comando)) {
+                  const resultado = await sticker(
+                    sock,
+                    msg,
+                    comando,
+                    args
+                 );
+
+                 if (resultado !== false) {
+                 ejecutado = true;
               }
            }
-
-
+        }
+            
             // =========================================
             // HERRAMIENTAS
             // =========================================
