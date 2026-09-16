@@ -147,6 +147,13 @@ async function inicio(
 ┃ • .sorteo
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+━〔 🎨 STICKERS 〕━━━━━━╮
+┃ • .sticker
+┃ • .stickertexto
+┃ • .toimg
+┃ • .take
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
 ┃ • .promote @usuario
 ┃ • .demote @usuario
