@@ -1,38 +1,195 @@
 // commands/eventos.js
-// TitanBot - Sistema de Eventos
+// TitanBot - Sistema de Eventos del Grupo
 
-const eventos = new Map();
-const encuestas = new Map();
+const fs = require("fs");
+const path = require("path");
 
-function obtenerChat(chat) {
-  if (!eventos.has(chat)) {
-    eventos.set(chat, []);
-  }
+const DB_DIR = path.join(__dirname, "..", "database");
+const EVENTOS_DB = path.join(DB_DIR, "eventos.json");
 
-  return eventos.get(chat);
+// Crear carpeta/database si no existe
+if (!fs.existsSync(DB_DIR)) {
+  fs.mkdirSync(DB_DIR, { recursive: true });
 }
 
-async function eventosCommand(
+if (!fs.existsSync(EVENTOS_DB)) {
+  fs.writeFileSync(EVENTOS_DB, JSON.stringify({}, null, 2));
+}
+
+// ================================
+// FUNCIONES DE BASE DE DATOS
+// ================================
+
+function cargarEventos() {
+  try {
+    return JSON.parse(fs.readFileSync(EVENTOS_DB, "utf8"));
+  } catch (error) {
+    console.error("❌ Error cargando eventos:", error);
+    return {};
+  }
+}
+
+function guardarEventos(db) {
+  try {
+    fs.writeFileSync(
+      EVENTOS_DB,
+      JSON.stringify(db, null, 2)
+    );
+  } catch (error) {
+    console.error("❌ Error guardando eventos:", error);
+  }
+}
+
+// ================================
+// CREAR EVENTO
+// ================================
+
+function crearEvento(chat, nombre, fecha, descripcion = "") {
+  const db = cargarEventos();
+
+  if (!db[chat]) {
+    db[chat] = [];
+  }
+
+  const evento = {
+    id: Date.now().toString(),
+    nombre,
+    fecha,
+    descripcion,
+    creado: new Date().toISOString()
+  };
+
+  db[chat].push(evento);
+
+  guardarEventos(db);
+
+  return evento;
+}
+
+// ================================
+// OBTENER EVENTOS
+// ================================
+
+function obtenerEventos(chat) {
+  const db = cargarEventos();
+
+  return db[chat] || [];
+}
+
+// ================================
+// ELIMINAR EVENTO
+// ================================
+
+function eliminarEvento(chat, id) {
+  const db = cargarEventos();
+
+  if (!db[chat]) {
+    return false;
+  }
+
+  const cantidadAntes = db[chat].length;
+
+  db[chat] = db[chat].filter(
+    evento => evento.id !== id
+  );
+
+  if (db[chat].length === cantidadAntes) {
+    return false;
+  }
+
+  guardarEventos(db);
+
+  return true;
+}
+
+// ================================
+// FORMATO DE EVENTOS
+// ================================
+
+function formatearEventos(eventos) {
+  if (!eventos.length) {
+    return "📅 *EVENTOS DEL GRUPO*\n\nNo hay eventos registrados.";
+  }
+
+  let texto = "📅 *EVENTOS DEL GRUPO*\n\n";
+
+  eventos.forEach((evento, index) => {
+    texto +=
+      `🎉 *${index + 1}. ${evento.nombre}*\n` +
+      `📆 Fecha: ${evento.fecha}\n`;
+
+    if (evento.descripcion) {
+      texto += `📝 ${evento.descripcion}\n`;
+    }
+
+    texto += `🆔 ID: ${evento.id}\n\n`;
+  });
+
+  return texto.trim();
+}
+
+// ================================
+// COMANDO PRINCIPAL
+// ================================
+
+async function eventos(
   sock,
-  chat,
+  m,
   comando,
-  args = [],
-  id,
-  msg
+  args = []
 ) {
   try {
-    comando = String(comando || "")
-      .toLowerCase()
-      .replace(/^\./, "");
+    if (!m?.key?.remoteJid) {
+      return true;
+    }
 
-    // =========================
-    // .evento
-    // =========================
+    const chat = m.key.remoteJid;
 
-    if (comando === "evento") {
-      const accion = String(args[0] || "").toLowerCase();
+    // Solo grupos
+    if (!chat.endsWith("@g.us")) {
+      await sock.sendMessage(
+        chat,
+        {
+          text: "❌ Este sistema solo funciona en grupos."
+        },
+        { quoted: m }
+      );
 
-      // .evento crear
+      return true;
+    }
+
+    // ============================
+    // EVENTOS
+    // ============================
+
+    if (
+      comando === "evento" ||
+      comando === "eventos"
+    ) {
+      const accion = args[0]?.toLowerCase();
+
+      // ----------------------------
+      // LISTAR
+      // ----------------------------
+
+      if (!accion || accion === "lista") {
+        const lista = obtenerEventos(chat);
+
+        await sock.sendMessage(
+          chat,
+          {
+            text: formatearEventos(lista)
+          },
+          { quoted: m }
+        );
+
+        return true;
+      }
+
+      // ----------------------------
+      // CREAR
+      // ----------------------------
+
       if (accion === "crear") {
         if (args.length < 3) {
           await sock.sendMessage(
@@ -41,476 +198,137 @@ async function eventosCommand(
               text:
                 "📅 *CREAR EVENTO*\n\n" +
                 "Uso:\n" +
-                ".evento crear <nombre> <fecha>\n\n" +
+                ".evento crear Nombre Fecha Descripción\n\n" +
                 "Ejemplo:\n" +
-                ".evento crear Reunion 20/09/2026"
+                ".evento crear Cumpleaños 20/10 Fiesta del grupo 🎉"
             },
-            { quoted: msg }
+            { quoted: m }
           );
 
           return true;
         }
 
         const nombre = args[1];
-        const fecha = args.slice(2).join(" ");
+        const fecha = args[2];
+        const descripcion = args
+          .slice(3)
+          .join(" ");
 
-        const lista = obtenerChat(chat);
-
-        const nuevoEvento = {
-          id: Date.now().toString(),
+        crearEvento(
+          chat,
           nombre,
           fecha,
-          creador: id,
-          participantes: []
-        };
-
-        lista.push(nuevoEvento);
+          descripcion
+        );
 
         await sock.sendMessage(
           chat,
           {
             text:
-              "📅 *EVENTO CREADO*\n\n" +
-              `🎯 Nombre: *${nombre}*\n` +
+              "✅ *EVENTO CREADO*\n\n" +
+              `🎉 Nombre: *${nombre}*\n` +
               `📆 Fecha: *${fecha}*\n` +
-              `🆔 ID: *${nuevoEvento.id}*\n\n` +
-              `Usa *.evento info ${nuevoEvento.id}* para verlo.`
+              (descripcion
+                ? `📝 ${descripcion}\n`
+                : "") +
+              "\n💾 Evento guardado correctamente."
           },
-          { quoted: msg }
+          { quoted: m }
         );
 
         return true;
       }
 
-      // .evento lista
-      if (accion === "lista") {
-        const lista = obtenerChat(chat);
-
-        if (lista.length === 0) {
-          await sock.sendMessage(
-            chat,
-            {
-              text: "📅 No hay eventos creados en este grupo."
-            },
-            { quoted: msg }
-          );
-
-          return true;
-        }
-
-        let texto = "📅 *EVENTOS DEL GRUPO*\n\n";
-
-        lista.forEach((evento, index) => {
-          texto +=
-            `${index + 1}. 🎯 *${evento.nombre}*\n` +
-            `   📆 ${evento.fecha}\n` +
-            `   👥 ${evento.participantes.length} participantes\n` +
-            `   🆔 ${evento.id}\n\n`;
-        });
-
-        await sock.sendMessage(
-          chat,
-          { text: texto },
-          { quoted: msg }
-        );
-
-        return true;
-      }
-
-      // .evento info ID
-      if (accion === "info") {
-        const eventoId = args[1];
-
-        if (!eventoId) {
-          await sock.sendMessage(
-            chat,
-            {
-              text:
-                "❌ Escribe el ID del evento.\n\n" +
-                "Ejemplo:\n" +
-                ".evento info 123456"
-            },
-            { quoted: msg }
-          );
-
-          return true;
-        }
-
-        const lista = obtenerChat(chat);
-
-        const evento = lista.find(
-          e => e.id === eventoId
-        );
-
-        if (!evento) {
-          await sock.sendMessage(
-            chat,
-            {
-              text: "❌ No encontré ese evento."
-            },
-            { quoted: msg }
-          );
-
-          return true;
-        }
-
-        await sock.sendMessage(
-          chat,
-          {
-            text:
-              "📅 *INFORMACIÓN DEL EVENTO*\n\n" +
-              `🎯 Nombre: *${evento.nombre}*\n` +
-              `📆 Fecha: *${evento.fecha}*\n` +
-              `👥 Participantes: *${evento.participantes.length}*\n` +
-              `🆔 ID: *${evento.id}*`
-          },
-          { quoted: msg }
-        );
-
-        return true;
-      }
-
-      // .evento participar ID
-      if (accion === "participar") {
-        const eventoId = args[1];
-
-        if (!eventoId) {
-          await sock.sendMessage(
-            chat,
-            {
-              text:
-                "❌ Escribe el ID del evento.\n\n" +
-                "Ejemplo:\n" +
-                ".evento participar 123456"
-            },
-            { quoted: msg }
-          );
-
-          return true;
-        }
-
-        const lista = obtenerChat(chat);
-
-        const evento = lista.find(
-          e => e.id === eventoId
-        );
-
-        if (!evento) {
-          await sock.sendMessage(
-            chat,
-            {
-              text: "❌ Ese evento no existe."
-            },
-            { quoted: msg }
-          );
-
-          return true;
-        }
-
-        if (evento.participantes.includes(id)) {
-          await sock.sendMessage(
-            chat,
-            {
-              text: "ℹ️ Ya estás registrado en este evento."
-            },
-            { quoted: msg }
-          );
-
-          return true;
-        }
-
-        evento.participantes.push(id);
-
-        await sock.sendMessage(
-          chat,
-          {
-            text:
-              "✅ *TE HAS REGISTRADO*\n\n" +
-              `📅 Evento: *${evento.nombre}*\n` +
-              `📆 Fecha: *${evento.fecha}*\n` +
-              `👥 Participantes: *${evento.participantes.length}*`
-          },
-          { quoted: msg }
-        );
-
-        return true;
-      }
-
-      // .evento cancelar ID
-      if (accion === "cancelar") {
-        const eventoId = args[1];
-
-        if (!eventoId) {
-          await sock.sendMessage(
-            chat,
-            {
-              text:
-                "❌ Escribe el ID del evento."
-            },
-            { quoted: msg }
-          );
-
-          return true;
-        }
-
-        const lista = obtenerChat(chat);
-
-        const indice = lista.findIndex(
-          e => e.id === eventoId
-        );
-
-        if (indice === -1) {
-          await sock.sendMessage(
-            chat,
-            {
-              text: "❌ Ese evento no existe."
-            },
-            { quoted: msg }
-          );
-
-          return true;
-        }
-
-        lista.splice(indice, 1);
-
-        await sock.sendMessage(
-          chat,
-          {
-            text: "🗑️ Evento cancelado correctamente."
-          },
-          { quoted: msg }
-        );
-
-        return true;
-      }
-
-      // Ayuda de .evento
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            "📅 *SISTEMA DE EVENTOS*\n\n" +
-            "`.evento crear <nombre> <fecha>`\n" +
-            "`.evento lista`\n" +
-            "`.evento info <ID>`\n" +
-            "`.evento participar <ID>`\n" +
-            "`.evento cancelar <ID>`"
-        },
-        { quoted: msg }
-      );
-
-      return true;
-    }
-
-    // =========================
-    // .encuesta
-    // =========================
-
-    if (comando === "encuesta") {
-      if (args.length < 3) {
-        await sock.sendMessage(
-          chat,
-          {
-            text:
-              "📊 *ENCUESTA*\n\n" +
-              "Uso:\n" +
-              ".encuesta pregunta | opcion1 | opcion2\n\n" +
-              "Ejemplo:\n" +
-              ".encuesta ¿Jugamos hoy? | Sí | No"
-          },
-          { quoted: msg }
-        );
-
-        return true;
-      }
-
-      const texto = args.join(" ");
-      const partes = texto
-        .split("|")
-        .map(x => x.trim())
-        .filter(Boolean);
-
-      if (partes.length < 3) {
-        await sock.sendMessage(
-          chat,
-          {
-            text:
-              "❌ Necesitas una pregunta y al menos 2 opciones."
-          },
-          { quoted: msg }
-        );
-
-        return true;
-      }
-
-      const pregunta = partes[0];
-      const opciones = partes.slice(1);
-
-      const encuestaId = Date.now().toString();
-
-      encuestas.set(
-        `${chat}:${encuestaId}`,
-        {
-          pregunta,
-          opciones,
-          votos: {},
-          creador: id
-        }
-      );
-
-      let textoEncuesta =
-        `📊 *ENCUESTA*\n\n` +
-        `❓ ${pregunta}\n\n`;
-
-      opciones.forEach((opcion, index) => {
-        textoEncuesta +=
-          `${index + 1}. ${opcion}\n`;
-      });
-
-      textoEncuesta +=
-        `\n🆔 ID: ${encuestaId}\n\n` +
-        `Vota con:\n` +
-        `.votar ${encuestaId} <número>`;
-
-      await sock.sendMessage(
-        chat,
-        {
-          text: textoEncuesta
-        },
-        { quoted: msg }
-      );
-
-      return true;
-    }
-
-    // =========================
-    // .votar
-    // =========================
-
-    if (comando === "votar") {
-      const encuestaId = args[0];
-      const numero = parseInt(args[1]);
-
-      if (!encuestaId || isNaN(numero)) {
-        await sock.sendMessage(
-          chat,
-          {
-            text:
-              "❌ Uso correcto:\n" +
-              ".votar <ID> <número>"
-          },
-          { quoted: msg }
-        );
-
-        return true;
-      }
-
-      const encuesta =
-        encuestas.get(`${chat}:${encuestaId}`);
-
-      if (!encuesta) {
-        await sock.sendMessage(
-          chat,
-          {
-            text: "❌ No encontré esa encuesta."
-          },
-          { quoted: msg }
-        );
-
-        return true;
-      }
+      // ----------------------------
+      // BORRAR
+      // ----------------------------
 
       if (
-        numero < 1 ||
-        numero > encuesta.opciones.length
+        accion === "borrar" ||
+        accion === "eliminar"
       ) {
+        const id = args[1];
+
+        if (!id) {
+          await sock.sendMessage(
+            chat,
+            {
+              text:
+                "❌ Debes indicar el ID del evento.\n\n" +
+                "Usa *.eventos* para ver los IDs."
+            },
+            { quoted: m }
+          );
+
+          return true;
+        }
+
+        const eliminado = eliminarEvento(
+          chat,
+          id
+        );
+
         await sock.sendMessage(
           chat,
           {
-            text: "❌ Esa opción no existe."
+            text: eliminado
+              ? "🗑️ Evento eliminado correctamente."
+              : "❌ No encontré un evento con ese ID."
           },
-          { quoted: msg }
+          { quoted: m }
         );
 
         return true;
       }
 
-      encuesta.votos[id] = numero;
+      // ----------------------------
+      // AYUDA
+      // ----------------------------
 
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            `✅ Voto registrado.\n\n` +
-            `🗳️ Elegiste: *${encuesta.opciones[numero - 1]}*`
-        },
-        { quoted: msg }
-      );
-
-      return true;
-    }
-
-    // =========================
-    // .sorteo
-    // =========================
-
-    if (comando === "sorteo") {
-      const participantes =
-        args.length > 0
-          ? args
-              .filter(x => x.includes("@"))
-          : [];
-
-      if (participantes.length < 2) {
+      if (accion === "ayuda") {
         await sock.sendMessage(
           chat,
           {
             text:
-              "🎉 *SORTEO*\n\n" +
-              "Menciona al menos 2 participantes.\n\n" +
-              "Ejemplo:\n" +
-              ".sorteo @usuario1 @usuario2"
+              "📅 *SISTEMA DE EVENTOS*\n\n" +
+              "📋 *.eventos*\n" +
+              "Ver los eventos del grupo.\n\n" +
+
+              "➕ *.evento crear Nombre Fecha Descripción*\n" +
+              "Crear un evento.\n\n" +
+
+              "🗑️ *.evento borrar ID*\n" +
+              "Eliminar un evento.\n\n" +
+
+              "💡 Ejemplo:\n" +
+              "*.evento crear Reunión 25/10 Reunión del grupo*"
           },
-          { quoted: msg }
+          { quoted: m }
         );
 
         return true;
       }
 
-      const ganador =
-        participantes[
-          Math.floor(
-            Math.random() * participantes.length
-          )
-        ];
-
-      const numero =
-        ganador.replace(/\D/g, "");
-
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            `🎉 *SORTEO*\n\n` +
-            `🏆 Ganador: @${numero} 🎊`,
-          mentions: [`${numero}@s.whatsapp.net`]
-        },
-        { quoted: msg }
-      );
-
-      return true;
+      // Comando no reconocido
+      return false;
     }
 
     return false;
 
   } catch (error) {
-    console.error(
-      "❌ Error en eventos:",
-      error
-    );
+    console.error("❌ Error en eventos:", error);
 
     return true;
   }
 }
 
-module.exports = eventosCommand;
+// ================================
+// EXPORTAR
+// ================================
+
+module.exports = eventos;
+
+// También exportamos funciones
+module.exports.crearEvento = crearEvento;
+module.exports.obtenerEventos = obtenerEventos;
+module.exports.eliminarEvento = eliminarEvento;
