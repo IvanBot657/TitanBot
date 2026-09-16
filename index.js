@@ -20,6 +20,7 @@ const diversion = require("./commands/diversion");
 const anime = require("./commands/anime");
 const musica = require("./commands/musica");
 const grupos = require("./commands/grupos");
+const eventos = require("./commands/eventos");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
@@ -1097,6 +1098,24 @@ ${resultadoXP.nivel}
                  ejecutado = true;
                 }
              }
+
+
+            // ========================================
+            // EVENTOS DEL GRUPO
+           // ========================================
+
+           if (!ejecutado) {
+            const resultado = await eventos(
+               sock,
+               msg,
+               comando,
+               args
+             );
+
+             if (resultado !== false) {
+              ejecutado = true;
+            }
+        }
 
 
             // =========================================
