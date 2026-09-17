@@ -1,5 +1,5 @@
 // ========================================
-// TITANBOT v3.3
+// TITANBOT v3.4
 // SISTEMA ANIME + PERSONAJES RECLAMABLES
 // ========================================
 
@@ -101,7 +101,6 @@ function limpiarId(id) {
 // ========================================
 
 const personajesAnime = [
-
   {
     id: 1,
     nombre: "Goku",
@@ -221,7 +220,6 @@ const personajesAnime = [
     image:
       "https://cdn.myanimelist.net/images/characters/9/310307.jpg"
   }
-
 ];
 
 // ========================================
@@ -231,20 +229,16 @@ const personajesAnime = [
 function obtenerPersonajeDisponible(
   reclamados
 ) {
-
   const disponibles =
     personajesAnime.filter(
-      personaje => {
-
-        return !Object.values(
+      personaje =>
+        !Object.values(
           reclamados
         ).some(
           p =>
             p.personajeId ===
             personaje.id
-        );
-
-      }
+        )
     );
 
   if (!disponibles.length) {
@@ -263,12 +257,8 @@ function obtenerPersonajeDisponible(
 // DESCARGAR IMAGEN
 // ========================================
 
-async function descargarImagen(
-  url
-) {
-
+async function descargarImagen(url) {
   try {
-
     const respuesta =
       await fetch(url);
 
@@ -278,15 +268,11 @@ async function descargarImagen(
       );
     }
 
-    const buffer =
-      Buffer.from(
-        await respuesta.arrayBuffer()
-      );
-
-    return buffer;
+    return Buffer.from(
+      await respuesta.arrayBuffer()
+    );
 
   } catch (error) {
-
     console.error(
       "❌ Error descargando imagen:",
       error
@@ -301,28 +287,15 @@ async function descargarImagen(
 // ========================================
 
 function escapar(texto) {
-
   return String(texto)
-    .replace(
-      /&/g,
-      "&amp;"
-    )
-    .replace(
-      /</g,
-      "&lt;"
-    )
-    .replace(
-      />/g,
-      "&gt;"
-    )
-    .replace(
-      /"/g,
-      "&quot;"
-    );
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 // ========================================
-// CREAR TARJETA
+// CREAR TARJETA ANIME
 // ========================================
 
 async function crearTarjeta({
@@ -331,7 +304,6 @@ async function crearTarjeta({
   idUsuario,
   estado = "RECLAMADO"
 }) {
-
   const ancho = 1000;
   const alto = 1350;
 
@@ -340,10 +312,6 @@ async function crearTarjeta({
       personaje.image
     );
 
-  // ======================================
-  // FONDO
-  // ======================================
-
   const fondo =
     Buffer.from(`
 <svg
@@ -351,9 +319,7 @@ async function crearTarjeta({
   height="${alto}"
   xmlns="http://www.w3.org/2000/svg"
 >
-
   <defs>
-
     <linearGradient
       id="bg"
       x1="0"
@@ -361,7 +327,6 @@ async function crearTarjeta({
       x2="1"
       y2="1"
     >
-
       <stop
         offset="0%"
         stop-color="#09091c"
@@ -376,7 +341,6 @@ async function crearTarjeta({
         offset="100%"
         stop-color="#05050d"
       />
-
     </linearGradient>
 
     <linearGradient
@@ -386,7 +350,6 @@ async function crearTarjeta({
       x2="1"
       y2="0"
     >
-
       <stop
         offset="0%"
         stop-color="#5b5cff"
@@ -396,9 +359,7 @@ async function crearTarjeta({
         offset="100%"
         stop-color="#00e5ff"
       />
-
     </linearGradient>
-
   </defs>
 
   <rect
@@ -463,13 +424,8 @@ async function crearTarjeta({
     stroke-width="1"
     opacity="0.25"
   />
-
 </svg>
 `);
-
-  // ======================================
-  // TEXTO
-  // ======================================
 
   const texto =
     Buffer.from(`
@@ -478,7 +434,6 @@ async function crearTarjeta({
   height="${alto}"
   xmlns="http://www.w3.org/2000/svg"
 >
-
   <text
     x="500"
     y="115"
@@ -587,13 +542,8 @@ async function crearTarjeta({
   >
     ${escapar(idUsuario)}
   </text>
-
 </svg>
 `);
-
-  // ======================================
-  // FRASE
-  // ======================================
 
   const frase =
     Buffer.from(`
@@ -602,7 +552,6 @@ async function crearTarjeta({
   height="${alto}"
   xmlns="http://www.w3.org/2000/svg"
 >
-
   <rect
     x="85"
     y="650"
@@ -636,48 +585,31 @@ async function crearTarjeta({
   >
     ${escapar(personaje.frase)}
   </text>
-
 </svg>
 `);
 
-  // ======================================
-  // BASE
-  // ======================================
-
-  let base =
-    sharp(fondo);
-
-  // ======================================
-  // IMAGEN DEL PERSONAJE
-  // ======================================
+  let base = sharp(fondo);
 
   if (imagen) {
-
     const personajeImagen =
       await sharp(imagen)
-        .resize(
-          700,
-          650,
-          {
-            fit: "cover",
-            position: "centre"
-          }
-        )
+        .resize(700, 650, {
+          fit: "cover",
+          position: "centre"
+        })
         .jpeg()
         .toBuffer();
 
     base =
       base.composite([
         {
-          input:
-            personajeImagen,
+          input: personajeImagen,
           left: 150,
           top: 190
         }
       ]);
 
   } else {
-
     const sinImagen =
       Buffer.from(`
 <svg
@@ -685,7 +617,6 @@ async function crearTarjeta({
   height="650"
   xmlns="http://www.w3.org/2000/svg"
 >
-
   <rect
     width="700"
     height="650"
@@ -703,7 +634,6 @@ async function crearTarjeta({
   >
     ${escapar(personaje.nombre)}
   </text>
-
 </svg>
 `);
 
@@ -716,10 +646,6 @@ async function crearTarjeta({
         }
       ]);
   }
-
-  // ======================================
-  // COMPONER TARJETA
-  // ======================================
 
   return await base
     .composite([
@@ -752,7 +678,6 @@ async function anime(
   id,
   msg
 ) {
-
   comando =
     String(comando || "")
       .toLowerCase()
@@ -760,10 +685,7 @@ async function anime(
 
   const idUsuario =
     limpiarId(
-      obtenerId(
-        msg,
-        id
-      )
+      obtenerId(msg, id)
     );
 
   try {
@@ -779,7 +701,6 @@ async function anime(
       ) ||
       comando === "animemenu"
     ) {
-
       await sock.sendMessage(
         chat,
         {
@@ -837,7 +758,6 @@ para reclamar un personaje anime.`
           );
 
         if (actual) {
-
           await sock.sendMessage(
             chat,
             {
@@ -866,7 +786,6 @@ Usa:
         );
 
       if (!personaje) {
-
         await sock.sendMessage(
           chat,
           {
@@ -887,7 +806,6 @@ Todos los personajes de la colección están reclamados.
         "Usuario";
 
       reclamados[idUsuario] = {
-
         personajeId:
           personaje.id,
 
@@ -911,7 +829,6 @@ Todos los personajes de la colección están reclamados.
 
         fecha:
           new Date().toISOString()
-
       };
 
       guardarReclamados(
@@ -1001,7 +918,6 @@ RECLAMADO
         reclamados[idUsuario];
 
       if (!personajeUsuario) {
-
         await sock.sendMessage(
           chat,
           {
@@ -1029,7 +945,6 @@ para reclamar uno.`
         );
 
       if (!personaje) {
-
         await sock.sendMessage(
           chat,
           {
@@ -1120,7 +1035,7 @@ RECLAMADO
     }
 
     // ======================================
-    // PERSONAJES
+    // PERSONAJES DISPONIBLES
     // ======================================
 
     if (comando === "personajes") {
@@ -1165,10 +1080,10 @@ Estado: ${ocupado ? "OCUPADO" : "LIBRE"}
       );
 
       return true;
-    }
-
+      }    
+    
     // ======================================
-    // LIBERAR
+    // LIBERAR PERSONAJE
     // ======================================
 
     if (comando === "liberar") {
@@ -1192,9 +1107,7 @@ Estado: ${ocupado ? "OCUPADO" : "LIBRE"}
       const personaje =
         reclamados[idUsuario];
 
-      delete reclamados[
-        idUsuario
-      ];
+      delete reclamados[idUsuario];
 
       guardarReclamados(
         reclamados
@@ -1215,7 +1128,7 @@ Estado: ${ocupado ? "OCUPADO" : "LIBRE"}
       );
 
       return true;
-      }
+    }
 
     // ======================================
     // ANIMEBUSCAR
@@ -1232,11 +1145,57 @@ Estado: ${ocupado ? "OCUPADO" : "LIBRE"}
           chat,
           {
             text:
-          `❌ Escribe el nombre de un anime.
+`❌ Escribe el nombre de un anime.
 
-        Ejemplo:
+Ejemplo:
 
-        .animebuscar Naruto`
+.animebuscar Naruto`
+          }
+        );
+
+        return true;
+      }
+
+      const resultados = [
+        "Naruto",
+        "One Piece",
+        "Bleach",
+        "Dragon Ball",
+        "Demon Slayer",
+        "Jujutsu Kaisen"
+      ];
+
+      const encontrados =
+        resultados.filter(
+          anime =>
+            anime
+              .toLowerCase()
+              .includes(
+                nombre.toLowerCase()
+              )
+        );
+
+      if (!encontrados.length) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`🔎 BÚSQUEDA DE ANIME
+
+🎌 Buscaste:
+${nombre}
+
+❌ No encontré coincidencias en la base local.
+
+Prueba con:
+
+Naruto
+One Piece
+Bleach
+Dragon Ball
+Demon Slayer
+Jujutsu Kaisen`
           }
         );
 
@@ -1249,12 +1208,15 @@ Estado: ${ocupado ? "OCUPADO" : "LIBRE"}
           text:
 `🔎 BÚSQUEDA DE ANIME
 
-🎌 Anime:
-${nombre}
+🎌 Resultado:
 
-📺 Resultado encontrado.
+${encontrados
+  .map(
+    anime => `📺 ${anime}`
+  )
+  .join("\n")}
 
-ℹ️ Esta versión utiliza una lista local de TitanBot.`
+ℹ️ Base local de TitanBot.`
         }
       );
 
@@ -1407,19 +1369,105 @@ Ejemplo:
         return true;
       }
 
+      const animesInfo = {
+
+        naruto: {
+          titulo: "Naruto",
+          genero: "Acción, aventura, artes marciales",
+          estado: "Finalizado",
+          descripcion:
+            "Historia de un joven ninja que busca reconocimiento y sueña con convertirse en Hokage."
+        },
+
+        "one piece": {
+          titulo: "One Piece",
+          genero: "Aventura, acción, fantasía",
+          estado: "En emisión",
+          descripcion:
+            "Monkey D. Luffy y su tripulación recorren el mundo buscando el legendario One Piece."
+        },
+
+        bleach: {
+          titulo: "Bleach",
+          genero: "Acción, sobrenatural",
+          estado: "Finalizado / continuación",
+          descripcion:
+            "Ichigo Kurosaki obtiene poderes de Shinigami y comienza a proteger a los demás."
+        },
+
+        "dragon ball": {
+          titulo: "Dragon Ball",
+          genero: "Acción, aventura, artes marciales",
+          estado: "Franquicia en curso",
+          descripcion:
+            "Goku y sus amigos viven aventuras mientras entrenan y enfrentan diferentes enemigos."
+        },
+
+        "demon slayer": {
+          titulo: "Demon Slayer",
+          genero: "Acción, fantasía, sobrenatural",
+          estado: "Finalizado",
+          descripcion:
+            "Tanjiro Kamado emprende un viaje para proteger a su hermana y enfrentarse a demonios."
+        },
+
+        "jujutsu kaisen": {
+          titulo: "Jujutsu Kaisen",
+          genero: "Acción, sobrenatural",
+          estado: "En emisión",
+          descripcion:
+            "Yuji Itadori se ve involucrado en el mundo de las maldiciones y los hechiceros."
+        }
+
+      };
+
+      const clave =
+        nombre
+          .toLowerCase()
+          .trim();
+
+      const resultado =
+        animesInfo[clave];
+
+      if (!resultado) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`📖 ANIME INFO
+
+🎌 ${nombre}
+
+⚠️ No tengo información detallada de ese anime en la base local.
+
+Usa:
+
+.anime ${nombre}`
+          }
+        );
+
+        return true;
+      }
+
       await sock.sendMessage(
         chat,
         {
           text:
 `📖 ANIME INFO
 
-🎌 ${nombre}
+🎌 ${resultado.titulo}
 
-⭐ Información disponible próximamente.
+🎭 Género:
+${resultado.genero}
 
-💡 Usa .anime ${nombre}`
-          }
-        );
+📌 Estado:
+${resultado.estado}
+
+📚 Descripción:
+${resultado.descripcion}`
+        }
+      );
 
       return true;
     }
@@ -1475,6 +1523,31 @@ Ejemplo:
         gojo: {
           nombre: "Satoru Gojo",
           anime: "Jujutsu Kaisen"
+        },
+
+        levi: {
+          nombre: "Levi Ackerman",
+          anime: "Shingeki no Kyojin"
+        },
+
+        tanjiro: {
+          nombre: "Tanjiro Kamado",
+          anime: "Demon Slayer"
+        },
+
+        eren: {
+          nombre: "Eren Yeager",
+          anime: "Shingeki no Kyojin"
+        },
+
+        light: {
+          nombre: "Light Yagami",
+          anime: "Death Note"
+        },
+
+        killua: {
+          nombre: "Killua Zoldyck",
+          anime: "Hunter x Hunter"
         }
 
       };
@@ -1501,7 +1574,12 @@ Goku
 Naruto
 Ichigo
 Luffy
-Gojo`
+Gojo
+Levi
+Tanjiro
+Eren
+Light
+Killua`
           }
         );
 
@@ -1560,7 +1638,7 @@ Ejemplo:
 
 🔎 Búsqueda realizada.
 
-ℹ️ Esta versión utiliza información local.`
+ℹ️ Esta versión utiliza información local de TitanBot.`
         }
       );
 
@@ -1608,7 +1686,7 @@ ${resultado}`
 
     if (comando === "husbando") {
 
-      const personajes = [
+      const personajesHusbando = [
         "🔥 Gojo",
         "⚔️ Levi",
         "🌟 Luffy",
@@ -1617,10 +1695,10 @@ ${resultado}`
       ];
 
       const resultado =
-        personajes[
+        personajesHusbando[
           Math.floor(
             Math.random() *
-            personajes.length
+            personajesHusbando.length
           )
         ];
 
@@ -1646,7 +1724,7 @@ ${resultado}`
   } catch (error) {
 
     console.error(
-      "❌ Error en comando anime:",
+      "❌ Error en commands/anime.js:",
       error
     );
 
@@ -1662,7 +1740,14 @@ Revisa los logs de TitanBot.`
         }
       );
 
-    } catch (_) {}
+    } catch (errorEnvio) {
+
+      console.error(
+        "❌ No se pudo enviar el mensaje de error:",
+        errorEnvio
+      );
+
+    }
 
     return true;
   }
@@ -1671,12 +1756,5 @@ Revisa los logs de TitanBot.`
 // ========================================
 // EXPORTAR
 // ========================================
-
-    return true;
-  } catch (error) {
-    // ...
-    return true;
-  }
-}
 
 module.exports = anime;
