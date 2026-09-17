@@ -1217,7 +1217,7 @@ Estado: ${ocupado ? "OCUPADO" : "LIBRE"}
       return true;
       }
 
-        // ======================================
+    // ======================================
     // ANIMEBUSCAR
     // ======================================
 
@@ -1232,11 +1232,11 @@ Estado: ${ocupado ? "OCUPADO" : "LIBRE"}
           chat,
           {
             text:
-`❌ Escribe el nombre de un anime.
+          `❌ Escribe el nombre de un anime.
 
-Ejemplo:
+        Ejemplo:
 
-.animebuscar Naruto`
+        .animebuscar Naruto`
           }
         );
 
