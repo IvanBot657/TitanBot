@@ -141,15 +141,15 @@ const personajesAnime = [
       "https://cdn.myanimelist.net/images/characters/9/131317.jpg"
   },
 
-  {
-    id: 5,
-    nombre: "Satoru Gojo",
-    anime: "Jujutsu Kaisen",
-    frase:
-      "La confianza también puede convertirse en poder.",
-    image:
-      "https://cdn.myanimelist.net/images/characters/7/357919.jpg"
-  },
+{
+  id: 5,
+  nombre: "Satoru Gojo",
+  anime: "Jujutsu Kaisen",
+  frase:
+    "La confianza también puede convertirse en poder.",
+  image:
+    "https://cdn.myanimelist.net/images/characters/11/164471.jpg"
+ },
 
   {
     id: 6,
