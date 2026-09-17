@@ -1352,6 +1352,624 @@ ${resultado}`
   }
 
   // ========================================
+  // SISTEMA DE PERSONAJES RECLAMABLES
+  // ========================================
+
+  if (comando === "s") {
+
+    const fs = require("fs");
+    const path = require("path");
+
+    const dataDir =
+      path.join(__dirname, "..", "data");
+
+    const dataFile =
+      path.join(
+        dataDir,
+        "anime_reclamados.json"
+      );
+
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, {
+        recursive: true
+      });
+    }
+
+    if (!fs.existsSync(dataFile)) {
+      fs.writeFileSync(
+        dataFile,
+        JSON.stringify({}, null, 2)
+      );
+    }
+
+    let reclamados = {};
+
+    try {
+      reclamados =
+        JSON.parse(
+          fs.readFileSync(
+            dataFile,
+            "utf8"
+          )
+        );
+    } catch {
+      reclamados = {};
+    }
+
+    // ======================================
+    // ID DEL USUARIO
+    // ======================================
+
+    const idUsuario =
+      String(
+        id ||
+        msg?.key?.participant ||
+        msg?.key?.remoteJid ||
+        "usuario"
+      )
+      .replace("@s.whatsapp.net", "")
+      .replace("@lid", "")
+      .replace("@g.us", "");
+
+    const nombreUsuario =
+      msg?.pushName ||
+      "Usuario";
+
+    // ======================================
+    // CATÁLOGO
+    // ======================================
+
+    const personajesAnime = [
+
+      {
+        id: 1,
+        nombre: "Goku",
+        anime: "Dragon Ball",
+        frase:
+          "Siempre hay una nueva forma de superar tus límites."
+      },
+
+      {
+        id: 2,
+        nombre: "Naruto Uzumaki",
+        anime: "Naruto",
+        frase:
+          "Nunca abandones aquello por lo que decidiste luchar."
+      },
+
+      {
+        id: 3,
+        nombre: "Monkey D. Luffy",
+        anime: "One Piece",
+        frase:
+          "Persigue tus sueños aunque el camino sea difícil."
+      },
+
+      {
+        id: 4,
+        nombre: "Ichigo Kurosaki",
+        anime: "Bleach",
+        frase:
+          "Protege aquello que consideras importante."
+      },
+
+      {
+        id: 5,
+        nombre: "Satoru Gojo",
+        anime: "Jujutsu Kaisen",
+        frase:
+          "La confianza también puede convertirse en poder."
+      },
+
+      {
+        id: 6,
+        nombre: "Levi Ackerman",
+        anime: "Attack on Titan",
+        frase:
+          "Toma tus decisiones y acepta el camino que elegiste."
+      },
+
+      {
+        id: 7,
+        nombre: "Tanjiro Kamado",
+        anime: "Demon Slayer",
+        frase:
+          "La bondad puede mantenerse incluso en los momentos difíciles."
+      },
+
+      {
+        id: 8,
+        nombre: "Eren Yeager",
+        anime: "Attack on Titan",
+        frase:
+          "Avanza incluso cuando el camino parece imposible."
+      },
+
+      {
+        id: 9,
+        nombre: "Light Yagami",
+        anime: "Death Note",
+        frase:
+          "El poder cambia las reglas cuando decides utilizarlo."
+      },
+
+      {
+        id: 10,
+        nombre: "Edward Elric",
+        anime: "Fullmetal Alchemist",
+        frase:
+          "Todo esfuerzo tiene un precio y una consecuencia."
+      },
+
+      {
+        id: 11,
+        nombre: "Killua Zoldyck",
+        anime: "Hunter x Hunter",
+        frase:
+          "Tu verdadero potencial aparece cuando confías en ti."
+      },
+
+      {
+        id: 12,
+        nombre: "Izuku Midoriya",
+        anime: "My Hero Academia",
+        frase:
+          "Ser valiente también significa ayudar a los demás."
+      }
+
+    ];
+
+    // ======================================
+    // COMPROBAR SI YA TIENE PERSONAJE
+    // ======================================
+
+    if (reclamados[idUsuario]) {
+
+      const actual =
+        personajesAnime.find(
+          personaje =>
+            personaje.id ===
+            reclamados[idUsuario].personajeId
+        );
+
+      if (actual) {
+
+        await sock.sendMessage(chat, {
+          text:
+`🎴 YA TIENES UN PERSONAJE
+
+⭐ ${actual.nombre}
+🎌 ${actual.anime}
+
+🔒 Ya lo reclamaste anteriormente.
+
+Usa:
+
+.mispersonajes
+
+para verlo.`
+        });
+
+        return true;
+      }
+    }
+
+    // ======================================
+    // PERSONAJES DISPONIBLES
+    // ======================================
+
+    const disponibles =
+      personajesAnime.filter(
+        personaje =>
+          !Object.values(
+            reclamados
+          ).some(
+            reclamado =>
+              reclamado.personajeId ===
+              personaje.id
+          )
+      );
+
+    if (!disponibles.length) {
+
+      await sock.sendMessage(chat, {
+        text:
+`😔 NO HAY PERSONAJES DISPONIBLES
+
+Todos los personajes de la colección
+ya fueron reclamados.
+
+🎌 Próximamente habrá más personajes.`
+      });
+
+      return true;
+    }
+
+    // ======================================
+    // ELEGIR PERSONAJE
+    // ======================================
+
+    const personaje =
+      disponibles[
+        Math.floor(
+          Math.random() *
+          disponibles.length
+        )
+      ];
+
+    // ======================================
+    // GUARDAR
+    // ======================================
+
+    reclamados[idUsuario] = {
+
+      personajeId:
+        personaje.id,
+
+      nombre:
+        personaje.nombre,
+
+      anime:
+        personaje.anime,
+
+      frase:
+        personaje.frase,
+
+      nombreUsuario,
+
+      reclamadoPor:
+        idUsuario,
+
+      fecha:
+        new Date().toISOString()
+
+    };
+
+    fs.writeFileSync(
+      dataFile,
+      JSON.stringify(
+        reclamados,
+        null,
+        2
+      )
+    );
+
+    // ======================================
+    // RESPUESTA
+    // ======================================
+
+    await sock.sendMessage(chat, {
+      text:
+`🎌✨ ¡RECLAMASTE ESTE PERSONAJE! ✨🎌
+
+⭐ ${personaje.nombre}
+
+🎌 Anime:
+${personaje.anime}
+
+👤 Usuario:
+${nombreUsuario}
+
+🆔 ID:
+${idUsuario}
+
+🟢 ESTADO:
+RECLAMADO
+
+💬 "${personaje.frase}"
+
+🔒 Este personaje ahora pertenece a ti.
+
+Usa:
+
+.mispersonajes
+
+para verlo.`
+    });
+
+    return true;
+  }
+
+  // ========================================
+  // MIS PERSONAJES
+  // ========================================
+
+  if (
+    comando === "mispersonajes" ||
+    comando === "mispersonaje"
+  ) {
+
+    const fs = require("fs");
+    const path = require("path");
+
+    const dataFile =
+      path.join(
+        __dirname,
+        "..",
+        "data",
+        "anime_reclamados.json"
+      );
+
+    let reclamados = {};
+
+    try {
+
+      if (
+        fs.existsSync(dataFile)
+      ) {
+
+        reclamados =
+          JSON.parse(
+            fs.readFileSync(
+              dataFile,
+              "utf8"
+            )
+          );
+
+      }
+
+    } catch {
+
+      reclamados = {};
+
+    }
+
+    const idUsuario =
+      String(
+        id ||
+        msg?.key?.participant ||
+        msg?.key?.remoteJid ||
+        "usuario"
+      )
+      .replace("@s.whatsapp.net", "")
+      .replace("@lid", "")
+      .replace("@g.us", "");
+
+    const personaje =
+      reclamados[idUsuario];
+
+    if (!personaje) {
+
+      await sock.sendMessage(chat, {
+        text:
+`🎴 MIS PERSONAJES
+
+Todavía no tienes ningún personaje.
+
+Usa:
+
+.s
+
+para reclamar uno.`
+      });
+
+      return true;
+    }
+
+    await sock.sendMessage(chat, {
+      text:
+`🎴 MI PERSONAJE
+
+⭐ ${personaje.nombre}
+
+🎌 Anime:
+${personaje.anime}
+
+👤 Usuario:
+${personaje.nombreUsuario}
+
+🆔 ID:
+${idUsuario}
+
+🟢 ESTADO:
+RECLAMADO
+
+💬 "${personaje.frase}"
+
+📅 Reclamado:
+${new Date(
+  personaje.fecha
+).toLocaleDateString()}`
+    });
+
+    return true;
+  }
+
+  // ========================================
+  // PERSONAJES DISPONIBLES
+  // ========================================
+
+  if (comando === "personajes") {
+
+    const fs = require("fs");
+    const path = require("path");
+
+    const dataFile =
+      path.join(
+        __dirname,
+        "..",
+        "data",
+        "anime_reclamados.json"
+      );
+
+    let reclamados = {};
+
+    try {
+
+      if (
+        fs.existsSync(dataFile)
+      ) {
+
+        reclamados =
+          JSON.parse(
+            fs.readFileSync(
+              dataFile,
+              "utf8"
+            )
+          );
+
+      }
+
+    } catch {
+
+      reclamados = {};
+
+    }
+
+    const personajesAnime = [
+
+      ["Goku", "Dragon Ball"],
+      ["Naruto Uzumaki", "Naruto"],
+      ["Monkey D. Luffy", "One Piece"],
+      ["Ichigo Kurosaki", "Bleach"],
+      ["Satoru Gojo", "Jujutsu Kaisen"],
+      ["Levi Ackerman", "Attack on Titan"],
+      ["Tanjiro Kamado", "Demon Slayer"],
+      ["Eren Yeager", "Attack on Titan"],
+      ["Light Yagami", "Death Note"],
+      ["Edward Elric", "Fullmetal Alchemist"],
+      ["Killua Zoldyck", "Hunter x Hunter"],
+      ["Izuku Midoriya", "My Hero Academia"]
+
+    ];
+
+    let texto =
+`🎌 PERSONAJES TITANBOT
+
+`;
+
+    personajesAnime.forEach(
+      (personaje, index) => {
+
+        const ocupado =
+          Object.values(
+            reclamados
+          ).some(
+            p =>
+              p.personajeId ===
+              index + 1
+          );
+
+        texto +=
+`${ocupado ? "🔴" : "🟢"} ${personaje[0]}
+🎌 ${personaje[1]}
+${ocupado ? "OCUPADO" : "LIBRE"}
+
+`;
+
+      }
+    );
+
+    await sock.sendMessage(chat, {
+      text: texto
+    });
+
+    return true;
+  }
+
+  // ========================================
+  // LIBERAR PERSONAJE
+  // ========================================
+
+  if (comando === "liberar") {
+
+    const fs = require("fs");
+    const path = require("path");
+
+    const dataFile =
+      path.join(
+        __dirname,
+        "..",
+        "data",
+        "anime_reclamados.json"
+      );
+
+    let reclamados = {};
+
+    try {
+
+      if (
+        fs.existsSync(dataFile)
+      ) {
+
+        reclamados =
+          JSON.parse(
+            fs.readFileSync(
+              dataFile,
+              "utf8"
+            )
+          );
+
+      }
+
+    } catch {
+
+      reclamados = {};
+
+    }
+
+    const idUsuario =
+      String(
+        id ||
+        msg?.key?.participant ||
+        msg?.key?.remoteJid ||
+        "usuario"
+      )
+      .replace("@s.whatsapp.net", "")
+      .replace("@lid", "")
+      .replace("@g.us", "");
+
+    if (!reclamados[idUsuario]) {
+
+      await sock.sendMessage(chat, {
+        text:
+`❌ No tienes ningún personaje reclamado.
+
+Usa:
+
+.s
+
+para reclamar uno.`
+      });
+
+      return true;
+    }
+
+    const personaje =
+      reclamados[idUsuario];
+
+    delete reclamados[idUsuario];
+
+    fs.writeFileSync(
+      dataFile,
+      JSON.stringify(
+        reclamados,
+        null,
+        2
+      )
+    );
+
+    await sock.sendMessage(chat, {
+      text:
+`🔓 PERSONAJE LIBERADO
+
+⭐ ${personaje.nombre}
+
+🎌 ${personaje.anime}
+
+🟢 Ahora vuelve a estar disponible.
+
+Puedes usar:
+
+.s
+
+para reclamar otro personaje.`
+    });
+
+    return true;
+  }
+
+  // ========================================
   // NO ES COMANDO DE ANIME
   // ========================================
 
