@@ -1,9 +1,8 @@
 // ========================================
-// TITANBOT v3.2
+// TITANBOT v3.3
 // SISTEMA ANIME + PERSONAJES RECLAMABLES
 // ========================================
 
-const { crearAnimeCard } = require("./animecard");
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
@@ -12,15 +11,28 @@ const sharp = require("sharp");
 // CARPETA DE DATOS
 // ========================================
 
-const DATA_DIR = path.join(__dirname, "..", "data");
-const DATA_FILE = path.join(DATA_DIR, "anime_reclamados.json");
+const DATA_DIR = path.join(
+  __dirname,
+  "..",
+  "database"
+);
+
+const DATA_FILE = path.join(
+  DATA_DIR,
+  "anime_reclamados.json"
+);
 
 if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.mkdirSync(DATA_DIR, {
+    recursive: true
+  });
 }
 
 if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify({}, null, 2));
+  fs.writeFileSync(
+    DATA_FILE,
+    JSON.stringify({}, null, 2)
+  );
 }
 
 // ========================================
@@ -30,9 +42,17 @@ if (!fs.existsSync(DATA_FILE)) {
 function cargarReclamados() {
   try {
     return JSON.parse(
-      fs.readFileSync(DATA_FILE, "utf8")
+      fs.readFileSync(
+        DATA_FILE,
+        "utf8"
+      )
     );
-  } catch {
+  } catch (error) {
+    console.error(
+      "❌ Error leyendo personajes:",
+      error
+    );
+
     return {};
   }
 }
@@ -40,16 +60,22 @@ function cargarReclamados() {
 function guardarReclamados(data) {
   fs.writeFileSync(
     DATA_FILE,
-    JSON.stringify(data, null, 2)
+    JSON.stringify(
+      data,
+      null,
+      2
+    )
   );
 }
 
 // ========================================
-// OBTENER ID DEL USUARIO
+// OBTENER ID
 // ========================================
 
 function obtenerId(msg, id) {
-  if (id) return id;
+  if (id) {
+    return id;
+  }
 
   return (
     msg?.key?.participant ||
@@ -71,7 +97,7 @@ function limpiarId(id) {
 }
 
 // ========================================
-// PERSONAJES
+// PERSONAJES ANIME
 // ========================================
 
 const personajesAnime = [
@@ -80,7 +106,8 @@ const personajesAnime = [
     id: 1,
     nombre: "Goku",
     anime: "Dragon Ball",
-    frase: "Siempre hay una nueva forma de superar tus límites.",
+    frase:
+      "Siempre hay una nueva forma de superar tus límites.",
     image:
       "https://cdn.myanimelist.net/images/characters/11/137581.jpg"
   },
@@ -89,7 +116,8 @@ const personajesAnime = [
     id: 2,
     nombre: "Naruto Uzumaki",
     anime: "Naruto",
-    frase: "Nunca abandones aquello por lo que decidiste luchar.",
+    frase:
+      "Nunca abandones aquello por lo que decidiste luchar.",
     image:
       "https://cdn.myanimelist.net/images/characters/2/284303.jpg"
   },
@@ -98,7 +126,8 @@ const personajesAnime = [
     id: 3,
     nombre: "Monkey D. Luffy",
     anime: "One Piece",
-    frase: "Persigue tus sueños aunque el camino sea difícil.",
+    frase:
+      "Persigue tus sueños aunque el camino sea difícil.",
     image:
       "https://cdn.myanimelist.net/images/characters/9/310307.jpg"
   },
@@ -107,7 +136,8 @@ const personajesAnime = [
     id: 4,
     nombre: "Ichigo Kurosaki",
     anime: "Bleach",
-    frase: "Protege aquello que consideras importante.",
+    frase:
+      "Protege aquello que consideras importante.",
     image:
       "https://cdn.myanimelist.net/images/characters/9/131317.jpg"
   },
@@ -116,7 +146,8 @@ const personajesAnime = [
     id: 5,
     nombre: "Satoru Gojo",
     anime: "Jujutsu Kaisen",
-    frase: "La confianza también puede convertirse en poder.",
+    frase:
+      "La confianza también puede convertirse en poder.",
     image:
       "https://cdn.myanimelist.net/images/characters/7/357919.jpg"
   },
@@ -125,7 +156,8 @@ const personajesAnime = [
     id: 6,
     nombre: "Levi Ackerman",
     anime: "Shingeki no Kyojin",
-    frase: "Toma tus decisiones y acepta el camino que elegiste.",
+    frase:
+      "Toma tus decisiones y acepta el camino que elegiste.",
     image:
       "https://cdn.myanimelist.net/images/characters/7/241413.jpg"
   },
@@ -134,7 +166,8 @@ const personajesAnime = [
     id: 7,
     nombre: "Tanjiro Kamado",
     anime: "Demon Slayer",
-    frase: "La bondad puede mantenerse incluso en los momentos difíciles.",
+    frase:
+      "La bondad puede mantenerse incluso en los momentos difíciles.",
     image:
       "https://cdn.myanimelist.net/images/characters/3/363159.jpg"
   },
@@ -143,7 +176,8 @@ const personajesAnime = [
     id: 8,
     nombre: "Eren Yeager",
     anime: "Shingeki no Kyojin",
-    frase: "Avanza incluso cuando el camino parece imposible.",
+    frase:
+      "Avanza incluso cuando el camino parece imposible.",
     image:
       "https://cdn.myanimelist.net/images/characters/10/307586.jpg"
   },
@@ -152,7 +186,8 @@ const personajesAnime = [
     id: 9,
     nombre: "Light Yagami",
     anime: "Death Note",
-    frase: "El poder cambia las reglas cuando decides utilizarlo.",
+    frase:
+      "El poder cambia las reglas cuando decides utilizarlo.",
     image:
       "https://cdn.myanimelist.net/images/characters/9/243955.jpg"
   },
@@ -161,7 +196,8 @@ const personajesAnime = [
     id: 10,
     nombre: "Edward Elric",
     anime: "Fullmetal Alchemist",
-    frase: "Todo esfuerzo tiene un precio y una consecuencia.",
+    frase:
+      "Todo esfuerzo tiene un precio y una consecuencia.",
     image:
       "https://cdn.myanimelist.net/images/characters/9/72533.jpg"
   },
@@ -170,7 +206,8 @@ const personajesAnime = [
     id: 11,
     nombre: "Killua Zoldyck",
     anime: "Hunter x Hunter",
-    frase: "Tu verdadero potencial aparece cuando confías en ti.",
+    frase:
+      "Tu verdadero potencial aparece cuando confías en ti.",
     image:
       "https://cdn.myanimelist.net/images/characters/8/294712.jpg"
   },
@@ -179,7 +216,8 @@ const personajesAnime = [
     id: 12,
     nombre: "Izuku Midoriya",
     anime: "My Hero Academia",
-    frase: "Ser valiente también significa ayudar a los demás.",
+    frase:
+      "Ser valiente también significa ayudar a los demás.",
     image:
       "https://cdn.myanimelist.net/images/characters/9/310307.jpg"
   }
@@ -187,17 +225,26 @@ const personajesAnime = [
 ];
 
 // ========================================
-// BUSCAR PERSONAJE DISPONIBLE
+// PERSONAJE DISPONIBLE
 // ========================================
 
-function obtenerPersonajeDisponible(reclamados) {
+function obtenerPersonajeDisponible(
+  reclamados
+) {
 
   const disponibles =
     personajesAnime.filter(
-      personaje =>
-        !Object.values(reclamados).some(
-          p => p.personajeId === personaje.id
-        )
+      personaje => {
+
+        return !Object.values(
+          reclamados
+        ).some(
+          p =>
+            p.personajeId ===
+            personaje.id
+        );
+
+      }
     );
 
   if (!disponibles.length) {
@@ -206,23 +253,29 @@ function obtenerPersonajeDisponible(reclamados) {
 
   return disponibles[
     Math.floor(
-      Math.random() * disponibles.length
+      Math.random() *
+      disponibles.length
     )
   ];
 }
 
 // ========================================
-// DESCARGAR IMAGEN DEL PERSONAJE
+// DESCARGAR IMAGEN
 // ========================================
 
-async function descargarImagen(url) {
+async function descargarImagen(
+  url
+) {
 
   try {
 
-    const respuesta = await fetch(url);
+    const respuesta =
+      await fetch(url);
 
     if (!respuesta.ok) {
-      throw new Error("No se pudo descargar la imagen");
+      throw new Error(
+        "No se pudo descargar la imagen"
+      );
     }
 
     const buffer =
@@ -232,33 +285,51 @@ async function descargarImagen(url) {
 
     return buffer;
 
-  } catch {
+  } catch (error) {
+
+    console.error(
+      "❌ Error descargando imagen:",
+      error
+    );
 
     return null;
   }
 }
 
 // ========================================
-// ESCAPAR TEXTO SVG
+// ESCAPAR TEXTO
 // ========================================
 
 function escapar(texto) {
 
   return String(texto)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+    .replace(
+      /</g,
+      "&lt;"
+    )
+    .replace(
+      />/g,
+      "&gt;"
+    )
+    .replace(
+      /"/g,
+      "&quot;"
+    );
 }
 
 // ========================================
-// CREAR TARJETA ANIME
+// CREAR TARJETA
 // ========================================
 
 async function crearTarjeta({
   personaje,
   nombreUsuario,
-  idUsuario
+  idUsuario,
+  estado = "RECLAMADO"
 }) {
 
   const ancho = 1000;
@@ -273,344 +344,381 @@ async function crearTarjeta({
   // FONDO
   // ======================================
 
-  const fondo = Buffer.from(`
-    <svg width="${ancho}" height="${alto}">
-      <defs>
+  const fondo =
+    Buffer.from(`
+<svg
+  width="${ancho}"
+  height="${alto}"
+  xmlns="http://www.w3.org/2000/svg"
+>
 
-        <linearGradient
-          id="bg"
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="1"
-        >
-          <stop
-            offset="0%"
-            stop-color="#09091c"
-          />
+  <defs>
 
-          <stop
-            offset="50%"
-            stop-color="#17104a"
-          />
+    <linearGradient
+      id="bg"
+      x1="0"
+      y1="0"
+      x2="1"
+      y2="1"
+    >
 
-          <stop
-            offset="100%"
-            stop-color="#05050d"
-          />
-        </linearGradient>
-
-        <linearGradient
-          id="linea"
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="0"
-        >
-          <stop
-            offset="0%"
-            stop-color="#5b5cff"
-          />
-
-          <stop
-            offset="100%"
-            stop-color="#00e5ff"
-          />
-        </linearGradient>
-
-      </defs>
-
-      <rect
-        width="100%"
-        height="100%"
-        fill="url(#bg)"
+      <stop
+        offset="0%"
+        stop-color="#09091c"
       />
 
-      <circle
-        cx="800"
-        cy="180"
-        r="180"
-        fill="none"
-        stroke="#5b5cff"
-        stroke-width="3"
-        opacity="0.25"
+      <stop
+        offset="50%"
+        stop-color="#17104a"
       />
 
-      <circle
-        cx="150"
-        cy="1100"
-        r="230"
-        fill="none"
-        stroke="#00e5ff"
-        stroke-width="3"
-        opacity="0.15"
+      <stop
+        offset="100%"
+        stop-color="#05050d"
       />
 
-      <path
-        d="M0 260 L1000 70"
-        stroke="url(#linea)"
-        stroke-width="3"
-        opacity="0.35"
+    </linearGradient>
+
+    <linearGradient
+      id="linea"
+      x1="0"
+      y1="0"
+      x2="1"
+      y2="0"
+    >
+
+      <stop
+        offset="0%"
+        stop-color="#5b5cff"
       />
 
-      <path
-        d="M0 1240 L1000 1040"
-        stroke="url(#linea)"
-        stroke-width="3"
-        opacity="0.25"
+      <stop
+        offset="100%"
+        stop-color="#00e5ff"
       />
 
-      <rect
-        x="35"
-        y="35"
-        width="930"
-        height="1280"
-        rx="35"
-        fill="none"
-        stroke="#6b6dff"
-        stroke-width="4"
-      />
+    </linearGradient>
 
-      <rect
-        x="55"
-        y="55"
-        width="890"
-        height="1240"
-        rx="28"
-        fill="none"
-        stroke="#ffffff"
-        stroke-width="1"
-        opacity="0.25"
-      />
+  </defs>
 
-    </svg>
-  `);
+  <rect
+    width="100%"
+    height="100%"
+    fill="url(#bg)"
+  />
+
+  <circle
+    cx="800"
+    cy="180"
+    r="180"
+    fill="none"
+    stroke="#5b5cff"
+    stroke-width="3"
+    opacity="0.25"
+  />
+
+  <circle
+    cx="150"
+    cy="1100"
+    r="230"
+    fill="none"
+    stroke="#00e5ff"
+    stroke-width="3"
+    opacity="0.15"
+  />
+
+  <path
+    d="M0 260 L1000 70"
+    stroke="url(#linea)"
+    stroke-width="3"
+    opacity="0.35"
+  />
+
+  <path
+    d="M0 1240 L1000 1040"
+    stroke="url(#linea)"
+    stroke-width="3"
+    opacity="0.25"
+  />
+
+  <rect
+    x="35"
+    y="35"
+    width="930"
+    height="1280"
+    rx="35"
+    fill="none"
+    stroke="#6b6dff"
+    stroke-width="4"
+  />
+
+  <rect
+    x="55"
+    y="55"
+    width="890"
+    height="1240"
+    rx="28"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="1"
+    opacity="0.25"
+  />
+
+</svg>
+`);
 
   // ======================================
   // TEXTO
   // ======================================
 
-  const texto = Buffer.from(`
-    <svg width="${ancho}" height="${alto}">
+  const texto =
+    Buffer.from(`
+<svg
+  width="${ancho}"
+  height="${alto}"
+  xmlns="http://www.w3.org/2000/svg"
+>
 
-      <text
-        x="500"
-        y="115"
-        text-anchor="middle"
-        font-family="Arial"
-        font-size="52"
-        font-weight="bold"
-        fill="white"
-      >
-        TITANBOT
-      </text>
+  <text
+    x="500"
+    y="115"
+    text-anchor="middle"
+    font-family="Arial"
+    font-size="52"
+    font-weight="bold"
+    fill="white"
+  >
+    TITANBOT
+  </text>
 
-      <text
-        x="500"
-        y="160"
-        text-anchor="middle"
-        font-family="Arial"
-        font-size="24"
-        fill="#9ca3ff"
-      >
-        ANIME CHARACTER
-      </text>
+  <text
+    x="500"
+    y="160"
+    text-anchor="middle"
+    font-family="Arial"
+    font-size="24"
+    fill="#9ca3ff"
+  >
+    ANIME CHARACTER
+  </text>
 
-      <text
-        x="500"
-        y="930"
-        text-anchor="middle"
-        font-family="Arial"
-        font-size="46"
-        font-weight="bold"
-        fill="white"
-      >
-        ${escapar(personaje.nombre)}
-      </text>
+  <text
+    x="500"
+    y="930"
+    text-anchor="middle"
+    font-family="Arial"
+    font-size="46"
+    font-weight="bold"
+    fill="white"
+  >
+    ${escapar(personaje.nombre)}
+  </text>
 
-      <text
-        x="500"
-        y="975"
-        text-anchor="middle"
-        font-family="Arial"
-        font-size="27"
-        fill="#b9c0ff"
-      >
-        ${escapar(personaje.anime)}
-      </text>
+  <text
+    x="500"
+    y="975"
+    text-anchor="middle"
+    font-family="Arial"
+    font-size="27"
+    fill="#b9c0ff"
+  >
+    ${escapar(personaje.anime)}
+  </text>
 
-      <rect
-        x="280"
-        y="1010"
-        width="440"
-        height="65"
-        rx="32"
-        fill="#153b29"
-        stroke="#45ff9a"
-        stroke-width="2"
-      />
+  <rect
+    x="280"
+    y="1010"
+    width="440"
+    height="65"
+    rx="32"
+    fill="#153b29"
+    stroke="#45ff9a"
+    stroke-width="2"
+  />
 
-      <text
-        x="500"
-        y="1053"
-        text-anchor="middle"
-        font-family="Arial"
-        font-size="30"
-        font-weight="bold"
-        fill="#45ff9a"
-      >
-        ● RECLAMADO
-      </text>
+  <text
+    x="500"
+    y="1053"
+    text-anchor="middle"
+    font-family="Arial"
+    font-size="30"
+    font-weight="bold"
+    fill="#45ff9a"
+  >
+    ● ${escapar(estado)}
+  </text>
 
-      <text
-        x="90"
-        y="1145"
-        font-family="Arial"
-        font-size="25"
-        fill="#8f96ff"
-      >
-        NOMBRE
-      </text>
+  <text
+    x="90"
+    y="1145"
+    font-family="Arial"
+    font-size="25"
+    fill="#8f96ff"
+  >
+    NOMBRE
+  </text>
 
-      <text
-        x="90"
-        y="1180"
-        font-family="Arial"
-        font-size="30"
-        fill="white"
-      >
-        ${escapar(nombreUsuario)}
-      </text>
+  <text
+    x="90"
+    y="1180"
+    font-family="Arial"
+    font-size="30"
+    fill="white"
+  >
+    ${escapar(nombreUsuario)}
+  </text>
 
-      <text
-        x="90"
-        y="1225"
-        font-family="Arial"
-        font-size="25"
-        fill="#8f96ff"
-      >
-        ID
-      </text>
+  <text
+    x="90"
+    y="1225"
+    font-family="Arial"
+    font-size="25"
+    fill="#8f96ff"
+  >
+    ID
+  </text>
 
-      <text
-        x="90"
-        y="1260"
-        font-family="Arial"
-        font-size="27"
-        fill="white"
-      >
-        ${escapar(idUsuario)}
-      </text>
+  <text
+    x="90"
+    y="1260"
+    font-family="Arial"
+    font-size="27"
+    fill="white"
+  >
+    ${escapar(idUsuario)}
+  </text>
 
-    </svg>
-  `);
+</svg>
+`);
 
   // ======================================
   // FRASE
   // ======================================
 
-  const frase = Buffer.from(`
-    <svg width="${ancho}" height="${alto}">
+  const frase =
+    Buffer.from(`
+<svg
+  width="${ancho}"
+  height="${alto}"
+  xmlns="http://www.w3.org/2000/svg"
+>
 
-      <rect
-        x="85"
-        y="650"
-        width="830"
-        height="180"
-        rx="25"
-        fill="#05050d"
-        opacity="0.82"
-        stroke="#7778ff"
-        stroke-width="2"
-      />
+  <rect
+    x="85"
+    y="650"
+    width="830"
+    height="180"
+    rx="25"
+    fill="#05050d"
+    opacity="0.82"
+    stroke="#7778ff"
+    stroke-width="2"
+  />
 
-      <text
-        x="500"
-        y="705"
-        text-anchor="middle"
-        font-family="Arial"
-        font-size="25"
-        fill="#8f96ff"
-      >
-        ✦ FRASE DEL PERSONAJE ✦
-      </text>
+  <text
+    x="500"
+    y="705"
+    text-anchor="middle"
+    font-family="Arial"
+    font-size="25"
+    fill="#8f96ff"
+  >
+    ✦ FRASE DEL PERSONAJE ✦
+  </text>
 
-      <text
-        x="500"
-        y="755"
-        text-anchor="middle"
-        font-family="Arial"
-        font-size="25"
-        fill="white"
-      >
-        ${escapar(personaje.frase)}
-      </text>
+  <text
+    x="500"
+    y="755"
+    text-anchor="middle"
+    font-family="Arial"
+    font-size="25"
+    fill="white"
+  >
+    ${escapar(personaje.frase)}
+  </text>
 
-    </svg>
-  `);
+</svg>
+`);
 
   // ======================================
-  // IMAGEN
+  // BASE
   // ======================================
 
-  let base = sharp(fondo);
+  let base =
+    sharp(fondo);
+
+  // ======================================
+  // IMAGEN DEL PERSONAJE
+  // ======================================
 
   if (imagen) {
 
     const personajeImagen =
       await sharp(imagen)
-        .resize(700, 650, {
-          fit: "cover",
-          position: "centre"
-        })
+        .resize(
+          700,
+          650,
+          {
+            fit: "cover",
+            position: "centre"
+          }
+        )
         .jpeg()
         .toBuffer();
 
-    base = base.composite([
-      {
-        input: personajeImagen,
-        left: 150,
-        top: 190
-      }
-    ]);
+    base =
+      base.composite([
+        {
+          input:
+            personajeImagen,
+          left: 150,
+          top: 190
+        }
+      ]);
 
   } else {
 
-    const sinImagen = Buffer.from(`
-      <svg width="700" height="650">
+    const sinImagen =
+      Buffer.from(`
+<svg
+  width="700"
+  height="650"
+  xmlns="http://www.w3.org/2000/svg"
+>
 
-        <rect
-          width="700"
-          height="650"
-          rx="35"
-          fill="#101020"
-        />
+  <rect
+    width="700"
+    height="650"
+    rx="35"
+    fill="#101020"
+  />
 
-        <text
-          x="350"
-          y="330"
-          text-anchor="middle"
-          font-family="Arial"
-          font-size="45"
-          fill="white"
-        >
-          ${escapar(personaje.nombre)}
-        </text>
+  <text
+    x="350"
+    y="330"
+    text-anchor="middle"
+    font-family="Arial"
+    font-size="45"
+    fill="white"
+  >
+    ${escapar(personaje.nombre)}
+  </text>
 
-      </svg>
-    `);
+</svg>
+`);
 
-    base = base.composite([
-      {
-        input: sinImagen,
-        left: 150,
-        top: 190
-      }
-    ]);
+    base =
+      base.composite([
+        {
+          input: sinImagen,
+          left: 150,
+          top: 190
+        }
+      ]);
   }
 
   // ======================================
-  // COMPONER TODO
+  // COMPONER TARJETA
   // ======================================
 
   return await base
@@ -645,23 +753,37 @@ async function anime(
   msg
 ) {
 
+  comando =
+    String(comando || "")
+      .toLowerCase()
+      .replace(/^\./, "");
+
   const idUsuario =
     limpiarId(
-      obtenerId(msg, id)
+      obtenerId(
+        msg,
+        id
+      )
     );
 
-  // ========================================
-  // MENÚ ANIME
-  // ========================================
+  try {
 
-  if (
-    comando === "anime" &&
-    args.length === 0 ||
-    comando === "animemenu"
-  ) {
+    // ======================================
+    // MENÚ ANIME
+    // ======================================
 
-    await sock.sendMessage(chat, {
-      text:
+    if (
+      (
+        comando === "anime" &&
+        args.length === 0
+      ) ||
+      comando === "animemenu"
+    ) {
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `🌸 TITANBOT — ANIME
 
 🎌 COMANDOS
@@ -688,173 +810,222 @@ Usa:
 .s
 
 para reclamar un personaje anime.`
-    });
+        }
+      );
 
-    return true;
-  }
+      return true;
+    }
 
-  // ========================================
-  // .S — RECLAMAR PERSONAJE
-  // ========================================
+    // ======================================
+    // .S — RECLAMAR
+    // ======================================
 
-  if (comando === "s") {
+    if (comando === "s") {
 
-    const reclamados =
-      cargarReclamados();
+      const reclamados =
+        cargarReclamados();
 
-    // --------------------------------------
-    // COMPROBAR SI YA TIENE PERSONAJE
-    // --------------------------------------
+      // ------------------------------------
+      // YA TIENE PERSONAJE
+      // ------------------------------------
 
-    if (reclamados[idUsuario]) {
+      if (reclamados[idUsuario]) {
 
-      const actual =
-        personajesAnime.find(
-          p =>
-            p.id ===
-            reclamados[idUsuario].personajeId
-        );
+        const actual =
+          personajesAnime.find(
+            p =>
+              p.id ===
+              reclamados[
+                idUsuario
+              ].personajeId
+          );
 
-      if (actual) {
+        if (actual) {
 
-        await sock.sendMessage(chat, {
-          text:
+          await sock.sendMessage(
+            chat,
+            {
+              text:
 `🎴 YA TIENES UN PERSONAJE
 
-👤 ${actual.nombre}
+⭐ ${actual.nombre}
+
 🎌 ${actual.anime}
 
 🔒 Este personaje ya está reclamado por ti.
 
 Usa:
+
 .mispersonajes`
-        });
+            }
+          );
 
-        return true;
+          return true;
+        }
       }
-    }
 
-    // --------------------------------------
-    // BUSCAR DISPONIBLE
-    // --------------------------------------
+      // ------------------------------------
+      // BUSCAR DISPONIBLE
+      // ------------------------------------
 
-    const personaje =
-      obtenerPersonajeDisponible(
-        reclamados
-      );
+      const personaje =
+        obtenerPersonajeDisponible(
+          reclamados
+        );
 
-    if (!personaje) {
+      if (!personaje) {
 
-      await sock.sendMessage(chat, {
-        text:
+        await sock.sendMessage(
+          chat,
+          {
+            text:
 `😔 NO HAY PERSONAJES DISPONIBLES
 
 Todos los personajes de la colección están reclamados.
 
 🎌 Próximamente habrá más personajes.`
-      });
+          }
+        );
+
+        return true;
+      }
+
+      // ------------------------------------
+      // NOMBRE
+      // ------------------------------------
+
+      const nombreUsuario =
+        msg?.pushName ||
+        "Usuario";
+
+      // ------------------------------------
+      // GUARDAR
+      // ------------------------------------
+
+      reclamados[idUsuario] = {
+
+        personajeId:
+          personaje.id,
+
+        nombre:
+          personaje.nombre,
+
+        anime:
+          personaje.anime,
+
+        frase:
+          personaje.frase,
+
+        image:
+          personaje.image,
+
+        reclamadoPor:
+          idUsuario,
+
+        nombreUsuario:
+          nombreUsuario,
+
+        fecha:
+          new Date().toISOString()
+
+      };
+
+      guardarReclamados(
+        reclamados
+      );
+
+      // ------------------------------------
+      // CREAR TARJETA
+      // ------------------------------------
+
+      try {
+
+        const tarjeta =
+          await crearTarjeta({
+            personaje,
+            nombreUsuario,
+            idUsuario,
+            estado:
+              "RECLAMADO"
+          });
+
+        await sock.sendMessage(
+          chat,
+          {
+            image: tarjeta,
+            caption:
+`🎌✨ ¡RECLAMASTE ESTE PERSONAJE! ✨🎌
+
+⭐ ${personaje.nombre}
+
+🎌 ${personaje.anime}
+
+👤 ${nombreUsuario}
+
+🆔 ${idUsuario}
+
+🟢 ESTADO:
+RECLAMADO
+
+💬 "${personaje.frase}"
+
+🎴 Usa .mispersonajes para verlo nuevamente.`
+          }
+        );
+
+      } catch (error) {
+
+        console.error(
+          "❌ Error creando tarjeta:",
+          error
+        );
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`🎌✨ ¡RECLAMASTE ESTE PERSONAJE!
+
+⭐ ${personaje.nombre}
+
+🎌 ${personaje.anime}
+
+👤 ${nombreUsuario}
+
+🆔 ${idUsuario}
+
+🟢 ESTADO:
+RECLAMADO
+
+💬 "${personaje.frase}"`
+          }
+        );
+      }
 
       return true;
     }
 
-    // --------------------------------------
-    // NOMBRE
-    // --------------------------------------
+    // ======================================
+    // MIS PERSONAJES
+    // ======================================
 
-    let nombreUsuario =
-      msg?.pushName ||
-      "Usuario";
+    if (
+      comando === "mispersonajes" ||
+      comando === "mispersonaje"
+    ) {
 
-    // --------------------------------------
-    // GUARDAR
-    // --------------------------------------
+      const reclamados =
+        cargarReclamados();
 
-    reclamados[idUsuario] = {
-      personajeId: personaje.id,
-      nombre: personaje.nombre,
-      anime: personaje.anime,
-      reclamadoPor: idUsuario,
-      nombreUsuario,
-      fecha:
-        new Date().toISOString()
-    };
+      const personajeUsuario =
+        reclamados[idUsuario];
 
-    guardarReclamados(
-      reclamados
-    );
+      if (!personajeUsuario) {
 
-    // --------------------------------------
-    // GENERAR TARJETA
-    // --------------------------------------
-
-    try {
-
-      const tarjeta =
-        await crearTarjeta({
-          personaje,
-          nombreUsuario,
-          idUsuario
-        });
-
-      await sock.sendMessage(chat, {
-        image: tarjeta,
-        caption:
-`🎌 ¡RECLAMASTE ESTE PERSONAJE!
-
-⭐ ${personaje.nombre}
-🎬 ${personaje.anime}
-
-👤 ${nombreUsuario}
-🆔 ${idUsuario}
-
-🔒 Ahora pertenece a ti.
-
-💬 ${personaje.frase}`
-      });
-
-    } catch (error) {
-
-      console.error(
-        "Error creando tarjeta anime:",
-        error
-      );
-
-      await sock.sendMessage(chat, {
-        text:
-`🎌 ¡RECLAMASTE ESTE PERSONAJE!
-
-⭐ ${personaje.nombre}
-🎬 ${personaje.anime}
-
-👤 ${nombreUsuario}
-🆔 ${idUsuario}
-
-🔒 Ahora pertenece a ti.`
-      });
-    }
-
-    return true;
-  }
-
-  // ========================================
-  // MIS PERSONAJES
-  // ========================================
-
-  if (
-    comando === "mispersonajes" ||
-    comando === "mispersonaje"
-  ) {
-
-    const reclamados =
-      cargarReclamados();
-
-    const personajeUsuario =
-      reclamados[idUsuario];
-
-    if (!personajeUsuario) {
-
-      await sock.sendMessage(chat, {
-        text:
+        await sock.sendMessage(
+          chat,
+          {
+            text:
 `🎴 MIS PERSONAJES
 
 Todavía no tienes ningún personaje.
@@ -864,19 +1035,56 @@ Usa:
 .s
 
 para reclamar uno.`
-      });
+          }
+        );
 
-      return true;
-    }
+        return true;
+      }
 
-    await sock.sendMessage(chat, {
-      text:
-`🎴 TU PERSONAJE
+      const personaje =
+        personajesAnime.find(
+          p =>
+            p.id ===
+            personajeUsuario.personajeId
+        );
 
-⭐ ${personajeUsuario.nombre}
+      if (!personaje) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`❌ No pude encontrar los datos del personaje.`
+          }
+        );
+
+        return true;
+      }
+
+      try {
+
+        const tarjeta =
+          await crearTarjeta({
+            personaje,
+            nombreUsuario:
+              personajeUsuario.nombreUsuario ||
+              "Usuario",
+            idUsuario,
+            estado:
+              "RECLAMADO"
+          });
+
+        await sock.sendMessage(
+          chat,
+          {
+            image: tarjeta,
+            caption:
+`🎴 MI PERSONAJE
+
+⭐ ${personaje.nombre}
 
 🎌 Anime:
-${personajeUsuario.anime}
+${personaje.anime}
 
 👤 Usuario:
 ${personajeUsuario.nombreUsuario}
@@ -884,98 +1092,153 @@ ${personajeUsuario.nombreUsuario}
 🆔 ID:
 ${idUsuario}
 
-🔒 Estado:
-RECLAMADO`
-    });
+🟢 ESTADO:
+RECLAMADO
 
-    return true;
-  }
+💬 "${personaje.frase}"
 
-  // ========================================
-  // PERSONAJES DISPONIBLES
-  // ========================================
+📅 Reclamado:
+${new Date(
+  personajeUsuario.fecha
+).toLocaleDateString()}`
+          }
+        );
 
-  if (comando === "personajes") {
+      } catch (error) {
 
-    const reclamados =
-      cargarReclamados();
+        console.error(
+          "❌ Error en mispersonajes:",
+          error
+        );
 
-    let texto =
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`🎴 MI PERSONAJE
+
+⭐ ${personaje.nombre}
+
+🎌 Anime:
+${personaje.anime}
+
+👤 Usuario:
+${personajeUsuario.nombreUsuario}
+
+🆔 ID:
+${idUsuario}
+
+🟢 ESTADO:
+RECLAMADO
+
+💬 "${personaje.frase}"`
+          }
+        );
+      }
+
+      return true;
+    }
+
+    // ======================================
+    // PERSONAJES
+    // ======================================
+
+    if (comando === "personajes") {
+
+      const reclamados =
+        cargarReclamados();
+
+      let texto =
 `🎌 PERSONAJES TITANBOT
+
+━━━━━━━━━━━━━━━━━━
 
 `;
 
-    for (
-      const personaje of personajesAnime
-    ) {
+      for (
+        const personaje
+        of personajesAnime
+      ) {
 
-      const ocupado =
-        Object.values(
-          reclamados
-        ).some(
-          p =>
-            p.personajeId ===
-            personaje.id
-        );
+        const ocupado =
+          Object.values(
+            reclamados
+          ).some(
+            p =>
+              p.personajeId ===
+              personaje.id
+          );
 
-      texto +=
+        texto +=
 `${ocupado ? "🔴" : "🟢"} ${personaje.nombre}
 🎌 ${personaje.anime}
 Estado: ${ocupado ? "OCUPADO" : "LIBRE"}
 
 `;
-    }
+      }
 
-    await sock.sendMessage(chat, {
-      text: texto
-    });
-
-    return true;
-  }
-
-  // ========================================
-  // LIBERAR PERSONAJE
-  // ========================================
-
-  if (comando === "liberar") {
-
-    const reclamados =
-      cargarReclamados();
-
-    if (!reclamados[idUsuario]) {
-
-      await sock.sendMessage(chat, {
-        text:
-`❌ No tienes ningún personaje reclamado.`
-      });
+      await sock.sendMessage(
+        chat,
+        {
+          text: texto
+        }
+      );
 
       return true;
     }
 
-    const personaje =
-      reclamados[idUsuario];
+    // ======================================
+    // LIBERAR
+    // ======================================
 
-    delete reclamados[idUsuario];
+    if (comando === "liberar") {
 
-    guardarReclamados(
-      reclamados
-    );
+      const reclamados =
+        cargarReclamados();
 
-    await sock.sendMessage(chat, {
-      text:
+      if (!reclamados[idUsuario]) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`❌ No tienes ningún personaje reclamado.`
+          }
+        );
+
+        return true;
+      }
+
+      const personaje =
+        reclamados[idUsuario];
+
+      delete reclamados[
+        idUsuario
+      ];
+
+      guardarReclamados(
+        reclamados
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `🔓 PERSONAJE LIBERADO
 
 ⭐ ${personaje.nombre}
+
 🎌 ${personaje.anime}
 
-El personaje vuelve a estar 🟢 LIBRE.`
-    });
+🟢 El personaje vuelve a estar LIBRE.`
+        }
+      );
 
-    return true;
-  }
+      return true;
+    }
 
-  // ========================================
-  // BUSCAR ANIME
+       // ========================================
+  // ANIMEBUSCAR
   // ========================================
 
   if (comando === "animebuscar") {
@@ -1123,7 +1386,7 @@ ${resultado.estado}`
     return true;
   }
 
-   // ========================================
+  // ========================================
   // ANIMEINFO
   // ========================================
 
@@ -1353,642 +1616,14 @@ ${resultado}`
   }
 
   // ========================================
-  // SISTEMA DE PERSONAJES RECLAMABLES
-  // ========================================
-
-  if (comando === "s") {
-
-    const fs = require("fs");
-    const path = require("path");
-
-    const dataDir =
-      path.join(__dirname, "..", "data");
-
-    const dataFile =
-      path.join(
-        dataDir,
-        "anime_reclamados.json"
-      );
-
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, {
-        recursive: true
-      });
-    }
-
-    if (!fs.existsSync(dataFile)) {
-      fs.writeFileSync(
-        dataFile,
-        JSON.stringify({}, null, 2)
-      );
-    }
-
-    let reclamados = {};
-
-    try {
-      reclamados =
-        JSON.parse(
-          fs.readFileSync(
-            dataFile,
-            "utf8"
-          )
-        );
-    } catch {
-      reclamados = {};
-    }
-
-    // ======================================
-    // ID DEL USUARIO
-    // ======================================
-
-    const idUsuario =
-      String(
-        id ||
-        msg?.key?.participant ||
-        msg?.key?.remoteJid ||
-        "usuario"
-      )
-      .replace("@s.whatsapp.net", "")
-      .replace("@lid", "")
-      .replace("@g.us", "");
-
-    const nombreUsuario =
-      msg?.pushName ||
-      "Usuario";
-
-    // ======================================
-    // CATÁLOGO
-    // ======================================
-
-    const personajesAnime = [
-
-  {
-    id: 1,
-    nombre: "Goku",
-    anime: "Dragon Ball",
-    imagen: "goku.jpg",
-    frase: "Siempre hay una nueva forma de superar tus límites."
-  },
-
-  {
-    id: 2,
-    nombre: "Naruto Uzumaki",
-    anime: "Naruto",
-    imagen: "naruto.jpg",
-    frase: "Nunca abandones aquello por lo que decidiste luchar."
-  },
-
-  {
-    id: 3,
-    nombre: "Monkey D. Luffy",
-    anime: "One Piece",
-    imagen: "luffy.jpg",
-    frase: "Persigue tus sueños aunque el camino sea difícil."
-  },
-
-  {
-    id: 4,
-    nombre: "Ichigo Kurosaki",
-    anime: "Bleach",
-    imagen: "ichigo.jpg",
-    frase: "Protege aquello que consideras importante."
-  },
-
-  {
-    id: 5,
-    nombre: "Satoru Gojo",
-    anime: "Jujutsu Kaisen",
-    imagen: "gojo.jpg",
-    frase: "La confianza también puede convertirse en poder."
-  },
-
-  {
-    id: 6,
-    nombre: "Levi Ackerman",
-    anime: "Attack on Titan",
-    imagen: "levi.jpg",
-    frase: "Toma tus decisiones y acepta el camino que elegiste."
-  }
-
-];
-    
-    // ======================================
-    // COMPROBAR SI YA TIENE PERSONAJE
-    // ======================================
-
-    if (reclamados[idUsuario]) {
-
-      const actual =
-        personajesAnime.find(
-          personaje =>
-            personaje.id ===
-            reclamados[idUsuario].personajeId
-        );
-
-      if (actual) {
-
-        await sock.sendMessage(chat, {
-          text:
-`🎴 YA TIENES UN PERSONAJE
-
-⭐ ${actual.nombre}
-🎌 ${actual.anime}
-
-🔒 Ya lo reclamaste anteriormente.
-
-Usa:
-
-.mispersonajes
-
-para verlo.`
-        });
-
-        return true;
-      }
-    }
-
-    // ======================================
-    // PERSONAJES DISPONIBLES
-    // ======================================
-
-    const disponibles =
-      personajesAnime.filter(
-        personaje =>
-          !Object.values(
-            reclamados
-          ).some(
-            reclamado =>
-              reclamado.personajeId ===
-              personaje.id
-          )
-      );
-
-    if (!disponibles.length) {
-
-      await sock.sendMessage(chat, {
-        text:
-`😔 NO HAY PERSONAJES DISPONIBLES
-
-Todos los personajes de la colección
-ya fueron reclamados.
-
-🎌 Próximamente habrá más personajes.`
-      });
-
-      return true;
-    }
-
-    // ======================================
-    // ELEGIR PERSONAJE
-    // ======================================
-
-    const personaje =
-      disponibles[
-        Math.floor(
-          Math.random() *
-          disponibles.length
-        )
-      ];
-
-    // ======================================
-    // GUARDAR
-    // ======================================
-
-    reclamados[idUsuario] = {
-
-      personajeId:
-        personaje.id,
-
-      nombre:
-        personaje.nombre,
-
-      anime:
-        personaje.anime,
-
-      frase:
-        personaje.frase,
-
-      nombreUsuario,
-
-      reclamadoPor:
-        idUsuario,
-
-      fecha:
-        new Date().toISOString()
-
-    };
-
-    fs.writeFileSync(
-      dataFile,
-      JSON.stringify(
-        reclamados,
-        null,
-        2
-      )
-    );
-
-     // ======================================
-     // CREAR TARJETA ANIME
-    // ======================================
-
-try {
-
-  const tarjeta =
-    await crearAnimeCard({
-      personaje:
-        personaje.nombre
-          .toLowerCase()
-          .replace(/\s+/g, "_") + ".jpg",
-
-      anime:
-        personaje.anime,
-
-      nombreUsuario:
-        nombreUsuario,
-
-      idUsuario:
-        idUsuario,
-
-      estado:
-        "RECLAMADO",
-
-      frase:
-        personaje.frase
-    });
-
-  await sock.sendMessage(
-    chat,
-    {
-      image: tarjeta,
-      caption:
-`🎌✨ ¡RECLAMASTE ESTE PERSONAJE! ✨🎌
-
-⭐ ${personaje.nombre}
-
-🎌 ${personaje.anime}
-
-👤 ${nombreUsuario}
-
-🆔 ${idUsuario}
-
-🔒 ESTADO: RECLAMADO
-
-💬 "${personaje.frase}"`
-    },
-    { quoted: msg }
-  );
-
-} catch (error) {
-
-  console.error(
-    "❌ Error creando tarjeta anime:",
-    error
-  );
-
-  await sock.sendMessage(
-    chat,
-    {
-      text:
-`🎌✨ ¡PERSONAJE RECLAMADO!
-
-⭐ ${personaje.nombre}
-🎌 ${personaje.anime}
-
-👤 ${nombreUsuario}
-🆔 ${idUsuario}
-
-🔒 ESTADO: RECLAMADO
-
-💬 "${personaje.frase}"
-
-⚠️ No pude generar la tarjeta visual.`
-    },
-    { quoted: msg }
-  );
-}
-
-return true;
-
-  // ========================================
-  // MIS PERSONAJES
-  // ========================================
-
-  if (
-    comando === "mispersonajes" ||
-    comando === "mispersonaje"
-  ) {
-
-    const fs = require("fs");
-    const path = require("path");
-
-    const dataFile =
-      path.join(
-        __dirname,
-        "..",
-        "database",
-        "anime_reclamados.json"
-      );
-
-    let reclamados = {};
-
-    try {
-
-      if (
-        fs.existsSync(dataFile)
-      ) {
-
-        reclamados =
-          JSON.parse(
-            fs.readFileSync(
-              dataFile,
-              "utf8"
-            )
-          );
-
-      }
-
-    } catch {
-
-      reclamados = {};
-
-    }
-
-    const idUsuario =
-      String(
-        id ||
-        msg?.key?.participant ||
-        msg?.key?.remoteJid ||
-        "usuario"
-      )
-      .replace("@s.whatsapp.net", "")
-      .replace("@lid", "")
-      .replace("@g.us", "");
-
-    const personaje =
-      reclamados[idUsuario];
-
-    if (!personaje) {
-
-      await sock.sendMessage(chat, {
-        text:
-`🎴 MIS PERSONAJES
-
-Todavía no tienes ningún personaje.
-
-Usa:
-
-.s
-
-para reclamar uno.`
-      });
-
-      return true;
-    }
-
-    const tarjeta =
-  await crearAnimeCard({
-    personaje: personaje.imagen,
-    anime: personaje.anime,
-    nombreUsuario: personaje.nombreUsuario,
-    idUsuario: idUsuario,
-    estado: "RECLAMADO",
-    frase: personaje.frase
-  });
-
-await sock.sendMessage(
-  chat,
-  {
-    image: tarjeta,
-    caption:
-`🎴 MI PERSONAJE
-
-⭐ ${personaje.nombre}
-
-🎌 Anime:
-${personaje.anime}
-
-👤 Usuario:
-${personaje.nombreUsuario}
-
-🆔 ID:
-${idUsuario}
-
-🔒 ESTADO:
-RECLAMADO
-
-💬 "${personaje.frase}"
-
-📅 Reclamado:
-${new Date(
-  personaje.fecha
-).toLocaleDateString()}`
-  },
-  { quoted: msg }
-);
-
-return true;
-  
-  }
-
-  // ========================================
-  // PERSONAJES DISPONIBLES
-  // ========================================
-
-  if (comando === "personajes") {
-
-    const fs = require("fs");
-    const path = require("path");
-
-    const dataFile =
-      path.join(
-        __dirname,
-        "..",
-        "database",
-        "anime_reclamados.json"
-      );
-
-    let reclamados = {};
-
-    try {
-
-      if (
-        fs.existsSync(dataFile)
-      ) {
-
-        reclamados =
-          JSON.parse(
-            fs.readFileSync(
-              dataFile,
-              "utf8"
-            )
-          );
-
-      }
-
-    } catch {
-
-      reclamados = {};
-
-    }
-
-    const personajesAnime = [
-
-      ["Goku", "Dragon Ball"],
-      ["Naruto Uzumaki", "Naruto"],
-      ["Monkey D. Luffy", "One Piece"],
-      ["Ichigo Kurosaki", "Bleach"],
-      ["Satoru Gojo", "Jujutsu Kaisen"],
-      ["Levi Ackerman", "Attack on Titan"],
-      ["Tanjiro Kamado", "Demon Slayer"],
-      ["Eren Yeager", "Attack on Titan"],
-      ["Light Yagami", "Death Note"],
-      ["Edward Elric", "Fullmetal Alchemist"],
-      ["Killua Zoldyck", "Hunter x Hunter"],
-      ["Izuku Midoriya", "My Hero Academia"]
-
-    ];
-
-    let texto =
-`🎌 PERSONAJES TITANBOT
-
-`;
-
-    personajesAnime.forEach(
-      (personaje, index) => {
-
-        const ocupado =
-          Object.values(
-            reclamados
-          ).some(
-            p =>
-              p.personajeId ===
-              index + 1
-          );
-
-        texto +=
-`${ocupado ? "🔴" : "🟢"} ${personaje[0]}
-🎌 ${personaje[1]}
-${ocupado ? "OCUPADO" : "LIBRE"}
-
-`;
-
-      }
-    );
-
-    await sock.sendMessage(chat, {
-      text: texto
-    });
-
-    return true;
-  }
-
-  // ========================================
-  // LIBERAR PERSONAJE
-  // ========================================
-
-  if (comando === "liberar") {
-
-    const fs = require("fs");
-    const path = require("path");
-
-    const dataFile =
-      path.join(
-        __dirname,
-        "..",
-        "database",
-        "anime_reclamados.json"
-      );
-
-    let reclamados = {};
-
-    try {
-
-      if (
-        fs.existsSync(dataFile)
-      ) {
-
-        reclamados =
-          JSON.parse(
-            fs.readFileSync(
-              dataFile,
-              "utf8"
-            )
-          );
-
-      }
-
-    } catch {
-
-      reclamados = {};
-
-    }
-
-    const idUsuario =
-      String(
-        id ||
-        msg?.key?.participant ||
-        msg?.key?.remoteJid ||
-        "usuario"
-      )
-      .replace("@s.whatsapp.net", "")
-      .replace("@lid", "")
-      .replace("@g.us", "");
-
-    if (!reclamados[idUsuario]) {
-
-      await sock.sendMessage(chat, {
-        text:
-`❌ No tienes ningún personaje reclamado.
-
-Usa:
-
-.s
-
-para reclamar uno.`
-      });
-
-      return true;
-    }
-
-    const personaje =
-      reclamados[idUsuario];
-
-    delete reclamados[idUsuario];
-
-    fs.writeFileSync(
-      dataFile,
-      JSON.stringify(
-        reclamados,
-        null,
-        2
-      )
-    );
-
-    await sock.sendMessage(chat, {
-      text:
-`🔓 PERSONAJE LIBERADO
-
-⭐ ${personaje.nombre}
-
-🎌 ${personaje.anime}
-
-🟢 Ahora vuelve a estar disponible.
-
-Puedes usar:
-
-.s
-
-para reclamar otro personaje.`
-    });
-
-    return true;
-  }
-
-  // ========================================
-  // NO ES COMANDO DE ANIME
+  // COMANDO NO ES DE ANIME
   // ========================================
 
   return false;
 }
+
+// ========================================
+// EXPORTAR
+// ========================================
 
 module.exports = anime;
