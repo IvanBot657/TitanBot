@@ -1041,10 +1041,12 @@ ${resultadoXP.nivel}
 
               const resultado =
                 await anime(
-                  sock,
-                  chat,
-                  comando,
-                  args
+                  sock, 
+                  chat, 
+                  comando, 
+                  args, 
+                  id,
+                  msg
                 );
 
 
