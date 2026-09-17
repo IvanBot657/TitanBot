@@ -1422,104 +1422,56 @@ ${resultado}`
 
     const personajesAnime = [
 
-      {
-        id: 1,
-        nombre: "Goku",
-        anime: "Dragon Ball",
-        frase:
-          "Siempre hay una nueva forma de superar tus límites."
-      },
+  {
+    id: 1,
+    nombre: "Goku",
+    anime: "Dragon Ball",
+    imagen: "goku.jpg",
+    frase: "Siempre hay una nueva forma de superar tus límites."
+  },
 
-      {
-        id: 2,
-        nombre: "Naruto Uzumaki",
-        anime: "Naruto",
-        frase:
-          "Nunca abandones aquello por lo que decidiste luchar."
-      },
+  {
+    id: 2,
+    nombre: "Naruto Uzumaki",
+    anime: "Naruto",
+    imagen: "naruto.jpg",
+    frase: "Nunca abandones aquello por lo que decidiste luchar."
+  },
 
-      {
-        id: 3,
-        nombre: "Monkey D. Luffy",
-        anime: "One Piece",
-        frase:
-          "Persigue tus sueños aunque el camino sea difícil."
-      },
+  {
+    id: 3,
+    nombre: "Monkey D. Luffy",
+    anime: "One Piece",
+    imagen: "luffy.jpg",
+    frase: "Persigue tus sueños aunque el camino sea difícil."
+  },
 
-      {
-        id: 4,
-        nombre: "Ichigo Kurosaki",
-        anime: "Bleach",
-        frase:
-          "Protege aquello que consideras importante."
-      },
+  {
+    id: 4,
+    nombre: "Ichigo Kurosaki",
+    anime: "Bleach",
+    imagen: "ichigo.jpg",
+    frase: "Protege aquello que consideras importante."
+  },
 
-      {
-        id: 5,
-        nombre: "Satoru Gojo",
-        anime: "Jujutsu Kaisen",
-        frase:
-          "La confianza también puede convertirse en poder."
-      },
+  {
+    id: 5,
+    nombre: "Satoru Gojo",
+    anime: "Jujutsu Kaisen",
+    imagen: "gojo.jpg",
+    frase: "La confianza también puede convertirse en poder."
+  },
 
-      {
-        id: 6,
-        nombre: "Levi Ackerman",
-        anime: "Attack on Titan",
-        frase:
-          "Toma tus decisiones y acepta el camino que elegiste."
-      },
+  {
+    id: 6,
+    nombre: "Levi Ackerman",
+    anime: "Attack on Titan",
+    imagen: "levi.jpg",
+    frase: "Toma tus decisiones y acepta el camino que elegiste."
+  }
 
-      {
-        id: 7,
-        nombre: "Tanjiro Kamado",
-        anime: "Demon Slayer",
-        frase:
-          "La bondad puede mantenerse incluso en los momentos difíciles."
-      },
-
-      {
-        id: 8,
-        nombre: "Eren Yeager",
-        anime: "Attack on Titan",
-        frase:
-          "Avanza incluso cuando el camino parece imposible."
-      },
-
-      {
-        id: 9,
-        nombre: "Light Yagami",
-        anime: "Death Note",
-        frase:
-          "El poder cambia las reglas cuando decides utilizarlo."
-      },
-
-      {
-        id: 10,
-        nombre: "Edward Elric",
-        anime: "Fullmetal Alchemist",
-        frase:
-          "Todo esfuerzo tiene un precio y una consecuencia."
-      },
-
-      {
-        id: 11,
-        nombre: "Killua Zoldyck",
-        anime: "Hunter x Hunter",
-        frase:
-          "Tu verdadero potencial aparece cuando confías en ti."
-      },
-
-      {
-        id: 12,
-        nombre: "Izuku Midoriya",
-        anime: "My Hero Academia",
-        frase:
-          "Ser valiente también significa ayudar a los demás."
-      }
-
-    ];
-
+];
+    
     // ======================================
     // COMPROBAR SI YA TIENE PERSONAJE
     // ======================================
@@ -1635,41 +1587,87 @@ ya fueron reclamados.
       )
     );
 
-    // ======================================
-    // RESPUESTA
+     // ======================================
+     // CREAR TARJETA ANIME
     // ======================================
 
-    await sock.sendMessage(chat, {
-      text:
+try {
+
+  const tarjeta =
+    await crearAnimeCard({
+      personaje:
+        personaje.nombre
+          .toLowerCase()
+          .replace(/\s+/g, "_") + ".jpg",
+
+      anime:
+        personaje.anime,
+
+      nombreUsuario:
+        nombreUsuario,
+
+      idUsuario:
+        idUsuario,
+
+      estado:
+        "RECLAMADO",
+
+      frase:
+        personaje.frase
+    });
+
+  await sock.sendMessage(
+    chat,
+    {
+      image: tarjeta,
+      caption:
 `🎌✨ ¡RECLAMASTE ESTE PERSONAJE! ✨🎌
 
 ⭐ ${personaje.nombre}
 
-🎌 Anime:
-${personaje.anime}
+🎌 ${personaje.anime}
 
-👤 Usuario:
-${nombreUsuario}
+👤 ${nombreUsuario}
 
-🆔 ID:
-${idUsuario}
+🆔 ${idUsuario}
 
-🟢 ESTADO:
-RECLAMADO
+🔒 ESTADO: RECLAMADO
+
+💬 "${personaje.frase}"`
+    },
+    { quoted: msg }
+  );
+
+} catch (error) {
+
+  console.error(
+    "❌ Error creando tarjeta anime:",
+    error
+  );
+
+  await sock.sendMessage(
+    chat,
+    {
+      text:
+`🎌✨ ¡PERSONAJE RECLAMADO!
+
+⭐ ${personaje.nombre}
+🎌 ${personaje.anime}
+
+👤 ${nombreUsuario}
+🆔 ${idUsuario}
+
+🔒 ESTADO: RECLAMADO
 
 💬 "${personaje.frase}"
 
-🔒 Este personaje ahora pertenece a ti.
+⚠️ No pude generar la tarjeta visual.`
+    },
+    { quoted: msg }
+  );
+}
 
-Usa:
-
-.mispersonajes
-
-para verlo.`
-    });
-
-    return true;
-  }
+return true;
 
   // ========================================
   // MIS PERSONAJES
@@ -1747,8 +1745,21 @@ para reclamar uno.`
       return true;
     }
 
-    await sock.sendMessage(chat, {
-      text:
+    const tarjeta =
+  await crearAnimeCard({
+    personaje: personaje.imagen,
+    anime: personaje.anime,
+    nombreUsuario: personaje.nombreUsuario,
+    idUsuario: idUsuario,
+    estado: "RECLAMADO",
+    frase: personaje.frase
+  });
+
+await sock.sendMessage(
+  chat,
+  {
+    image: tarjeta,
+    caption:
 `🎴 MI PERSONAJE
 
 ⭐ ${personaje.nombre}
@@ -1762,7 +1773,7 @@ ${personaje.nombreUsuario}
 🆔 ID:
 ${idUsuario}
 
-🟢 ESTADO:
+🔒 ESTADO:
 RECLAMADO
 
 💬 "${personaje.frase}"
@@ -1771,9 +1782,12 @@ RECLAMADO
 ${new Date(
   personaje.fecha
 ).toLocaleDateString()}`
-    });
+  },
+  { quoted: msg }
+);
 
-    return true;
+return true;
+  
   }
 
   // ========================================
