@@ -825,10 +825,6 @@ para reclamar un personaje anime.`
       const reclamados =
         cargarReclamados();
 
-      // ------------------------------------
-      // YA TIENE PERSONAJE
-      // ------------------------------------
-
       if (reclamados[idUsuario]) {
 
         const actual =
@@ -864,10 +860,6 @@ Usa:
         }
       }
 
-      // ------------------------------------
-      // BUSCAR DISPONIBLE
-      // ------------------------------------
-
       const personaje =
         obtenerPersonajeDisponible(
           reclamados
@@ -890,17 +882,9 @@ Todos los personajes de la colección están reclamados.
         return true;
       }
 
-      // ------------------------------------
-      // NOMBRE
-      // ------------------------------------
-
       const nombreUsuario =
         msg?.pushName ||
         "Usuario";
-
-      // ------------------------------------
-      // GUARDAR
-      // ------------------------------------
 
       reclamados[idUsuario] = {
 
@@ -933,10 +917,6 @@ Todos los personajes de la colección están reclamados.
       guardarReclamados(
         reclamados
       );
-
-      // ------------------------------------
-      // CREAR TARJETA
-      // ------------------------------------
 
       try {
 
@@ -1235,33 +1215,38 @@ Estado: ${ocupado ? "OCUPADO" : "LIBRE"}
       );
 
       return true;
-    }
+      }
 
-       // ========================================
-  // ANIMEBUSCAR
-  // ========================================
+        // ======================================
+    // ANIMEBUSCAR
+    // ======================================
 
-  if (comando === "animebuscar") {
+    if (comando === "animebuscar") {
 
-    const nombre =
-      args.join(" ");
+      const nombre =
+        args.join(" ").trim();
 
-    if (!nombre) {
+      if (!nombre) {
 
-      await sock.sendMessage(chat, {
-        text:
+        await sock.sendMessage(
+          chat,
+          {
+            text:
 `❌ Escribe el nombre de un anime.
 
 Ejemplo:
 
 .animebuscar Naruto`
-      });
+          }
+        );
 
-      return true;
-    }
+        return true;
+      }
 
-    await sock.sendMessage(chat, {
-      text:
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `🔎 BÚSQUEDA DE ANIME
 
 🎌 Anime:
@@ -1270,86 +1255,92 @@ ${nombre}
 📺 Resultado encontrado.
 
 ℹ️ Esta versión utiliza una lista local de TitanBot.`
-    });
+        }
+      );
 
-    return true;
-  }
+      return true;
+    }
 
-  // ========================================
-  // ANIME
-  // ========================================
+    // ======================================
+    // ANIME
+    // ======================================
 
-  if (comando === "anime") {
+    if (comando === "anime") {
 
-    const nombre =
-      args.join(" ");
+      const nombre =
+        args.join(" ").trim();
 
-    if (!nombre) {
+      if (!nombre) {
 
-      await sock.sendMessage(chat, {
-        text:
+        await sock.sendMessage(
+          chat,
+          {
+            text:
 `❌ Escribe un anime.
 
 Ejemplo:
 
 .anime Naruto`
-      });
+          }
+        );
 
-      return true;
-    }
-
-    const animes = {
-
-      naruto: {
-        titulo: "Naruto",
-        genero: "Acción, aventura",
-        estado: "Finalizado"
-      },
-
-      "one piece": {
-        titulo: "One Piece",
-        genero: "Aventura, acción",
-        estado: "En emisión"
-      },
-
-      bleach: {
-        titulo: "Bleach",
-        genero: "Acción, sobrenatural",
-        estado: "Finalizado / continuación"
-      },
-
-      "dragon ball": {
-        titulo: "Dragon Ball",
-        genero: "Acción, aventura",
-        estado: "Franquicia en curso"
-      },
-
-      "demon slayer": {
-        titulo: "Demon Slayer",
-        genero: "Acción, fantasía",
-        estado: "Finalizado"
-      },
-
-      "jujutsu kaisen": {
-        titulo: "Jujutsu Kaisen",
-        genero: "Acción, sobrenatural",
-        estado: "En emisión"
+        return true;
       }
 
-    };
+      const animes = {
 
-    const clave =
-      nombre
-        .toLowerCase()
-        .trim();
+        naruto: {
+          titulo: "Naruto",
+          genero: "Acción, aventura",
+          estado: "Finalizado"
+        },
 
-    const resultado =
-      animes[clave];
+        "one piece": {
+          titulo: "One Piece",
+          genero: "Aventura, acción",
+          estado: "En emisión"
+        },
 
-    if (!resultado) {
+        bleach: {
+          titulo: "Bleach",
+          genero: "Acción, sobrenatural",
+          estado: "Finalizado / continuación"
+        },
 
-      await sock.sendMessage(chat, {
-        text:
+        "dragon ball": {
+          titulo: "Dragon Ball",
+          genero: "Acción, aventura",
+          estado: "Franquicia en curso"
+        },
+
+        "demon slayer": {
+          titulo: "Demon Slayer",
+          genero: "Acción, fantasía",
+          estado: "Finalizado"
+        },
+
+        "jujutsu kaisen": {
+          titulo: "Jujutsu Kaisen",
+          genero: "Acción, sobrenatural",
+          estado: "En emisión"
+        }
+
+      };
+
+      const clave =
+        nombre
+          .toLowerCase()
+          .trim();
+
+      const resultado =
+        animes[clave];
+
+      if (!resultado) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
 `🔎 ANIME
 
 🎌 Buscaste:
@@ -1365,13 +1356,16 @@ Bleach
 Dragon Ball
 Demon Slayer
 Jujutsu Kaisen`
-      });
+          }
+        );
 
-      return true;
-    }
+        return true;
+      }
 
-    await sock.sendMessage(chat, {
-      text:
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `🎌 INFORMACIÓN DEL ANIME
 
 📺 ${resultado.titulo}
@@ -1381,36 +1375,42 @@ ${resultado.genero}
 
 📌 Estado:
 ${resultado.estado}`
-    });
+        }
+      );
 
-    return true;
-  }
+      return true;
+    }
 
-  // ========================================
-  // ANIMEINFO
-  // ========================================
+    // ======================================
+    // ANIMEINFO
+    // ======================================
 
-  if (comando === "animeinfo") {
+    if (comando === "animeinfo") {
 
-    const nombre =
-      args.join(" ");
+      const nombre =
+        args.join(" ").trim();
 
-    if (!nombre) {
+      if (!nombre) {
 
-      await sock.sendMessage(chat, {
-        text:
+        await sock.sendMessage(
+          chat,
+          {
+            text:
 `❌ Escribe un anime.
 
 Ejemplo:
 
 .animeinfo Naruto`
-      });
+          }
+        );
 
-      return true;
-    }
+        return true;
+      }
 
-    await sock.sendMessage(chat, {
-      text:
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `📖 ANIME INFO
 
 🎌 ${nombre}
@@ -1418,75 +1418,81 @@ Ejemplo:
 ⭐ Información disponible próximamente.
 
 💡 Usa .anime ${nombre}`
-    });
+          }
+        );
 
-    return true;
-  }
+      return true;
+    }
 
-  // ========================================
-  // PERSONAJE
-  // ========================================
+    // ======================================
+    // PERSONAJE
+    // ======================================
 
-  if (comando === "personaje") {
+    if (comando === "personaje") {
 
-    const nombre =
-      args.join(" ");
+      const nombre =
+        args.join(" ").trim();
 
-    if (!nombre) {
+      if (!nombre) {
 
-      await sock.sendMessage(chat, {
-        text:
+        await sock.sendMessage(
+          chat,
+          {
+            text:
 `❌ Escribe el nombre de un personaje.
 
 Ejemplo:
 
 .personaje Goku`
-      });
+          }
+        );
 
-      return true;
-    }
-
-    const personajes = {
-
-      goku: {
-        nombre: "Goku",
-        anime: "Dragon Ball"
-      },
-
-      naruto: {
-        nombre: "Naruto Uzumaki",
-        anime: "Naruto"
-      },
-
-      ichigo: {
-        nombre: "Ichigo Kurosaki",
-        anime: "Bleach"
-      },
-
-      luffy: {
-        nombre: "Monkey D. Luffy",
-        anime: "One Piece"
-      },
-
-      gojo: {
-        nombre: "Satoru Gojo",
-        anime: "Jujutsu Kaisen"
+        return true;
       }
 
-    };
+      const personajes = {
 
-    const clave =
-      nombre
-        .toLowerCase()
-        .trim();
+        goku: {
+          nombre: "Goku",
+          anime: "Dragon Ball"
+        },
 
-    const personaje =
-      personajes[clave];
+        naruto: {
+          nombre: "Naruto Uzumaki",
+          anime: "Naruto"
+        },
 
-    if (!personaje) {
+        ichigo: {
+          nombre: "Ichigo Kurosaki",
+          anime: "Bleach"
+        },
 
-      await sock.sendMessage(chat, {
-        text:
+        luffy: {
+          nombre: "Monkey D. Luffy",
+          anime: "One Piece"
+        },
+
+        gojo: {
+          nombre: "Satoru Gojo",
+          anime: "Jujutsu Kaisen"
+        }
+
+      };
+
+      const clave =
+        nombre
+          .toLowerCase()
+          .trim();
+
+      const personaje =
+        personajes[clave];
+
+      if (!personaje) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
 `❌ Personaje no encontrado.
 
 Prueba con:
@@ -1496,49 +1502,58 @@ Naruto
 Ichigo
 Luffy
 Gojo`
-      });
+          }
+        );
 
-      return true;
-    }
+        return true;
+      }
 
-    await sock.sendMessage(chat, {
-      text:
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `👤 PERSONAJE
 
 ⭐ ${personaje.nombre}
 
 🎌 Anime:
 ${personaje.anime}`
-    });
+        }
+      );
 
-    return true;
-  }
+      return true;
+    }
 
-  // ========================================
-  // MANGA
-  // ========================================
+    // ======================================
+    // MANGA
+    // ======================================
 
-  if (comando === "manga") {
+    if (comando === "manga") {
 
-    const nombre =
-      args.join(" ");
+      const nombre =
+        args.join(" ").trim();
 
-    if (!nombre) {
+      if (!nombre) {
 
-      await sock.sendMessage(chat, {
-        text:
+        await sock.sendMessage(
+          chat,
+          {
+            text:
 `❌ Escribe un manga.
 
 Ejemplo:
 
 .manga One Piece`
-      });
+          }
+        );
 
-      return true;
-    }
+        return true;
+      }
 
-    await sock.sendMessage(chat, {
-      text:
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `📚 MANGA
 
 📖 ${nombre}
@@ -1546,84 +1561,122 @@ Ejemplo:
 🔎 Búsqueda realizada.
 
 ℹ️ Esta versión utiliza información local.`
-    });
+        }
+      );
 
-    return true;
-  }
+      return true;
+    }
 
-  // ========================================
-  // WAIFU
-  // ========================================
+    // ======================================
+    // WAIFU
+    // ======================================
 
-  if (comando === "waifu") {
+    if (comando === "waifu") {
 
-    const waifus = [
-      "🌸 Hinata",
-      "💜 Rem",
-      "🔥 Asuna",
-      "🌺 Nezuko",
-      "⭐ Mikasa"
-    ];
-
-    const resultado =
-      waifus[
-        Math.floor(
-          Math.random() *
-          waifus.length
-        )
+      const waifus = [
+        "🌸 Hinata",
+        "💜 Rem",
+        "🔥 Asuna",
+        "🌺 Nezuko",
+        "⭐ Mikasa"
       ];
 
-    await sock.sendMessage(chat, {
-      text:
+      const resultado =
+        waifus[
+          Math.floor(
+            Math.random() *
+            waifus.length
+          )
+        ];
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `🌸 WAIFU
 
 ${resultado}`
-    });
+        }
+      );
 
-    return true;
-  }
+      return true;
+    }
 
-  // ========================================
-  // HUSBANDO
-  // ========================================
+    // ======================================
+    // HUSBANDO
+    // ======================================
 
-  if (comando === "husbando") {
+    if (comando === "husbando") {
 
-    const personajes = [
-      "🔥 Gojo",
-      "⚔️ Levi",
-      "🌟 Luffy",
-      "💥 Goku",
-      "🖤 Itachi"
-    ];
-
-    const resultado =
-      personajes[
-        Math.floor(
-          Math.random() *
-          personajes.length
-        )
+      const personajes = [
+        "🔥 Gojo",
+        "⚔️ Levi",
+        "🌟 Luffy",
+        "💥 Goku",
+        "🖤 Itachi"
       ];
 
-    await sock.sendMessage(chat, {
-      text:
+      const resultado =
+        personajes[
+          Math.floor(
+            Math.random() *
+            personajes.length
+          )
+        ];
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `⚔️ HUSBANDO
 
 ${resultado}`
-    });
+        }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // COMANDO NO ES DE ANIME
+    // ======================================
+
+    return false;
+
+  } catch (error) {
+
+    console.error(
+      "❌ Error en comando anime:",
+      error
+    );
+
+    try {
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+`❌ Ocurrió un error al ejecutar el comando de anime.
+
+Revisa los logs de TitanBot.`
+        }
+      );
+
+    } catch (_) {}
 
     return true;
   }
-
-  // ========================================
-  // COMANDO NO ES DE ANIME
-  // ========================================
-
-  return false;
 }
 
 // ========================================
 // EXPORTAR
 // ========================================
+
+    return true;
+  } catch (error) {
+    // ...
+    return true;
+  }
+}
 
 module.exports = anime;
