@@ -1686,7 +1686,7 @@ para verlo.`
       path.join(
         __dirname,
         "..",
-        "data",
+        "database",
         "anime_reclamados.json"
       );
 
@@ -1788,7 +1788,7 @@ ${new Date(
       path.join(
         __dirname,
         "..",
-        "data",
+        "database",
         "anime_reclamados.json"
       );
 
@@ -1880,7 +1880,7 @@ ${ocupado ? "OCUPADO" : "LIBRE"}
       path.join(
         __dirname,
         "..",
-        "data",
+        "database",
         "anime_reclamados.json"
       );
 
