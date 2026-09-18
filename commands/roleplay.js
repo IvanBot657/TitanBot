@@ -191,6 +191,7 @@ Ejemplo:
     const gifUrl =
       gif?.images?.original?.url ||
       gif?.images?.downsized?.url;
+    console.log("🎬 GIF ENCONTRADO:", gifUrl);
 
     if (!gifUrl) {
       throw new Error("GIPHY no devolvió una URL válida.");
