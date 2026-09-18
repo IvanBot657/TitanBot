@@ -208,13 +208,18 @@ Ejemplo:
     // 🎬 ENVIAR GIF + TEXTO
     // =========================================
 
-    await sock.sendMessage(
-      chat,
-      {
-        video: {
-          url: gifUrl
-        },
+    const archivoGif = await 
+      axios.get(gifUrl, {
+        responseType: "arraybuffer",
+        timeout: 30000
+      });
 
+      await sock.sendMessage(
+        chat,
+        {
+    video: Buffer.from(archivoGif.data),
+
+    gifPlayback: true,
         gifPlayback: true,
 
         caption:
