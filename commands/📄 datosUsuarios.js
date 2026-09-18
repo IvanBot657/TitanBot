@@ -1,198 +1,221 @@
 // =========================================
-// 👑 RANKING PREMIUM - TITANBOT
+// 👤 DATOS DE USUARIOS - TITANBOT
 // =========================================
 
-const {
-  obtenerUsuario
-} = require("./datosUsuarios");
+const fs = require("fs");
+const path = require("path");
 
-function normalizar(texto) {
-  return String(texto || "")
-    .toLowerCase()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
+const archivoUsuarios = path.join(
+  __dirname,
+  "usuarios.json"
+);
 
-async function rankingpremium(
-  sock,
-  chat,
-  comando,
-  args = [],
-  id,
-  msg
-) {
+// =========================================
+// 📂 CARGAR USUARIOS
+// =========================================
 
-  const cmd = normalizar(comando);
-
-  if (cmd !== "rankingpremium") {
-    return false;
-  }
-
-  // =========================================
-  // 👑 SOLO GRUPOS
-  // =========================================
-
-  if (!chat.endsWith("@g.us")) {
-    await sock.sendMessage(chat, {
-      text: "❌ Este comando solo funciona en grupos."
-    });
-
-    return true;
-  }
-
-  // =========================================
-  // 📊 ELEGIR TOP
-  // =========================================
-
-  let cantidad = parseInt(args[0], 10);
-
-  if (![10, 20, 50, 100].includes(cantidad)) {
-    cantidad = 10;
-  }
+function cargarUsuarios() {
 
   try {
 
-    // =========================================
-    // 👥 OBTENER PARTICIPANTES
-    // =========================================
-
-    const metadata =
-      await sock.groupMetadata(chat);
-
-    const participantes =
-      metadata.participants || [];
-
-    if (!participantes.length) {
-      await sock.sendMessage(chat, {
-        text: "❌ No encontré participantes."
-      });
-
-      return true;
+    if (!fs.existsSync(archivoUsuarios)) {
+      fs.writeFileSync(
+        archivoUsuarios,
+        "{}",
+        "utf8"
+      );
     }
 
-    // =========================================
-    // 🏆 CREAR RANKING
-    // =========================================
-
-    const ranking = participantes
-      .map((participante) => {
-
-        const jid = participante.id;
-
-        const datos =
-          obtenerUsuario(jid);
-
-        return {
-          jid,
-          nivel: datos.nivel,
-          xp: datos.xp,
-          logros: datos.logros,
-          aventuras: datos.aventuras,
-          capitulos: datos.capitulos
-        };
-
-      })
-
-      .sort((a, b) => {
-
-        // Nivel
-        if (b.nivel !== a.nivel) {
-          return b.nivel - a.nivel;
-        }
-
-        // XP
-        if (b.xp !== a.xp) {
-          return b.xp - a.xp;
-        }
-
-        // Logros
-        if (b.logros !== a.logros) {
-          return b.logros - a.logros;
-        }
-
-        // Aventuras
-        return b.aventuras - a.aventuras;
-
-      })
-      .slice(0, cantidad);
-
-    // =========================================
-    // 🏆 ENCABEZADO
-    // =========================================
-
-    let texto =
-`👑 *RANKING PREMIUM*
-
-━━━━━━━━━━━━━━━━━━━━
-🏆 *TOP ${cantidad}*
-━━━━━━━━━━━━━━━━━━━━
-
-`;
-
-    const menciones = [];
-
-    // =========================================
-    // 📋 LISTA
-    // =========================================
-
-    ranking.forEach((usuario, index) => {
-
-      let posicion;
-
-      if (index === 0) {
-        posicion = "🥇";
-      } else if (index === 1) {
-        posicion = "🥈";
-      } else if (index === 2) {
-        posicion = "🥉";
-      } else {
-        posicion =
-          `${String(index + 1).padStart(2, "0")}.`;
-      }
-
-      texto +=
-`${posicion} @${usuario.jid.split("@")[0]}
-⭐ Nivel ${usuario.nivel} | ✨ ${usuario.xp} XP
-🏆 ${usuario.logros} logros | ⚔️ ${usuario.aventuras} aventuras
-
-`;
-
-      menciones.push(usuario.jid);
-    });
-
-    // =========================================
-    // 👑 FINAL
-    // =========================================
-
-    texto +=
-`━━━━━━━━━━━━━━━━━━━━
-📖 Datos basados en tu progreso de TITANBOT
-✨ *TITANBOT PREMIUM*`;
-
-    await sock.sendMessage(chat, {
-      text: texto,
-      mentions: menciones
-    });
+    return JSON.parse(
+      fs.readFileSync(
+        archivoUsuarios,
+        "utf8"
+      )
+    );
 
   } catch (error) {
 
     console.log(
-      "❌ ERROR RANKING PREMIUM:"
+      "❌ ERROR CARGANDO USUARIOS:",
+      error
     );
 
-    console.log(error);
-
-    await sock.sendMessage(chat, {
-      text:
-`❌ No pude generar el ranking.
-
-${error.message}`
-    });
+    return {};
   }
-
-  return true;
 }
 
-module.exports = rankingpremium;
-module.exports.rankingpremium = rankingpremium;
+// =========================================
+// 💾 GUARDAR USUARIOS
+// =========================================
+
+function guardarUsuarios(usuarios) {
+
+  try {
+
+    fs.writeFileSync(
+      archivoUsuarios,
+      JSON.stringify(
+        usuarios,
+        null,
+        2
+      ),
+      "utf8"
+    );
+
+  } catch (error) {
+
+    console.log(
+      "❌ ERROR GUARDANDO USUARIOS:",
+      error
+    );
+  }
+}
+
+// =========================================
+// 👤 OBTENER USUARIO
+// =========================================
+
+function obtenerUsuario(jid) {
+
+  const usuarios =
+    cargarUsuarios();
+
+  if (!usuarios[jid]) {
+
+    usuarios[jid] = {
+      nivel: 1,
+      xp: 0,
+      logros: 0,
+      aventuras: 0,
+      capitulos: 0
+    };
+
+    guardarUsuarios(usuarios);
+  }
+
+  return usuarios[jid];
+}
+
+// =========================================
+// ⭐ AGREGAR XP
+// =========================================
+
+function agregarXP(jid, cantidad) {
+
+  const usuarios =
+    cargarUsuarios();
+
+  if (!usuarios[jid]) {
+
+    usuarios[jid] = {
+      nivel: 1,
+      xp: 0,
+      logros: 0,
+      aventuras: 0,
+      capitulos: 0
+    };
+  }
+
+  const usuario =
+    usuarios[jid];
+
+  usuario.xp += cantidad;
+
+  // =======================================
+  // 📈 SUBIR DE NIVEL
+  // Cada nivel requiere 100 XP
+  // =======================================
+
+  let subioNivel = false;
+
+  while (
+    usuario.xp >= usuario.nivel * 100
+  ) {
+
+    usuario.xp -=
+      usuario.nivel * 100;
+
+    usuario.nivel++;
+
+    subioNivel = true;
+  }
+
+  guardarUsuarios(usuarios);
+
+  return {
+    usuario,
+    subioNivel
+  };
+}
+
+// =========================================
+// 🏆 AGREGAR LOGRO
+// =========================================
+
+function agregarLogro(jid) {
+
+  const usuarios =
+    cargarUsuarios();
+
+  if (!usuarios[jid]) {
+    obtenerUsuario(jid);
+  }
+
+  usuarios[jid].logros++;
+
+  guardarUsuarios(usuarios);
+
+  return usuarios[jid];
+}
+
+// =========================================
+// ⚔️ AGREGAR AVENTURA
+// =========================================
+
+function agregarAventura(jid) {
+
+  const usuarios =
+    cargarUsuarios();
+
+  if (!usuarios[jid]) {
+    obtenerUsuario(jid);
+  }
+
+  usuarios[jid].aventuras++;
+
+  guardarUsuarios(usuarios);
+
+  return usuarios[jid];
+}
+
+// =========================================
+// 📖 AGREGAR CAPÍTULO
+// =========================================
+
+function agregarCapitulo(jid) {
+
+  const usuarios =
+    cargarUsuarios();
+
+  if (!usuarios[jid]) {
+    obtenerUsuario(jid);
+  }
+
+  usuarios[jid].capitulos++;
+
+  guardarUsuarios(usuarios);
+
+  return usuarios[jid];
+}
+
+// =========================================
+// 📤 EXPORTAR
+// =========================================
+
+module.exports = {
+  obtenerUsuario,
+  agregarXP,
+  agregarLogro,
+  agregarAventura,
+  agregarCapitulo
+};
