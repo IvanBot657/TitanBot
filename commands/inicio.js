@@ -58,6 +58,12 @@ async function inicio(
 ┃ • .transferir
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+━━━〔 🎯 MISIONES 〕━━━╮
+┃ • .misiones
+┃ • .mision
+┃ • .misionesinfo
+╰━━━━━━━━━━━━━━━━
+
 ╭━━━〔 🎮 JUEGOS 〕━━━╮
 ┃ • .juegos
 ┃ • .dado
