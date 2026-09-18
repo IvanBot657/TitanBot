@@ -11,6 +11,18 @@ const {
 } = require("../datosUsuarios");
 
 // =========================================
+// 🖼️ IMAGEN DE LA CARTA #20
+// =========================================
+
+function obtenerImagen(id) {
+  if (id === 20) {
+    return "https://raw.githubusercontent.com/IvanBot657/TitanBot/main/Cartas/mago_hielo_20.png";
+  }
+
+  return null;
+}
+
+// =========================================
 // 🎴 CARTAS
 // =========================================
 
@@ -85,7 +97,6 @@ const cartas = [
 // =========================================
 
 function obtenerRareza() {
-
   const numero = Math.random() * 100;
 
   if (numero < 45) return "⚪ Común";
@@ -102,7 +113,6 @@ function obtenerRareza() {
 // =========================================
 
 function obtenerCartaAleatoria() {
-
   const rareza = obtenerRareza();
 
   const disponibles = cartas.filter(
@@ -119,7 +129,6 @@ function obtenerCartaAleatoria() {
 // =========================================
 
 function obtenerTotalCartas(usuario) {
-
   if (!usuario.cartas) {
     return 0;
   }
@@ -132,7 +141,6 @@ function obtenerTotalCartas(usuario) {
 }
 
 function obtenerCartasDiferentes(usuario) {
-
   if (!usuario.cartas) {
     return 0;
   }
@@ -161,6 +169,20 @@ async function ejecutarCartas(
 
     const carta = obtenerCartaAleatoria();
 
+    if (!carta) {
+      await sock.sendMessage(
+        chat,
+        {
+          text: "❌ No se pudo generar una carta."
+        },
+        {
+          quoted: msg
+        }
+      );
+
+      return true;
+    }
+
     const usuario = obtenerUsuario(id);
 
     if (!usuario.cartas) {
@@ -171,18 +193,16 @@ async function ejecutarCartas(
       c => c.id === carta.id
     );
 
-    if (existente) {
+    const nuevaCarta = !existente;
 
+    if (existente) {
       existente.cantidad =
         (existente.cantidad || 0) + 1;
-
     } else {
-
       usuario.cartas.push({
         id: carta.id,
         cantidad: 1
       });
-
     }
 
     guardarUsuario(id, usuario);
@@ -192,6 +212,9 @@ async function ejecutarCartas(
     const diferentes =
       obtenerCartasDiferentes(usuario);
 
+    const total =
+      obtenerTotalCartas(usuario);
+
     const caption =
 `🃏 *¡CARTA OBTENIDA!*
 
@@ -199,24 +222,49 @@ async function ejecutarCartas(
 ✨ Rareza: *${carta.rareza}*
 🔢 Carta: *#${carta.id}*
 
-🎉 ¡Nueva carta para tu colección!
+${nuevaCarta
+  ? "🎉 ¡NUEVA CARTA PARA TU COLECCIÓN!"
+  : "♻️ ¡Has conseguido otra copia!"}
 
-📚 Colección: *${diferentes}/50*`;
+📚 Colección: *${diferentes}/50*
+📦 Total de cartas: *${total}*`;
 
     if (imagen) {
 
-      await sock.sendMessage(
-        chat,
-        {
-          image: {
-            url: imagen
+      try {
+
+        await sock.sendMessage(
+          chat,
+          {
+            image: {
+              url: imagen
+            },
+            caption: caption
           },
-          caption: caption
-        },
-        {
-          quoted: msg
-        }
-      );
+          {
+            quoted: msg
+          }
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Error enviando imagen de carta:",
+          error
+        );
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              caption +
+              "\n\n⚠️ No se pudo cargar la imagen."
+          },
+          {
+            quoted: msg
+          }
+        );
+      }
 
     } else {
 
@@ -225,7 +273,7 @@ async function ejecutarCartas(
         {
           text:
             caption +
-            `\n\n⚠️ Imagen de esta carta pendiente.`
+            "\n\n🖼️ Imagen de esta carta pendiente."
         },
         {
           quoted: msg
@@ -281,7 +329,7 @@ Todavía no tienes cartas.
       if (!carta) continue;
 
       texto +=
-`${carta.rareza} #${carta.id} ${carta.nombre} ×${coleccion.cantidad}\n`;
+`${carta.rareza} #${carta.id} ${carta.nombre} ×${coleccion.cantidad || 0}\n`;
     }
 
     const diferentes =
@@ -317,7 +365,7 @@ Todavía no tienes cartas.
 
   if (comando === "cartainfo") {
 
-    const numero = parseInt(args[0]);
+    const numero = parseInt(args[0], 10);
 
     if (
       isNaN(numero) ||
@@ -352,8 +400,7 @@ Ejemplo:
       return true;
     }
 
-    const imagen =
-      obtenerImagen(carta.id);
+    const imagen = obtenerImagen(carta.id);
 
     const texto =
 `🃏 *INFORMACIÓN DE CARTA*
@@ -364,18 +411,40 @@ Ejemplo:
 
     if (imagen) {
 
-      await sock.sendMessage(
-        chat,
-        {
-          image: {
-            url: imagen
+      try {
+
+        await sock.sendMessage(
+          chat,
+          {
+            image: {
+              url: imagen
+            },
+            caption: texto
           },
-          caption: texto
-        },
-        {
-          quoted: msg
-        }
-      );
+          {
+            quoted: msg
+          }
+        );
+
+      } catch (error) {
+
+        console.error(
+          "Error enviando imagen de carta:",
+          error
+        );
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              texto +
+              "\n\n⚠️ No se pudo cargar la imagen."
+          },
+          {
+            quoted: msg
+          }
+        );
+      }
 
     } else {
 
@@ -384,7 +453,7 @@ Ejemplo:
         {
           text:
             texto +
-            `\n\n⚠️ Imagen todavía no disponible.`
+            "\n\n🖼️ Imagen todavía no disponible."
         },
         {
           quoted: msg
@@ -401,11 +470,10 @@ Ejemplo:
 
   if (comando === "cartasranking") {
 
-    const archivo =
-      path.join(
-        __dirname,
-        "../usuarios.json"
-      );
+    const archivo = path.join(
+      __dirname,
+      "../usuarios.json"
+    );
 
     let usuarios = {};
 
@@ -433,7 +501,6 @@ Ejemplo:
 
     const ranking =
       Object.entries(usuarios)
-
         .map(([jid, usuario]) => {
 
           const coleccion =
@@ -445,8 +512,7 @@ Ejemplo:
           const copias =
             coleccion.reduce(
               (suma, carta) =>
-                suma +
-                (carta.cantidad || 0),
+                suma + (carta.cantidad || 0),
               0
             );
 
@@ -456,7 +522,6 @@ Ejemplo:
             copias
           };
         })
-
         .sort((a, b) => {
 
           if (
@@ -472,7 +537,6 @@ Ejemplo:
           return b.copias - a.copias;
 
         })
-
         .slice(0, 10);
 
     let texto =
@@ -483,7 +547,7 @@ Ejemplo:
     if (ranking.length === 0) {
 
       texto +=
-        `Todavía nadie tiene cartas.`;
+        "Todavía nadie tiene cartas.";
 
     } else {
 
@@ -504,10 +568,9 @@ Ejemplo:
       chat,
       {
         text: texto,
-        mentions:
-          ranking.map(
-            jugador => jugador.jid
-          )
+        mentions: ranking.map(
+          jugador => jugador.jid
+        )
       },
       {
         quoted: msg
