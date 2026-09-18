@@ -19,11 +19,13 @@ function cargarUsuarios() {
   try {
 
     if (!fs.existsSync(archivoUsuarios)) {
+
       fs.writeFileSync(
         archivoUsuarios,
         "{}",
         "utf8"
       );
+
     }
 
     return JSON.parse(
@@ -41,14 +43,18 @@ function cargarUsuarios() {
     );
 
     return {};
+
   }
+
 }
 
 // =========================================
 // 💾 GUARDAR USUARIOS
 // =========================================
 
-function guardarUsuarios(usuarios) {
+function guardarUsuarios(
+  usuarios
+) {
 
   try {
 
@@ -68,7 +74,9 @@ function guardarUsuarios(usuarios) {
       "❌ ERROR GUARDANDO USUARIOS:",
       error
     );
+
   }
+
 }
 
 // =========================================
@@ -79,9 +87,17 @@ function crearUsuario() {
 
   return {
 
+    // =====================================
+    // ⭐ EXPERIENCIA
+    // =====================================
+
     nivel: 1,
 
     xp: 0,
+
+    // =====================================
+    // 🏆 ESTADÍSTICAS
+    // =====================================
 
     logros: 0,
 
@@ -89,91 +105,202 @@ function crearUsuario() {
 
     capitulos: 0,
 
+    // =====================================
+    // 🎯 MISIONES
+    // =====================================
+
     misionesFecha: "",
 
-    misiones: {}
+    misiones: {},
 
-  };
-}    
-    // 🐾 RACHA
+    // =====================================
+    // 🐾 RACHA DE ANIMALES
+    // =====================================
+
     rachaActual: 0,
 
     rachaMaxima: 0,
 
     nivelAnimal: 1,
 
-    rachaUltimoDia: "",
+    rachaUltimoDia: ""
+
+  };
+
+}
 
 // =========================================
 // 👤 OBTENER USUARIO
 // =========================================
 
-function obtenerUsuario(jid) {
+function obtenerUsuario(
+  jid
+) {
 
   const usuarios =
     cargarUsuarios();
+
+  // =====================================
+  // 🆕 CREAR SI NO EXISTE
+  // =====================================
 
   if (!usuarios[jid]) {
 
     usuarios[jid] =
       crearUsuario();
 
-    guardarUsuarios(usuarios);
+    guardarUsuarios(
+      usuarios
+    );
 
   }
 
   const usuario =
     usuarios[jid];
 
-  // Compatibilidad con usuarios
-  // creados anteriormente
+  // =====================================
+  // ⭐ NIVEL
+  // =====================================
 
   if (
     typeof usuario.nivel !== "number"
   ) {
+
     usuario.nivel = 1;
+
   }
+
+  // =====================================
+  // ⭐ XP
+  // =====================================
 
   if (
     typeof usuario.xp !== "number"
   ) {
+
     usuario.xp = 0;
+
   }
+
+  // =====================================
+  // 🏆 LOGROS
+  // =====================================
 
   if (
     typeof usuario.logros !== "number"
   ) {
+
     usuario.logros = 0;
+
   }
+
+  // =====================================
+  // ⚔️ AVENTURAS
+  // =====================================
 
   if (
     typeof usuario.aventuras !== "number"
   ) {
+
     usuario.aventuras = 0;
+
   }
+
+  // =====================================
+  // 📖 CAPÍTULOS
+  // =====================================
 
   if (
     typeof usuario.capitulos !== "number"
   ) {
+
     usuario.capitulos = 0;
+
   }
+
+  // =====================================
+  // 🎯 FECHA DE MISIONES
+  // =====================================
 
   if (
     typeof usuario.misionesFecha !== "string"
   ) {
+
     usuario.misionesFecha = "";
+
   }
+
+  // =====================================
+  // 🎯 MISIONES
+  // =====================================
 
   if (
     !usuario.misiones ||
     typeof usuario.misiones !== "object"
   ) {
+
     usuario.misiones = {};
+
   }
 
-  guardarUsuarios(usuarios);
+  // =====================================
+  // 🐾 RACHA ACTUAL
+  // =====================================
+
+  if (
+    typeof usuario.rachaActual !== "number"
+  ) {
+
+    usuario.rachaActual = 0;
+
+  }
+
+  // =====================================
+  // 🏆 RÉCORD DE RACHA
+  // =====================================
+
+  if (
+    typeof usuario.rachaMaxima !== "number"
+  ) {
+
+    usuario.rachaMaxima = 0;
+
+  }
+
+  // =====================================
+  // 🐾 NIVEL DEL ANIMAL
+  // =====================================
+
+  if (
+    typeof usuario.nivelAnimal !== "number"
+  ) {
+
+    usuario.nivelAnimal = 1;
+
+  }
+
+  // =====================================
+  // 📅 ÚLTIMO DÍA DE RACHA
+  // =====================================
+
+  if (
+    typeof usuario.rachaUltimoDia !== "string"
+  ) {
+
+    usuario.rachaUltimoDia = "";
+
+  }
+
+  // =====================================
+  // 💾 GUARDAR CAMBIOS
+  // =====================================
+
+  guardarUsuarios(
+    usuarios
+  );
 
   return usuario;
+
 }
 
 // =========================================
@@ -196,6 +323,7 @@ function guardarUsuario(
   );
 
   return usuario;
+
 }
 
 // =========================================
@@ -210,6 +338,10 @@ function agregarXP(
   const usuarios =
     cargarUsuarios();
 
+  // =====================================
+  // 👤 CREAR USUARIO SI NO EXISTE
+  // =====================================
+
   if (!usuarios[jid]) {
 
     usuarios[jid] =
@@ -220,12 +352,22 @@ function agregarXP(
   const usuario =
     usuarios[jid];
 
+  // =====================================
+  // ⭐ XP GANADO
+  // =====================================
+
   const xpGanado =
     Number(cantidad) || 0;
 
-  usuario.xp += xpGanado;
+  usuario.xp +=
+    xpGanado;
 
-  let subioNivel = false;
+  let subioNivel =
+    false;
+
+  // =====================================
+  // ⬆️ SUBIR DE NIVEL
+  // =====================================
 
   while (
     usuario.xp >=
@@ -238,7 +380,12 @@ function agregarXP(
     usuario.nivel++;
 
     subioNivel = true;
+
   }
+
+  // =====================================
+  // 💾 GUARDAR
+  // =====================================
 
   guardarUsuarios(
     usuarios
@@ -253,6 +400,7 @@ function agregarXP(
     xpGanado
 
   };
+
 }
 
 // =========================================
@@ -282,6 +430,7 @@ function agregarLogro(
   );
 
   return usuarios[jid];
+
 }
 
 // =========================================
@@ -311,6 +460,7 @@ function agregarAventura(
   );
 
   return usuarios[jid];
+
 }
 
 // =========================================
@@ -340,6 +490,7 @@ function agregarCapitulo(
   );
 
   return usuarios[jid];
+
 }
 
 // =========================================
