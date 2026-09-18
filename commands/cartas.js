@@ -24,6 +24,93 @@ function obtenerImagen(id) {
 }
 
 // =========================================
+// 🎴 CARTAS
+// =========================================
+
+const cartas = [
+
+  // ⚪ COMUNES
+  { id: 1, nombre: "Guerrero Novato", rareza: "⚪ Común" },
+  { id: 2, nombre: "Arquero del Bosque", rareza: "⚪ Común" },
+  { id: 3, nombre: "Aprendiz de Magia", rareza: "⚪ Común" },
+  { id: 4, nombre: "Explorador", rareza: "⚪ Común" },
+  { id: 5, nombre: "Guardián del Pueblo", rareza: "⚪ Común" },
+  { id: 6, nombre: "Cazador", rareza: "⚪ Común" },
+  { id: 7, nombre: "Pescador", rareza: "⚪ Común" },
+  { id: 8, nombre: "Campesino", rareza: "⚪ Común" },
+  { id: 9, nombre: "Viajero", rareza: "⚪ Común" },
+  { id: 10, nombre: "Aventurero", rareza: "⚪ Común" },
+
+  // 🟢 POCO COMUNES
+  { id: 11, nombre: "Guerrero Verde", rareza: "🟢 Poco común" },
+  { id: 12, nombre: "Mago del Bosque", rareza: "🟢 Poco común" },
+  { id: 13, nombre: "Lobo Guardián", rareza: "🟢 Poco común" },
+  { id: 14, nombre: "Halcón Dorado", rareza: "🟢 Poco común" },
+  { id: 15, nombre: "Caballero Verde", rareza: "🟢 Poco común" },
+  { id: 16, nombre: "Monje", rareza: "🟢 Poco común" },
+  { id: 17, nombre: "Alquimista", rareza: "🟢 Poco común" },
+  { id: 18, nombre: "Pirata", rareza: "🟢 Poco común" },
+
+  // 🔵 RARAS
+  { id: 19, nombre: "Caballero Azul", rareza: "🔵 Rara" },
+  { id: 20, nombre: "Mago de Hielo", rareza: "🔵 Rara" },
+  { id: 21, nombre: "Dragón Marino", rareza: "🔵 Rara" },
+  { id: 22, nombre: "Guardián de Cristal", rareza: "🔵 Rara" },
+  { id: 23, nombre: "Ninja de la Niebla", rareza: "🔵 Rara" },
+  { id: 24, nombre: "Fénix Azul", rareza: "🔵 Rara" },
+  { id: 25, nombre: "Cazador Nocturno", rareza: "🔵 Rara" },
+  { id: 26, nombre: "Rey de los Lobos", rareza: "🔵 Rara" },
+
+  // 🟣 ÉPICAS
+  { id: 27, nombre: "Guerrero Oscuro", rareza: "🟣 Épica" },
+  { id: 28, nombre: "Hechicera Carmesí", rareza: "🟣 Épica" },
+  { id: 29, nombre: "Dragón de Fuego", rareza: "🟣 Épica" },
+  { id: 30, nombre: "Caballero de la Luz", rareza: "🟣 Épica" },
+  { id: 31, nombre: "Rey Demonio", rareza: "🟣 Épica" },
+  { id: 32, nombre: "Titán de Piedra", rareza: "🟣 Épica" },
+  { id: 33, nombre: "Guardián Celestial", rareza: "🟣 Épica" },
+  { id: 34, nombre: "Fénix Dorado", rareza: "🟣 Épica" },
+
+  // 🟠 LEGENDARIAS
+  { id: 35, nombre: "Rey Dragón", rareza: "🟠 Legendaria" },
+  { id: 36, nombre: "Dios del Trueno", rareza: "🟠 Legendaria" },
+  { id: 37, nombre: "Señor de las Sombras", rareza: "🟠 Legendaria" },
+  { id: 38, nombre: "Ángel Supremo", rareza: "🟠 Legendaria" },
+  { id: 39, nombre: "Bestia Ancestral", rareza: "🟠 Legendaria" },
+  { id: 40, nombre: "Guardián del Tiempo", rareza: "🟠 Legendaria" },
+
+  // 🔴 MÍTICAS
+  { id: 41, nombre: "Dragón Ancestral", rareza: "🔴 Mítica" },
+  { id: 42, nombre: "Dios de los Cielos", rareza: "🔴 Mítica" },
+  { id: 43, nombre: "Titán Cósmico", rareza: "🔴 Mítica" },
+  { id: 44, nombre: "Rey del Universo", rareza: "🔴 Mítica" },
+  { id: 45, nombre: "Guardián Absoluto", rareza: "🔴 Mítica" },
+  { id: 46, nombre: "Fénix Inmortal", rareza: "🔴 Mítica" },
+  { id: 47, nombre: "Señor del Multiverso", rareza: "🔴 Mítica" },
+  { id: 48, nombre: "Entidad Eterna", rareza: "🔴 Mítica" },
+  { id: 49, nombre: "TITÁN SUPREMO", rareza: "🔴 Mítica" },
+  { id: 50, nombre: "TITÁN LEGENDARIO", rareza: "🔴 Mítica" }
+
+];
+
+// =========================================
+// 🎲 PROBABILIDADES
+// =========================================
+
+function obtenerRareza() {
+
+  const numero = Math.random() * 100;
+
+  if (numero < 45) return "⚪ Común";
+  if (numero < 70) return "🟢 Poco común";
+  if (numero < 85) return "🔵 Rara";
+  if (numero < 94) return "🟣 Épica";
+  if (numero < 99) return "🟠 Legendaria";
+
+  return "🔴 Mítica";
+}
+
+// =========================================
 // 🎴 CARTA ALEATORIA
 // =========================================
 
