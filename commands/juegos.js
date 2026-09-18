@@ -1,6 +1,46 @@
 // ========================================
 // TITANBOT v3.1
-// JUEGOS
+// 🎮 JUEGOS + XP
+// ========================================
+
+const {
+  agregarXP
+} = require("./datosUsuarios");
+
+// ========================================
+// 🧠 TRIVIA ACTIVA
+// ========================================
+
+const triviasActivas = {};
+
+// ========================================
+// ⭐ DAR XP
+// ========================================
+
+async function darXP(
+  sock,
+  chat,
+  id,
+  cantidad
+) {
+
+  const resultado =
+    agregarXP(id, cantidad);
+
+  let mensaje =
+    `\n\n✨ +${cantidad} XP`;
+
+  if (resultado.subioNivel) {
+
+    mensaje +=
+      `\n🎉 ¡SUBISTE AL NIVEL ${resultado.usuario.nivel}!`;
+  }
+
+  return mensaje;
+}
+
+// ========================================
+// 🎮 JUEGOS
 // ========================================
 
 async function juegos(
@@ -12,7 +52,7 @@ async function juegos(
 ) {
 
   // ========================================
-  // DADO
+  // 🎲 DADO
   // ========================================
 
   if (comando === "dado") {
@@ -20,22 +60,30 @@ async function juegos(
     const resultado =
       Math.floor(Math.random() * 6) + 1;
 
+    const xp =
+      await darXP(
+        sock,
+        chat,
+        id,
+        5
+      );
+
     await sock.sendMessage(chat, {
       text:
-`🎲 DADO
+`🎲 *DADO*
 
 🎯 Resultado: ${resultado}
 
 ${resultado === 6
   ? "🔥 ¡Sacaste el máximo!"
-  : "¡Buen lanzamiento!"}`
+  : "¡Buen lanzamiento!"}${xp}`
     });
 
     return true;
   }
 
   // ========================================
-  // MONEDA
+  // 🪙 MONEDA
   // ========================================
 
   if (comando === "moneda") {
@@ -45,18 +93,26 @@ ${resultado === 6
         ? "CARA"
         : "SELLO";
 
+    const xp =
+      await darXP(
+        sock,
+        chat,
+        id,
+        5
+      );
+
     await sock.sendMessage(chat, {
       text:
-`🪙 MONEDA
+`🪙 *MONEDA*
 
-🎯 Resultado: ${resultado}`
+🎯 Resultado: ${resultado}${xp}`
     });
 
     return true;
   }
 
   // ========================================
-  // ADIVINA
+  // 🔢 ADIVINA
   // ========================================
 
   if (comando === "adivina") {
@@ -72,7 +128,7 @@ ${resultado === 6
 
       await sock.sendMessage(chat, {
         text:
-`🔢 ADIVINA EL NÚMERO
+`🔢 *ADIVINA EL NÚMERO*
 
 Debes escribir un número del 1 al 10.
 
@@ -91,25 +147,41 @@ Ejemplo:
 
     if (numero === secreto) {
 
+      const xp =
+        await darXP(
+          sock,
+          chat,
+          id,
+          10
+        );
+
       await sock.sendMessage(chat, {
         text:
-`🎉 ¡CORRECTO!
+`🎉 *¡CORRECTO!*
 
 🔢 Número: ${secreto}
 
-🏆 ¡Adivinaste!`
+🏆 ¡Adivinaste!${xp}`
       });
 
     } else {
 
+      const xp =
+        await darXP(
+          sock,
+          chat,
+          id,
+          2
+        );
+
       await sock.sendMessage(chat, {
         text:
-`❌ No acertaste.
+`❌ *No acertaste.*
 
 🔢 Tu número: ${numero}
 🎯 Era: ${secreto}
 
-¡Inténtalo nuevamente!`
+¡Inténtalo nuevamente!${xp}`
       });
     }
 
@@ -117,7 +189,7 @@ Ejemplo:
   }
 
   // ========================================
-  // PIEDRA PAPEL TIJERA
+  // ✊ PIEDRA PAPEL TIJERA
   // ========================================
 
   if (
@@ -140,7 +212,7 @@ Ejemplo:
 
       await sock.sendMessage(chat, {
         text:
-`✊ PIEDRA, PAPEL O TIJERA
+`✊ *PIEDRA, PAPEL O TIJERA*
 
 Usa:
 
@@ -161,9 +233,12 @@ Usa:
       ];
 
     let resultado;
+    let cantidadXP = 5;
 
     if (jugador === bot) {
-      resultado = "🤝 EMPATE";
+
+      resultado = "🤝 *EMPATE*";
+      cantidadXP = 5;
     }
 
     else if (
@@ -171,28 +246,41 @@ Usa:
       (jugador === "papel" && bot === "piedra") ||
       (jugador === "tijera" && bot === "papel")
     ) {
-      resultado = "🏆 ¡GANASTE!";
+
+      resultado = "🏆 *¡GANASTE!*";
+      cantidadXP = 10;
+
     }
 
     else {
-      resultado = "🤖 ¡GANÉ YO!";
+
+      resultado = "🤖 *¡GANÉ YO!*";
+      cantidadXP = 2;
     }
+
+    const xp =
+      await darXP(
+        sock,
+        chat,
+        id,
+        cantidadXP
+      );
 
     await sock.sendMessage(chat, {
       text:
-`🎮 PIEDRA, PAPEL O TIJERA
+`🎮 *PIEDRA, PAPEL O TIJERA*
 
 👤 Tú: ${jugador}
 🤖 TitanBot: ${bot}
 
-${resultado}`
+${resultado}${xp}`
     });
 
     return true;
   }
 
   // ========================================
-  // TRIVIA
+  // 🧠 TRIVIA
   // ========================================
 
   if (comando === "trivia") {
@@ -239,9 +327,12 @@ ${resultado}`
         )
       ];
 
+    triviasActivas[id] =
+      pregunta;
+
     await sock.sendMessage(chat, {
       text:
-`🧠 TRIVIA
+`🧠 *TRIVIA*
 
 ❓ ${pregunta.pregunta}
 
@@ -254,62 +345,77 @@ ${resultado}`
   }
 
   // ========================================
-  // RESPUESTA DE TRIVIA
+  // 💡 RESPUESTA TRIVIA
   // ========================================
 
-  if (comando === "triviarespuesta") {
-
-    const respuestas = [
-      {
-        respuesta: "jupiter",
-        texto: "Júpiter"
-      },
-      {
-        respuesta: "7",
-        texto: "7"
-      },
-      {
-        respuesta: "bogota",
-        texto: "Bogotá"
-      },
-      {
-        respuesta: "64",
-        texto: "64"
-      },
-      {
-        respuesta: "pacifico",
-        texto: "Pacífico"
-      }
-    ];
+  if (
+    comando === "triviarespuesta"
+  ) {
 
     const respuesta =
       args.join(" ")
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(
+          /[\u0300-\u036f]/g,
+          ""
+        );
 
-    const correcta =
-      respuestas.some(
-        item =>
-          item.respuesta === respuesta
-      );
+    const pregunta =
+      triviasActivas[id];
 
-    if (correcta) {
+    if (!pregunta) {
 
       await sock.sendMessage(chat, {
         text:
-`🎉 ¡CORRECTO!
+`❌ No tienes una trivia activa.
 
-🧠 Muy buena respuesta.`
+Usa:
+
+.trivia`
+      });
+
+      return true;
+    }
+
+    delete triviasActivas[id];
+
+    if (
+      respuesta === pregunta.respuesta
+    ) {
+
+      const xp =
+        await darXP(
+          sock,
+          chat,
+          id,
+          15
+        );
+
+      await sock.sendMessage(chat, {
+        text:
+`🎉 *¡CORRECTO!*
+
+🧠 Excelente respuesta.
+
+🏆 Ganaste 15 XP.${xp}`
       });
 
     } else {
 
+      const xp =
+        await darXP(
+          sock,
+          chat,
+          id,
+          2
+        );
+
       await sock.sendMessage(chat, {
         text:
-`❌ Respuesta incorrecta.
+`❌ *Respuesta incorrecta.*
 
-💡 ¡Sigue intentando!`
+💡 Sigue intentando.${xp}`
       });
     }
 
@@ -317,7 +423,7 @@ ${resultado}`
   }
 
   // ========================================
-  // NÚMERO ALEATORIO
+  // 🔢 NÚMERO ALEATORIO
   // ========================================
 
   if (comando === "numero") {
@@ -337,20 +443,28 @@ ${resultado}`
         Math.random() * max
       ) + 1;
 
+    const xp =
+      await darXP(
+        sock,
+        chat,
+        id,
+        5
+      );
+
     await sock.sendMessage(chat, {
       text:
-`🔢 NÚMERO ALEATORIO
+`🔢 *NÚMERO ALEATORIO*
 
 🎯 Resultado: ${resultado}
 
-📊 Rango: 1-${max}`
+📊 Rango: 1-${max}${xp}`
     });
 
     return true;
   }
 
   // ========================================
-  // SUERTE
+  // 🍀 SUERTE
   // ========================================
 
   if (comando === "suerte") {
@@ -371,18 +485,26 @@ ${resultado}`
         )
       ];
 
+    const xp =
+      await darXP(
+        sock,
+        chat,
+        id,
+        5
+      );
+
     await sock.sendMessage(chat, {
       text:
-`🔮 SUERTE
+`🔮 *SUERTE*
 
-${resultado}`
+${resultado}${xp}`
     });
 
     return true;
   }
 
   // ========================================
-  // 8 BALL
+  // 🎱 8 BALL
   // ========================================
 
   if (
@@ -408,49 +530,61 @@ ${resultado}`
         )
       ];
 
+    const xp =
+      await darXP(
+        sock,
+        chat,
+        id,
+        5
+      );
+
     await sock.sendMessage(chat, {
       text:
-`🎱 8 BALL
+`🎱 *8 BALL*
 
-${respuesta}`
+${respuesta}${xp}`
     });
 
     return true;
   }
 
   // ========================================
-  // JUEGOS
+  // 🎮 LISTA DE JUEGOS
   // ========================================
 
   if (comando === "juegos") {
 
     await sock.sendMessage(chat, {
       text:
-`🎮 TITANBOT — JUEGOS
+`🎮 *TITANBOT — JUEGOS*
 
 🎲 .dado
 🪙 .moneda
 🔢 .adivina
 ✊ .ppt
 🧠 .trivia
+💡 .triviarespuesta
 🎯 .numero
 🍀 .suerte
 🎱 .8ball
 
-━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━
 
-Ejemplo:
+⭐ *Todos los juegos dan XP*
+
+Ejemplos:
 
 .adivina 5
 .ppt piedra
-.numero 50`
+.numero 50
+.trivia`
     });
 
     return true;
   }
 
   // ========================================
-  // NO ES UN COMANDO DE JUEGOS
+  // ❌ NO ES JUEGO
   // ========================================
 
   return false;
