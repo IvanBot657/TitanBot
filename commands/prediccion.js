@@ -1,121 +1,173 @@
 // =========================================
-// 🔮 PREDICCIÓN - TITANBOT
+// 🔮 PREDICCIONES - TITANBOT
 // =========================================
 
-const tipos = [
-  {
-    nombre: "❤️ AMOR",
+const tipos = {
+
+  prediccion: {
+    nombre: "🔮 PREDICCIÓN",
     frases: [
-      "💌 Alguien podría sorprenderte hoy. 👀",
-      "❤️ Se viene un momento bonito e inesperado.",
-      "💘 Puede llegar un mensaje que no esperabas."
+      "✨ Hoy podría pasar algo que no esperabas.",
+      "👀 Alguien podría sorprenderte hoy.",
+      "🍀 La suerte podría aparecer cuando menos lo imagines.",
+      "⚡ Se aproxima algo interesante.",
+      "🎯 Una oportunidad podría aparecer de repente."
     ]
   },
 
-  {
-    nombre: "🍀 SUERTE",
+  amor: {
+    nombre: "❤️ PREDICCIÓN DE AMOR",
     frases: [
-      "🍀 Hoy podrías tener una pequeña dosis de suerte.",
+      "💌 Alguien podría tener un mensaje inesperado para ti.",
+      "❤️ Hoy podría ocurrir un momento bonito.",
+      "👀 Una conversación podría ponerse interesante.",
+      "💘 El destino podría sorprenderte."
+    ]
+  },
+
+  suerte: {
+    nombre: "🍀 PREDICCIÓN DE SUERTE",
+    frases: [
+      "🍀 Hoy podrías tener mucha suerte.",
       "🎯 Algo podría salir mejor de lo esperado.",
-      "✨ La suerte podría aparecer cuando menos lo imagines."
+      "✨ Una buena oportunidad podría aparecer.",
+      "🏆 Hoy podrías conseguir una pequeña victoria."
     ]
   },
 
-  {
-    nombre: "😂 RANDOM",
+  random: {
+    nombre: "😂 PREDICCIÓN RANDOM",
     frases: [
-      "🗿 Vas a entrar a una app y olvidarás para qué entraste.",
-      "💀 Hoy probablemente buscarás algo que tienes en la mano.",
-      "😂 Alguien dirá algo que te hará reír cuando menos lo esperes."
+      "🗿 Vas a abrir una app y olvidarás para qué la abriste.",
+      "💀 Buscarás algo que probablemente tienes frente a ti.",
+      "😂 Hoy algo completamente random podría pasar.",
+      "🤡 El universo decidió trolearte un poquito."
     ]
   },
 
-  {
-    nombre: "💰 DINERO",
+  dinero: {
+    nombre: "💰 PREDICCIÓN DE DINERO",
     frases: [
-      "💸 Hoy tu dinero podría desaparecer misteriosamente. 😂",
-      "🤑 Una pequeña oportunidad podría aparecer.",
-      "💰 Cuida tus monedas... podrían hacerte falta."
+      "💸 Hoy tendrás que cuidar bien tus monedas.",
+      "🤑 Podría aparecer una pequeña oportunidad.",
+      "💰 Guarda tu dinero... nunca sabes cuándo lo necesitarás.",
+      "👀 Revisa bien tus bolsillos, nunca se sabe."
     ]
   },
 
-  {
-    nombre: "🎮 GAMER",
+  gamer: {
+    nombre: "🎮 PREDICCIÓN GAMER",
     frases: [
-      "🏆 Una partida podría terminar de forma inesperada.",
-      "🎮 Hoy podrías conseguir una victoria épica.",
-      "🔥 Prepárate para una jugada inesperada."
+      "🏆 Hoy podrías conseguir una victoria épica.",
+      "🎮 Una partida podría terminar de forma inesperada.",
+      "🔥 Prepárate para una jugada increíble.",
+      "👾 Hoy el RNG podría estar de tu lado."
     ]
   },
 
-  {
-    nombre: "📱 SOCIAL",
+  social: {
+    nombre: "📱 PREDICCIÓN SOCIAL",
     frases: [
-      "👀 Alguien podría escribirte cuando menos lo esperes.",
-      "📱 Hoy podrías recibir un mensaje interesante.",
-      "😂 Una conversación podría terminar siendo muy divertida."
+      "📱 Alguien podría escribirte cuando menos lo esperes.",
+      "👀 Una conversación interesante podría aparecer.",
+      "😂 Hoy podrías terminar riéndote con alguien.",
+      "💬 Podrías recibir un mensaje inesperado."
     ]
   },
 
-  {
-    nombre: "🌙 NOCTURNA",
+  nocturna: {
+    nombre: "🌙 PREDICCIÓN NOCTURNA",
     frases: [
+      "🌙 Esta noche podrías pensar en algo inesperado.",
       "😴 Tu cama intentará convencerte de dormir temprano.",
-      "🌙 Esta noche podrías quedarte pensando en algo random.",
-      "👀 Algo curioso podría pasar antes de dormir."
+      "👀 Algo curioso podría pasar antes de dormir.",
+      "✨ La noche podría traer una sorpresa."
     ]
   },
 
-  {
-    nombre: "🔥 ÉPICA",
+  epica: {
+    nombre: "🔥 PREDICCIÓN ÉPICA",
     frases: [
-      "⚡ Hoy podría aparecer una oportunidad inesperada.",
-      "🔥 Se aproxima un momento digno de recordar.",
-      "🏆 El destino podría darte una pequeña victoria."
+      "⚡ Se aproxima un momento digno de recordar.",
+      "🔥 Hoy podría comenzar algo interesante.",
+      "🏆 Una pequeña victoria podría estar cerca.",
+      "🚀 Prepárate para algo inesperado."
     ]
   },
 
-  {
-    nombre: "🤡 TROLL",
+  troll: {
+    nombre: "🤡 PREDICCIÓN TROLL",
     frases: [
       "💀 El destino tiene una pequeña broma preparada para ti.",
-      "🗿 Hoy podrías hacer el ridículo sin darte cuenta. 😂",
-      "🤡 Alguien podría trolearte de la forma más inesperada."
+      "🗿 Hoy podrías quedar como payaso sin darte cuenta. 😂",
+      "🤡 Alguien podría trolearte de la forma más inesperada.",
+      "😂 El universo decidió reírse un poquito de ti."
     ]
   }
-];
+};
 
-async function prediccion(sock, chat, comando, args = [], id, msg) {
 
-  const cmd = String(comando || "")
+// =========================================
+// 🔧 NORMALIZAR COMANDO
+// =========================================
+
+function normalizar(texto) {
+
+  return String(texto || "")
     .toLowerCase()
     .trim()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  if (cmd !== "prediccion") {
+}
+
+
+// =========================================
+// 🔮 COMANDO PRINCIPAL
+// =========================================
+
+async function prediccion(
+  sock,
+  chat,
+  comando,
+  args = [],
+  id,
+  msg
+) {
+
+  const cmd = normalizar(comando);
+
+  // Si no es uno de nuestros comandos
+  if (!tipos[cmd]) {
     return false;
   }
 
-  const tipo =
-    tipos[Math.floor(Math.random() * tipos.length)];
+  // Elegir tipo
+  const tipo = tipos[cmd];
 
+  // Elegir frase aleatoria
   const frase =
-    tipo.frases[Math.floor(Math.random() * tipo.frases.length)];
+    tipo.frases[
+      Math.floor(Math.random() * tipo.frases.length)
+    ];
 
+  // Enviar resultado
   await sock.sendMessage(chat, {
     text:
-`🔮 *PREDICCIÓN*
-
-${tipo.nombre}
+`🔮 *${tipo.nombre}*
 
 ${frase}
 
-✨ _Predicción generada por TITANBOT_`
+✨ _TITANBOT_`
   });
 
   return true;
 }
+
+
+// =========================================
+// 📤 EXPORTAR
+// =========================================
 
 module.exports = prediccion;
 module.exports.prediccion = prediccion;
