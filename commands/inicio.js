@@ -62,6 +62,8 @@ async function inicio(
 ┃ • .misiones
 ┃ • .mision
 ┃ • .misionesinfo
+┃ • .misioncompletar
+┃ • .misionreclamar
 ╰━━━━━━━━━━━━━━━━
 
 ╭━━━〔 🎮 JUEGOS 〕━━━╮
