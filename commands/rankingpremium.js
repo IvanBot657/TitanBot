@@ -6,13 +6,25 @@ const {
   obtenerUsuario
 } = require("./datosUsuarios");
 
+// =========================================
+// 🔤 NORMALIZAR
+// =========================================
+
 function normalizar(texto) {
+
   return String(texto || "")
     .toLowerCase()
     .trim()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    );
 }
+
+// =========================================
+// 👑 RANKING PREMIUM
+// =========================================
 
 async function rankingpremium(
   sock,
@@ -23,85 +35,153 @@ async function rankingpremium(
   msg
 ) {
 
-  const cmd = normalizar(comando);
+  const cmd =
+    normalizar(comando);
 
-  if (cmd !== "rankingpremium") {
+  if (
+    cmd !== "rankingpremium"
+  ) {
     return false;
   }
 
-  // Solo funciona en grupos
-  if (!chat.endsWith("@g.us")) {
+  // =========================================
+  // 👑 SOLO GRUPOS
+  // =========================================
+
+  if (
+    !chat.endsWith("@g.us")
+  ) {
+
     await sock.sendMessage(chat, {
-      text: "❌ Este comando solo funciona en grupos."
+      text:
+        "❌ Este comando solo funciona en grupos."
     });
 
     return true;
   }
 
-  // ==============================
-  // 📊 CANTIDAD DEL TOP
-  // ==============================
+  // =========================================
+  // 📊 ELEGIR TOP
+  // =========================================
 
-  let cantidad = parseInt(args[0], 10);
+  let cantidad =
+    parseInt(args[0], 10);
 
-  if (![10, 20, 50, 100].includes(cantidad)) {
+  if (
+    ![10, 20, 50, 100]
+      .includes(cantidad)
+  ) {
+
     cantidad = 10;
   }
 
   try {
 
-    const metadata = await sock.groupMetadata(chat);
-    const participantes = metadata.participants || [];
+    // =========================================
+    // 👥 PARTICIPANTES
+    // =========================================
 
-    if (!participantes.length) {
+    const metadata =
+      await sock.groupMetadata(chat);
+
+    const participantes =
+      metadata.participants || [];
+
+    if (
+      !participantes.length
+    ) {
+
       await sock.sendMessage(chat, {
-        text: "❌ No encontré participantes."
+        text:
+          "❌ No encontré participantes."
       });
 
       return true;
     }
 
-    // ==============================
-    // 👤 CREAR / OBTENER USUARIOS
-    // ==============================
+    // =========================================
+    // 🏆 CREAR RANKING
+    // =========================================
 
-    const ranking = participantes
-      .map((participante) => {
+    const ranking =
+      participantes
 
-        const jid = participante.id;
-        const datos = obtenerUsuario(jid);
+        .map((participante) => {
 
-        return {
-          jid,
-          nivel: datos.nivel,
-          xp: datos.xp,
-          logros: datos.logros,
-          aventuras: datos.aventuras
-        };
+          const jid =
+            participante.id;
 
-      })
-      .sort((a, b) => {
+          const datos =
+            obtenerUsuario(jid);
 
-        if (b.nivel !== a.nivel) {
-          return b.nivel - a.nivel;
-        }
+          return {
+            jid,
 
-        if (b.xp !== a.xp) {
-          return b.xp - a.xp;
-        }
+            nivel:
+              Number(datos.nivel) || 1,
 
-        if (b.logros !== a.logros) {
-          return b.logros - a.logros;
-        }
+            xp:
+              Number(datos.xp) || 0,
 
-        return b.aventuras - a.aventuras;
+            logros:
+              Number(datos.logros) || 0,
 
-      })
-      .slice(0, cantidad);
+            aventuras:
+              Number(datos.aventuras) || 0,
 
-    // ==============================
-    // 🏆 CREAR MENSAJE
-    // ==============================
+            capitulos:
+              Number(datos.capitulos) || 0
+          };
+
+        })
+
+        .sort((a, b) => {
+
+          if (
+            b.nivel !== a.nivel
+          ) {
+
+            return (
+              b.nivel -
+              a.nivel
+            );
+          }
+
+          if (
+            b.xp !== a.xp
+          ) {
+
+            return (
+              b.xp -
+              a.xp
+            );
+          }
+
+          if (
+            b.logros !== a.logros
+          ) {
+
+            return (
+              b.logros -
+              a.logros
+            );
+          }
+
+          return (
+            b.aventuras -
+            a.aventuras
+          );
+
+        })
+
+        .slice(
+          0,
+          cantidad
+        );
+
+    // =========================================
+    // 🏆 ENCABEZADO
+    // =========================================
 
     let texto =
 `👑 *RANKING PREMIUM*
@@ -114,32 +194,62 @@ async function rankingpremium(
 
     const menciones = [];
 
-    ranking.forEach((usuario, index) => {
+    // =========================================
+    // 📋 LISTA
+    // =========================================
 
-      let posicion;
+    ranking.forEach(
+      (usuario, index) => {
 
-      if (index === 0) {
-        posicion = "🥇";
-      } else if (index === 1) {
-        posicion = "🥈";
-      } else if (index === 2) {
-        posicion = "🥉";
-      } else {
-        posicion = `${index + 1}.`;
-      }
+        let posicion;
 
-      texto +=
+        if (
+          index === 0
+        ) {
+
+          posicion = "🥇";
+
+        } else if (
+          index === 1
+        ) {
+
+          posicion = "🥈";
+
+        } else if (
+          index === 2
+        ) {
+
+          posicion = "🥉";
+
+        } else {
+
+          posicion =
+            `${String(
+              index + 1
+            ).padStart(2, "0")}.`;
+        }
+
+        texto +=
 `${posicion} @${usuario.jid.split("@")[0]}
-⭐ Nivel: ${usuario.nivel} | ✨ XP: ${usuario.xp}
-🏅 Logros: ${usuario.logros} | ⚔️ Aventuras: ${usuario.aventuras}
+⭐ Nivel ${usuario.nivel} | ✨ ${usuario.xp} XP
+🏆 ${usuario.logros} logros | ⚔️ ${usuario.aventuras} aventuras
 
 `;
 
-      menciones.push(usuario.jid);
-    });
+        menciones.push(
+          usuario.jid
+        );
+      }
+    );
+
+    // =========================================
+    // 👑 FINAL
+    // =========================================
 
     texto +=
 `━━━━━━━━━━━━━━━━━━━━
+📖 Datos basados en tu progreso de TITANBOT
+🎮 XP obtenida jugando
 ✨ *TITANBOT PREMIUM*`;
 
     await sock.sendMessage(chat, {
@@ -149,7 +259,10 @@ async function rankingpremium(
 
   } catch (error) {
 
-    console.log("❌ ERROR RANKING PREMIUM:");
+    console.log(
+      "❌ ERROR RANKING PREMIUM:"
+    );
+
     console.log(error);
 
     await sock.sendMessage(chat, {
@@ -163,5 +276,12 @@ ${error.message}`
   return true;
 }
 
-module.exports = rankingpremium;
-module.exports.rankingpremium = rankingpremium;
+// =========================================
+// 📤 EXPORTAR
+// =========================================
+
+module.exports =
+  rankingpremium;
+
+module.exports.rankingpremium =
+  rankingpremium;
