@@ -1,6 +1,6 @@
 // =========================================
 // 🃏 CARTAS COLECCIONABLES - TITANBOT
-// 🖼️ IMÁGENES GENERADAS AUTOMÁTICAMENTE
+// 🎨 ESTILO LORELEI
 // =========================================
 
 const {
@@ -80,7 +80,7 @@ const cartas = [
 ];
 
 // =========================================
-// 🖼️ GENERAR URL AUTOMÁTICAMENTE
+// 🎨 GENERAR IMAGEN LORELEI
 // =========================================
 
 function obtenerImagen(carta) {
@@ -89,7 +89,11 @@ function obtenerImagen(carta) {
     `titanbot-${carta.id}-${carta.nombre}`
   );
 
-  return `https://api.dicebear.com/10.x/pixel-art/png?seed=${seed}&size=512`;
+  return (
+    `https://api.dicebear.com/10.x/lorelei/png` +
+    `?seed=${seed}` +
+    `&size=512`
+  );
 
 }
 
@@ -163,12 +167,8 @@ async function conseguirCarta(
   const usuario =
     obtenerUsuario(id);
 
-  if (
-    !Array.isArray(usuario.cartas)
-  ) {
-
+  if (!Array.isArray(usuario.cartas)) {
     usuario.cartas = [];
-
   }
 
   const carta =
@@ -206,25 +206,16 @@ async function conseguirCarta(
     obtenerImagen(carta);
 
   const caption =
-
     `🃏 *¡CARTA OBTENIDA!*\n\n` +
-
     `${carta.emoji} *${carta.nombre}*\n` +
-
     `✨ Rareza: *${carta.rareza}*\n` +
-
     `🔢 Carta: *#${carta.id}*\n\n` +
-
-    `${existente.cantidad > 1
-      ? `📦 Copias: *${existente.cantidad}*`
-      : `🎉 ¡Nueva carta para tu colección!`
+    `${
+      existente.cantidad > 1
+        ? `📦 Copias: *${existente.cantidad}*`
+        : `🎉 ¡Nueva carta para tu colección!`
     }\n\n` +
-
     `📚 Colección: *${usuario.cartas.length}/50*`;
-
-  // =====================================
-  // 🖼️ ENVIAR IMAGEN DESDE URL
-  // =====================================
 
   await sock.sendMessage(
     chat,
@@ -242,7 +233,7 @@ async function conseguirCarta(
 }
 
 // =========================================
-// 📚 COLECCIÓN
+// 📚 MOSTRAR COLECCIÓN
 // =========================================
 
 async function mostrarCartas(
@@ -317,7 +308,7 @@ async function mostrarCartas(
 }
 
 // =========================================
-// 🔎 INFORMACIÓN DE CARTA
+// 🔎 INFO DE CARTA
 // =========================================
 
 async function infoCarta(
@@ -342,9 +333,8 @@ async function infoCarta(
       {
         text:
           `🔎 *INFO DE CARTA*\n\n` +
-          `Usa:\n` +
-          `*.cartainfo 1*\n\n` +
-          `📌 Números disponibles: 1-50`
+          `Usa: *.cartainfo 1*\n\n` +
+          `📌 Disponibles: *1-50*`
       },
       {
         quoted: msg
@@ -373,15 +363,10 @@ async function infoCarta(
     obtenerImagen(carta);
 
   const caption =
-
     `🔎 *INFORMACIÓN DE CARTA*\n\n` +
-
     `${carta.emoji} *${carta.nombre}*\n` +
-
     `✨ Rareza: *${carta.rareza}*\n` +
-
     `🔢 Número: *#${carta.id}*\n` +
-
     `📦 Copias: *${guardada ? guardada.cantidad : 0}*`;
 
   await sock.sendMessage(
@@ -458,9 +443,7 @@ async function rankingCartas(
       )
       .slice(0, 10);
 
-  if (
-    ranking.length === 0
-  ) {
+  if (ranking.length === 0) {
 
     await sock.sendMessage(
       chat,
@@ -511,7 +494,7 @@ async function rankingCartas(
 }
 
 // =========================================
-// 🎮 MANEJADOR
+// 🎮 COMANDOS
 // =========================================
 
 async function cartasComando(
