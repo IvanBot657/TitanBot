@@ -94,7 +94,15 @@ function crearUsuario() {
     misiones: {}
 
   };
-}
+}    
+    // 🐾 RACHA
+    rachaActual: 0,
+
+    rachaMaxima: 0,
+
+    nivelAnimal: 1,
+
+    rachaUltimoDia: "",
 
 // =========================================
 // 👤 OBTENER USUARIO
