@@ -75,10 +75,11 @@ async function roleplay(sock, chat, comando, args = [], id, msg) {
       return false;
     }
 
-    const cmd = String(comando || "")
-      .toLowerCase()
-      .replace(".", "")
-      .trim();
+     const cmdOriginal = String(comando || "").toLowerCase().trim();
+
+     const cmd = cmdOriginal
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
     const accion = acciones[cmd];
 
