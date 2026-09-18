@@ -5,25 +5,31 @@
 const fs = require("fs");
 const path = require("path");
 
+// =========================================
+// 👤 SISTEMA DE USUARIOS
+// =========================================
+// datosUsuarios.js está dentro de /commands/
 const {
   obtenerUsuario,
   guardarUsuario
-} = require("../datosUsuarios");
+} = require("./datosUsuarios");
 
 // =========================================
-// 🖼️ IMAGEN DE LA CARTA #20
+// 🖼️ IMÁGENES DE CARTAS
 // =========================================
 
 function obtenerImagen(id) {
+  // Carta #20 - Mago de Hielo
   if (id === 20) {
     return "https://raw.githubusercontent.com/IvanBot657/TitanBot/main/Cartas/mago_hielo_20.png";
   }
 
+  // Las demás cartas todavía no tienen imagen
   return null;
 }
 
 // =========================================
-// 🎴 CARTAS
+// 🎴 LISTA DE 50 CARTAS
 // =========================================
 
 const cartas = [
@@ -97,13 +103,28 @@ const cartas = [
 // =========================================
 
 function obtenerRareza() {
+
   const numero = Math.random() * 100;
 
-  if (numero < 45) return "⚪ Común";
-  if (numero < 70) return "🟢 Poco común";
-  if (numero < 85) return "🔵 Rara";
-  if (numero < 94) return "🟣 Épica";
-  if (numero < 99) return "🟠 Legendaria";
+  if (numero < 45) {
+    return "⚪ Común";
+  }
+
+  if (numero < 70) {
+    return "🟢 Poco común";
+  }
+
+  if (numero < 85) {
+    return "🔵 Rara";
+  }
+
+  if (numero < 94) {
+    return "🟣 Épica";
+  }
+
+  if (numero < 99) {
+    return "🟠 Legendaria";
+  }
 
   return "🔴 Mítica";
 }
@@ -113,11 +134,16 @@ function obtenerRareza() {
 // =========================================
 
 function obtenerCartaAleatoria() {
+
   const rareza = obtenerRareza();
 
   const disponibles = cartas.filter(
     carta => carta.rareza === rareza
   );
+
+  if (disponibles.length === 0) {
+    return null;
+  }
 
   return disponibles[
     Math.floor(Math.random() * disponibles.length)
@@ -125,23 +151,30 @@ function obtenerCartaAleatoria() {
 }
 
 // =========================================
-// 📊 COLECCIÓN
+// 📊 TOTAL DE CARTAS
 // =========================================
 
 function obtenerTotalCartas(usuario) {
-  if (!usuario.cartas) {
+
+  if (!usuario || !Array.isArray(usuario.cartas)) {
     return 0;
   }
 
   return usuario.cartas.reduce(
-    (total, carta) =>
-      total + (carta.cantidad || 0),
+    (total, carta) => {
+      return total + (Number(carta.cantidad) || 0);
+    },
     0
   );
 }
 
+// =========================================
+// 📚 CARTAS DIFERENTES
+// =========================================
+
 function obtenerCartasDiferentes(usuario) {
-  if (!usuario.cartas) {
+
+  if (!usuario || !Array.isArray(usuario.cartas)) {
     return 0;
   }
 
@@ -149,7 +182,7 @@ function obtenerCartasDiferentes(usuario) {
 }
 
 // =========================================
-// 🎴 EJECUTAR CARTAS
+// 🃏 EJECUTAR SISTEMA DE CARTAS
 // =========================================
 
 async function ejecutarCartas(
@@ -170,6 +203,7 @@ async function ejecutarCartas(
     const carta = obtenerCartaAleatoria();
 
     if (!carta) {
+
       await sock.sendMessage(
         chat,
         {
@@ -183,29 +217,86 @@ async function ejecutarCartas(
       return true;
     }
 
-    const usuario = obtenerUsuario(id);
+    let usuario;
 
-    if (!usuario.cartas) {
+    try {
+
+      usuario = obtenerUsuario(id);
+
+    } catch (error) {
+
+      console.error(
+        "❌ Error obteniendo usuario:",
+        error
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            "❌ No se pudo acceder a los datos del usuario."
+        },
+        {
+          quoted: msg
+        }
+      );
+
+      return true;
+    }
+
+    if (!usuario) {
+      usuario = {};
+    }
+
+    if (!Array.isArray(usuario.cartas)) {
       usuario.cartas = [];
     }
 
+    // Buscar si ya tiene la carta
     const existente = usuario.cartas.find(
-      c => c.id === carta.id
+      c => Number(c.id) === carta.id
     );
 
     const nuevaCarta = !existente;
 
     if (existente) {
+
       existente.cantidad =
-        (existente.cantidad || 0) + 1;
+        (Number(existente.cantidad) || 0) + 1;
+
     } else {
+
       usuario.cartas.push({
         id: carta.id,
         cantidad: 1
       });
     }
 
-    guardarUsuario(id, usuario);
+    // Guardar colección
+    try {
+
+      guardarUsuario(id, usuario);
+
+    } catch (error) {
+
+      console.error(
+        "❌ Error guardando usuario:",
+        error
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            "❌ La carta se generó, pero no se pudo guardar la colección."
+        },
+        {
+          quoted: msg
+        }
+      );
+
+      return true;
+    }
 
     const imagen = obtenerImagen(carta.id);
 
@@ -222,12 +313,18 @@ async function ejecutarCartas(
 ✨ Rareza: *${carta.rareza}*
 🔢 Carta: *#${carta.id}*
 
-${nuevaCarta
-  ? "🎉 ¡NUEVA CARTA PARA TU COLECCIÓN!"
-  : "♻️ ¡Has conseguido otra copia!"}
+${
+  nuevaCarta
+    ? "🎉 ¡NUEVA CARTA PARA TU COLECCIÓN!"
+    : "♻️ ¡HAS CONSEGUIDO OTRA COPIA!"
+}
 
 📚 Colección: *${diferentes}/50*
-📦 Total de cartas: *${total}*`;
+📦 Cartas totales: *${total}*`;
+
+    // =================================
+    // 🖼️ ENVIAR IMAGEN
+    // =================================
 
     if (imagen) {
 
@@ -249,7 +346,7 @@ ${nuevaCarta
       } catch (error) {
 
         console.error(
-          "Error enviando imagen de carta:",
+          "❌ Error enviando imagen de carta:",
           error
         );
 
@@ -290,10 +387,36 @@ ${nuevaCarta
 
   if (comando === "cartas") {
 
-    const usuario = obtenerUsuario(id);
+    let usuario;
+
+    try {
+
+      usuario = obtenerUsuario(id);
+
+    } catch (error) {
+
+      console.error(
+        "❌ Error obteniendo usuario:",
+        error
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            "❌ No se pudo cargar tu colección."
+        },
+        {
+          quoted: msg
+        }
+      );
+
+      return true;
+    }
 
     if (
-      !usuario.cartas ||
+      !usuario ||
+      !Array.isArray(usuario.cartas) ||
       usuario.cartas.length === 0
     ) {
 
@@ -323,13 +446,15 @@ Todavía no tienes cartas.
     for (const coleccion of usuario.cartas) {
 
       const carta = cartas.find(
-        c => c.id === coleccion.id
+        c => c.id === Number(coleccion.id)
       );
 
-      if (!carta) continue;
+      if (!carta) {
+        continue;
+      }
 
       texto +=
-`${carta.rareza} #${carta.id} ${carta.nombre} ×${coleccion.cantidad || 0}\n`;
+`${carta.rareza} #${carta.id} ${carta.nombre} ×${Number(coleccion.cantidad) || 0}\n`;
     }
 
     const diferentes =
@@ -377,11 +502,12 @@ Todavía no tienes cartas.
         chat,
         {
           text:
-`❌ *Carta inválida.*
+`❌ *CARTA INVÁLIDA*
 
 Debes indicar un número del *1 al 50*.
 
 Ejemplo:
+
 *.cartainfo 20*`
         },
         {
@@ -397,6 +523,18 @@ Ejemplo:
     );
 
     if (!carta) {
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            "❌ No se encontró esa carta."
+        },
+        {
+          quoted: msg
+        }
+      );
+
       return true;
     }
 
@@ -429,7 +567,7 @@ Ejemplo:
       } catch (error) {
 
         console.error(
-          "Error enviando imagen de carta:",
+          "❌ Error enviando imagen de carta:",
           error
         );
 
@@ -481,18 +619,24 @@ Ejemplo:
 
       if (fs.existsSync(archivo)) {
 
-        usuarios = JSON.parse(
+        const contenido =
           fs.readFileSync(
             archivo,
             "utf8"
-          )
-        );
+          );
+
+        if (contenido.trim()) {
+
+          usuarios =
+            JSON.parse(contenido);
+
+        }
       }
 
     } catch (error) {
 
       console.error(
-        "Error leyendo usuarios.json:",
+        "❌ Error leyendo usuarios.json:",
         error
       );
 
@@ -504,15 +648,21 @@ Ejemplo:
         .map(([jid, usuario]) => {
 
           const coleccion =
-            usuario.cartas || [];
+            Array.isArray(usuario.cartas)
+              ? usuario.cartas
+              : [];
 
           const diferentes =
             coleccion.length;
 
           const copias =
             coleccion.reduce(
-              (suma, carta) =>
-                suma + (carta.cantidad || 0),
+              (suma, carta) => {
+                return (
+                  suma +
+                  (Number(carta.cantidad) || 0)
+                );
+              },
               0
             );
 
@@ -522,19 +672,27 @@ Ejemplo:
             copias
           };
         })
+        .filter(
+          jugador =>
+            jugador.diferentes > 0
+        )
         .sort((a, b) => {
 
           if (
             b.diferentes !==
             a.diferentes
           ) {
+
             return (
               b.diferentes -
               a.diferentes
             );
           }
 
-          return b.copias - a.copias;
+          return (
+            b.copias -
+            a.copias
+          );
 
         })
         .slice(0, 10);
@@ -554,8 +712,13 @@ Ejemplo:
       ranking.forEach(
         (jugador, index) => {
 
+          const numero =
+            String(
+              jugador.jid.split("@")[0]
+            );
+
           texto +=
-`${index + 1}. @${jugador.jid.split("@")[0]}
+`${index + 1}. @${numero}
 🃏 ${jugador.diferentes}/50 diferentes
 📦 ${jugador.copias} copias
 
@@ -579,6 +742,10 @@ Ejemplo:
 
     return true;
   }
+
+  // =====================================
+  // ❌ COMANDO NO ENCONTRADO
+  // =====================================
 
   return false;
 }
