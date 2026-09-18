@@ -243,6 +243,22 @@ async function inicio(
 ┃
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🃏 CARTAS 〕━━━╮
+┃
+┃ 🎴 .carta
+┃ ┗ Obtener una carta aleatoria
+┃
+┃ 📚 .cartas
+┃ ┗ Ver tu colección
+┃
+┃ 🔎 .cartainfo 1
+┃ ┗ Ver información de una carta
+┃
+┃ 🏆 .cartasranking
+┃ ┗ Ranking de coleccionistas
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
 ┃ • .promote @usuario
 ┃ • .demote @usuario
