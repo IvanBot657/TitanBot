@@ -11,19 +11,6 @@ const {
 } = require("../datosUsuarios");
 
 // =========================================
-// 🖼️ IMAGEN DE LA CARTA #20
-// =========================================
-
-function obtenerImagen(id) {
-
-  if (id === 20) {
-    return "https://raw.githubusercontent.com/IvanBot657/TitanBot/main/Cartas/mago_hielo_20.png";
-  }
-
-  return null;
-}
-
-// =========================================
 // 🎴 CARTAS
 // =========================================
 
