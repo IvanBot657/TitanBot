@@ -118,18 +118,6 @@ async function inicio(
 ┃ • .bailar
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
-╭━━━━━━━━━━━━━━━━━━━━╮
-┃ 🔎 *MISTERIO* 🕵️
-┣━━━━━━━━━━━━━━━━━━━━┫
-┃ 🕵️ *Detective*
-┃
-┃ Resuelve casos,
-┃ analiza pistas y
-┃ descubre al culpable.
-┃
-┃ 🔎 `.detective`
-╰━━━━━━━━━━━━━━━━━━━━╯
-
 ╭━━━〔 🎉 DIVERSIÓN 〕━━━╮
 ┃ • .ship
 ┃ • .compatibilidad
