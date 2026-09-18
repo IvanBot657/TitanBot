@@ -15,6 +15,7 @@ const inicio = require("./commands/inicio");
 const usuario = require("./commands/usuario");
 const economia = require("./commands/economia");
 const juegos = require("./commands/juegos");
+const prediccion = require("./commands/prediccion");
 const roleplay = require("./commands/roleplay");
 const diversion = require("./commands/diversion");
 const anime = require("./commands/anime");
@@ -990,6 +991,27 @@ ${resultadoXP.nivel}
               }
 
             }
+            
+            // =========================================
+            // 🔮 PREDICCIÓN
+           // =========================================
+
+           if (!ejecutado) {
+
+            const resultado = await prediccion(
+              sock,
+              chat,
+              comando,
+              args,
+              id,
+              msg
+           );
+
+           if (resultado) {
+            ejecutado = true;
+          }
+
+        }
 
            // =========================================
            // 🎭 ROLEPLAY
