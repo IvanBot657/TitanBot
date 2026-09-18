@@ -28,6 +28,7 @@ const sticker = require("./commands/sticker");
 const historia = require("./commands/historia");
 const rankingpremium = require("./commands/rankingpremium");
 const racha = require("./commands/racha");
+const titulos = require("./commands/titulos");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
@@ -1274,6 +1275,26 @@ ${resultadoXP.nivel}
             if (resultado) {
              ejecutado = true;
            }
+
+        }
+            // =========================================
+            // 🎖️ TÍTULOS
+            // =========================================
+
+            if (!ejecutado) {
+
+            const resultado = await titulos(
+              sock,
+              chat,
+              comando,
+              args,
+              id,
+              msg
+           );
+
+           if (resultado) {
+            ejecutado = true;
+          }
 
         }
             
