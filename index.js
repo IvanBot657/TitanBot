@@ -1198,7 +1198,6 @@ ${resultadoXP.nivel}
            if (!ejecutado) {
 
             const resultado = await historia(
-          rankingpremium(
               sock,
               chat,
               comando,
@@ -1211,7 +1210,7 @@ ${resultadoXP.nivel}
              ejecutado = true;
           }
 
-        }
+       }
             
           // =========================================
           // 👑 RANKING PREMIUM
@@ -1219,7 +1218,8 @@ ${resultadoXP.nivel}
 
           if (!ejecutado) {
 
-           const resultado = await rankingpremium(
+           const resultado = await 
+             rankingpremium(
              sock,
              chat,
              comando,
