@@ -5,10 +5,11 @@
 const fs = require("fs");
 const path = require("path");
 
-const archivoUsuarios = path.join(
-  __dirname,
-  "usuarios.json"
-);
+const archivoUsuarios =
+  path.join(
+    __dirname,
+    "usuarios.json"
+  );
 
 // =========================================
 // 📂 CARGAR USUARIOS
@@ -18,7 +19,12 @@ function cargarUsuarios() {
 
   try {
 
-    if (!fs.existsSync(archivoUsuarios)) {
+    if (
+      !fs.existsSync(
+        archivoUsuarios
+      )
+    ) {
+
       fs.writeFileSync(
         archivoUsuarios,
         "{}",
@@ -48,7 +54,9 @@ function cargarUsuarios() {
 // 💾 GUARDAR USUARIOS
 // =========================================
 
-function guardarUsuarios(usuarios) {
+function guardarUsuarios(
+  usuarios
+) {
 
   try {
 
@@ -72,6 +80,24 @@ function guardarUsuarios(usuarios) {
 }
 
 // =========================================
+// 👤 USUARIO NUEVO
+// =========================================
+
+function crearUsuario() {
+
+  return {
+    nivel: 1,
+    xp: 0,
+    logros: 0,
+    aventuras: 0,
+    capitulos: 0,
+
+    misionesFecha: "",
+    misiones: {}
+  };
+}
+
+// =========================================
 // 👤 OBTENER USUARIO
 // =========================================
 
@@ -82,54 +108,104 @@ function obtenerUsuario(jid) {
 
   if (!usuarios[jid]) {
 
-    usuarios[jid] = {
-      nivel: 1,
-      xp: 0,
-      logros: 0,
-      aventuras: 0,
-      capitulos: 0
-    };
+    usuarios[jid] =
+      crearUsuario();
 
-    guardarUsuarios(usuarios);
+    guardarUsuarios(
+      usuarios
+    );
   }
 
-  return usuarios[jid];
+  // Compatibilidad con usuarios
+  // creados anteriormente
+
+  const usuario =
+    usuarios[jid];
+
+  if (
+    typeof usuario.nivel !==
+    "number"
+  ) {
+    usuario.nivel = 1;
+  }
+
+  if (
+    typeof usuario.xp !==
+    "number"
+  ) {
+    usuario.xp = 0;
+  }
+
+  if (
+    typeof usuario.logros !==
+    "number"
+  ) {
+    usuario.logros = 0;
+  }
+
+  if (
+    typeof usuario.aventuras !==
+    "number"
+  ) {
+    usuario.aventuras = 0;
+  }
+
+  if (
+    typeof usuario.capitulos !==
+    "number"
+  ) {
+    usuario.capitulos = 0;
+  }
+
+  if (
+    !usuario.misiones
+  ) {
+    usuario.misiones = {};
+  }
+
+  if (
+    typeof usuario.misionesFecha !==
+    "string"
+  ) {
+    usuario.misionesFecha = "";
+  }
+
+  guardarUsuarios(
+    usuarios
+  );
+
+  return usuario;
 }
 
 // =========================================
 // ⭐ AGREGAR XP
 // =========================================
 
-function agregarXP(jid, cantidad) {
+function agregarXP(
+  jid,
+  cantidad
+) {
 
   const usuarios =
     cargarUsuarios();
 
   if (!usuarios[jid]) {
 
-    usuarios[jid] = {
-      nivel: 1,
-      xp: 0,
-      logros: 0,
-      aventuras: 0,
-      capitulos: 0
-    };
+    usuarios[jid] =
+      crearUsuario();
   }
 
   const usuario =
     usuarios[jid];
 
-  usuario.xp += cantidad;
-
-  // =======================================
-  // 📈 SUBIR DE NIVEL
-  // Cada nivel requiere 100 XP
-  // =======================================
+  usuario.xp +=
+    Number(cantidad) || 0;
 
   let subioNivel = false;
 
   while (
-    usuario.xp >= usuario.nivel * 100
+    usuario.xp >=
+    usuario.nivel * 100
   ) {
 
     usuario.xp -=
@@ -140,7 +216,9 @@ function agregarXP(jid, cantidad) {
     subioNivel = true;
   }
 
-  guardarUsuarios(usuarios);
+  guardarUsuarios(
+    usuarios
+  );
 
   return {
     usuario,
@@ -149,7 +227,7 @@ function agregarXP(jid, cantidad) {
 }
 
 // =========================================
-// 🏆 AGREGAR LOGRO
+// 🏆 LOGRO
 // =========================================
 
 function agregarLogro(jid) {
@@ -158,18 +236,21 @@ function agregarLogro(jid) {
     cargarUsuarios();
 
   if (!usuarios[jid]) {
-    obtenerUsuario(jid);
+    usuarios[jid] =
+      crearUsuario();
   }
 
   usuarios[jid].logros++;
 
-  guardarUsuarios(usuarios);
+  guardarUsuarios(
+    usuarios
+  );
 
   return usuarios[jid];
 }
 
 // =========================================
-// ⚔️ AGREGAR AVENTURA
+// ⚔️ AVENTURA
 // =========================================
 
 function agregarAventura(jid) {
@@ -178,18 +259,21 @@ function agregarAventura(jid) {
     cargarUsuarios();
 
   if (!usuarios[jid]) {
-    obtenerUsuario(jid);
+    usuarios[jid] =
+      crearUsuario();
   }
 
   usuarios[jid].aventuras++;
 
-  guardarUsuarios(usuarios);
+  guardarUsuarios(
+    usuarios
+  );
 
   return usuarios[jid];
 }
 
 // =========================================
-// 📖 AGREGAR CAPÍTULO
+// 📖 CAPÍTULO
 // =========================================
 
 function agregarCapitulo(jid) {
@@ -198,12 +282,15 @@ function agregarCapitulo(jid) {
     cargarUsuarios();
 
   if (!usuarios[jid]) {
-    obtenerUsuario(jid);
+    usuarios[jid] =
+      crearUsuario();
   }
 
   usuarios[jid].capitulos++;
 
-  guardarUsuarios(usuarios);
+  guardarUsuarios(
+    usuarios
+  );
 
   return usuarios[jid];
 }
