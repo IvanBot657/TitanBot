@@ -862,7 +862,9 @@ async function anime(
       );
 
       return true;
-      }        personajeId:
+      }   
+          
+        personajeId:
           personajeFinal.id,
 
         nombre:
