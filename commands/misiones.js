@@ -4,6 +4,7 @@
 
 const {
   obtenerUsuario,
+  guardarUsuario,
   agregarXP
 } = require("./datosUsuarios");
 
@@ -19,7 +20,6 @@ const MISIONES = [
     objetivo: 3,
     recompensa: 30
   },
-
   {
     id: "trivia",
     nombre: "🧠 Cerebro",
@@ -27,7 +27,6 @@ const MISIONES = [
     objetivo: 2,
     recompensa: 40
   },
-
   {
     id: "adivina",
     nombre: "🔢 Adivinador",
@@ -35,7 +34,6 @@ const MISIONES = [
     objetivo: 1,
     recompensa: 20
   },
-
   {
     id: "ppt",
     nombre: "✊ Competidor",
@@ -43,7 +41,6 @@ const MISIONES = [
     objetivo: 2,
     recompensa: 35
   },
-
   {
     id: "dado",
     nombre: "🎲 Lanzador",
@@ -54,16 +51,18 @@ const MISIONES = [
 ];
 
 // =========================================
-// 📅 FECHA ACTUAL
+// 📅 FECHA
 // =========================================
 
 function fechaActual() {
-
   const ahora = new Date();
 
-  return ahora
-    .toISOString()
-    .split("T")[0];
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(ahora);
 }
 
 // =========================================
@@ -72,23 +71,21 @@ function fechaActual() {
 
 function prepararMisiones(usuario) {
 
-  const hoy =
-    fechaActual();
+  const hoy = fechaActual();
 
-  if (
-    usuario.misionesFecha !== hoy
-  ) {
+  if (usuario.misionesFecha !== hoy) {
 
     usuario.misionesFecha = hoy;
-
     usuario.misiones = {};
 
     for (const mision of MISIONES) {
 
       usuario.misiones[mision.id] = {
         progreso: 0,
-        completada: false
+        completada: false,
+        reclamada: false
       };
+
     }
   }
 
@@ -101,14 +98,17 @@ function prepararMisiones(usuario) {
 
 function obtenerMisiones(jid) {
 
-  const usuario =
-    obtenerUsuario(jid);
+  const usuario = obtenerUsuario(jid);
 
-  return prepararMisiones(usuario);
+  prepararMisiones(usuario);
+
+  guardarUsuario(jid, usuario);
+
+  return usuario;
 }
 
 // =========================================
-// ➕ PROGRESO DE MISIÓN
+// ➕ AVANZAR MISIÓN
 // =========================================
 
 function avanzarMision(
@@ -117,15 +117,13 @@ function avanzarMision(
   cantidad = 1
 ) {
 
-  const usuario =
-    obtenerUsuario(jid);
+  const usuario = obtenerUsuario(jid);
 
   prepararMisiones(usuario);
 
-  const mision =
-    MISIONES.find(
-      m => m.id === tipo
-    );
+  const mision = MISIONES.find(
+    m => m.id === tipo
+  );
 
   if (!mision) {
     return null;
@@ -135,7 +133,12 @@ function avanzarMision(
     usuario.misiones[mision.id];
 
   if (progreso.completada) {
-    return null;
+    return {
+      completada: true,
+      yaCompletada: true,
+      mision,
+      usuario
+    };
   }
 
   progreso.progreso += cantidad;
@@ -150,50 +153,51 @@ function avanzarMision(
 
     progreso.completada = true;
 
-    const recompensa =
-      agregarXP(
-        jid,
-        mision.recompensa
-      );
-
-    return {
-      completada: true,
-      mision,
-      recompensa,
-      usuario
-    };
   }
 
+  guardarUsuario(jid, usuario);
+
   return {
-    completada: false,
+    completada: progreso.completada,
     mision,
     usuario
   };
 }
 
 // =========================================
-// 🎯 MOSTRAR MISIONES
+// 🔎 BUSCAR MISIÓN
 // =========================================
 
-async function misiones(
+function buscarMision(nombre) {
+
+  const texto = String(
+    nombre || ""
+  )
+    .toLowerCase()
+    .trim();
+
+  return MISIONES.find(
+    m =>
+      m.id === texto ||
+      m.nombre.toLowerCase().includes(texto)
+  );
+}
+
+// =========================================
+// 🎯 .misiones
+// =========================================
+
+async function mostrarMisiones(
   sock,
   chat,
-  comando,
-  args,
   id
 ) {
-
-  if (
-    comando !== "misiones"
-  ) {
-    return false;
-  }
 
   const usuario =
     obtenerMisiones(id);
 
   let texto =
-`🎯 *MISIONES DIARIAS*
+`🎯 *MISIÓNES DIARIAS*
 
 ━━━━━━━━━━━━━━━━━━━━
 📅 ${usuario.misionesFecha}
@@ -201,22 +205,31 @@ async function misiones(
 
 `;
 
-  for (
-    const mision of MISIONES
-  ) {
+  for (const mision of MISIONES) {
 
     const progreso =
       usuario.misiones[mision.id];
 
-    const estado =
-      progreso.completada
-        ? "✅ COMPLETADA"
-        : `${progreso.progreso}/${mision.objetivo}`;
+    let estado;
+
+    if (progreso.reclamada) {
+
+      estado = "🎁 RECLAMADA";
+
+    } else if (progreso.completada) {
+
+      estado = "✅ COMPLETADA";
+
+    } else {
+
+      estado =
+        `${progreso.progreso}/${mision.objetivo}`;
+    }
 
     texto +=
 `${mision.nombre}
 📌 ${mision.descripcion}
-📊 Progreso: ${estado}
+📊 ${estado}
 ⭐ Recompensa: +${mision.recompensa} XP
 
 `;
@@ -224,27 +237,400 @@ async function misiones(
 
   texto +=
 `━━━━━━━━━━━━━━━━━━━━
-🎁 Las misiones se reinician cada día.
-✨ ¡Completa todas las que puedas!`;
+🎁 Completa una misión y usa:
+.misionreclamar`;
 
   await sock.sendMessage(chat, {
     text: texto
   });
-
-  return true;
 }
 
 // =========================================
-// 📤 EXPORTAR
+// 🔎 .mision
+// =========================================
+
+async function mostrarMision(
+  sock,
+  chat,
+  id,
+  args
+) {
+
+  const usuario =
+    obtenerMisiones(id);
+
+  const mision =
+    buscarMision(args[0]);
+
+  if (!mision) {
+
+    await sock.sendMessage(chat, {
+      text:
+`❌ Misión no encontrada.
+
+Usa:
+.misiones`
+    });
+
+    return;
+  }
+
+  const progreso =
+    usuario.misiones[mision.id];
+
+  let estado = "🔄 EN PROGRESO";
+
+  if (progreso.reclamada) {
+    estado = "🎁 RECLAMADA";
+  } else if (progreso.completada) {
+    estado = "✅ COMPLETADA";
+  }
+
+  const texto =
+`🎯 *DETALLE DE MISIÓN*
+
+━━━━━━━━━━━━━━━━━━━━
+${mision.nombre}
+
+📌 ${mision.descripcion}
+
+📊 Progreso:
+${progreso.progreso}/${mision.objetivo}
+
+⭐ Recompensa:
++${mision.recompensa} XP
+
+📍 Estado:
+${estado}
+━━━━━━━━━━━━━━━━━━━━`;
+
+  await sock.sendMessage(chat, {
+    text: texto
+  });
+}
+
+// =========================================
+// ℹ️ .misionesinfo
+// =========================================
+
+async function mostrarInfo(
+  sock,
+  chat
+) {
+
+  const texto =
+`ℹ️ *INFORMACIÓN DE MISIONES*
+
+━━━━━━━━━━━━━━━━━━━━
+
+🎯 Las misiones son objetivos
+que puedes completar jugando
+y usando TITANBOT.
+
+🎮 Completa los objetivos para
+desbloquear recompensas.
+
+⭐ Las recompensas entregan XP.
+
+🎁 Cuando completes una misión,
+usa:
+
+.misionreclamar
+
+📋 Para ver tus misiones:
+
+.misiones
+
+🔎 Para ver una misión:
+
+.mision [nombre]
+
+━━━━━━━━━━━━━━━━━━━━
+🔄 Las misiones se reinician
+cada día.`;
+
+  await sock.sendMessage(chat, {
+    text: texto
+  });
+}
+
+// =========================================
+// 🔄 .misioncompletar
+// =========================================
+
+async function comprobarMisiones(
+  sock,
+  chat,
+  id
+) {
+
+  const usuario =
+    obtenerMisiones(id);
+
+  const completadas =
+    MISIONES.filter(
+      m =>
+        usuario.misiones[m.id] &&
+        usuario.misiones[m.id].completada
+    );
+
+  if (!completadas.length) {
+
+    await sock.sendMessage(chat, {
+      text:
+`🔄 *MISIÓNES*
+
+Todavía no tienes misiones
+completadas.
+
+🎯 Sigue jugando para avanzar.`
+    });
+
+    return;
+  }
+
+  let texto =
+`✅ *MISIONES COMPLETADAS*
+
+━━━━━━━━━━━━━━━━━━━━
+
+`;
+
+  for (const mision of completadas) {
+
+    const progreso =
+      usuario.misiones[mision.id];
+
+    texto +=
+`${mision.nombre}
+📊 ${mision.objetivo}/${mision.objetivo}
+⭐ +${mision.recompensa} XP
+${progreso.reclamada
+  ? "🎁 Recompensa reclamada"
+  : "🎁 Recompensa disponible"}
+
+`;
+
+  }
+
+  texto +=
+`━━━━━━━━━━━━━━━━━━━━
+Usa .misionreclamar para
+recibir tus recompensas.`;
+
+  await sock.sendMessage(chat, {
+    text: texto
+  });
+}
+
+// =========================================
+// 🎁 .misionreclamar
+// =========================================
+
+async function reclamarMision(
+  sock,
+  chat,
+  id,
+  args
+) {
+
+  const usuario =
+    obtenerMisiones(id);
+
+  let misionesParaReclamar = [];
+
+  if (args[0]) {
+
+    const mision =
+      buscarMision(args[0]);
+
+    if (!mision) {
+
+      await sock.sendMessage(chat, {
+        text:
+`❌ Misión no encontrada.
+
+Usa:
+.misiones`
+      });
+
+      return;
+    }
+
+    misionesParaReclamar.push(mision);
+
+  } else {
+
+    misionesParaReclamar =
+      MISIONES.filter(
+        m =>
+          usuario.misiones[m.id] &&
+          usuario.misiones[m.id].completada &&
+          !usuario.misiones[m.id].reclamada
+      );
+  }
+
+  if (!misionesParaReclamar.length) {
+
+    await sock.sendMessage(chat, {
+      text:
+`🎁 No tienes recompensas
+pendientes por reclamar.`
+    });
+
+    return;
+  }
+
+  let recompensaTotal = 0;
+  let nombres = [];
+
+  for (const mision of misionesParaReclamar) {
+
+    const progreso =
+      usuario.misiones[mision.id];
+
+    if (
+      !progreso.completada ||
+      progreso.reclamada
+    ) {
+      continue;
+    }
+
+    progreso.reclamada = true;
+
+    recompensaTotal +=
+      mision.recompensa;
+
+    nombres.push(
+      `${mision.nombre} → +${mision.recompensa} XP`
+    );
+  }
+
+  if (!recompensaTotal) {
+
+    await sock.sendMessage(chat, {
+      text:
+`❌ Esa misión todavía no está
+completada o ya reclamaste
+su recompensa.`
+    });
+
+    return;
+  }
+
+  guardarUsuario(id, usuario);
+
+  const resultado =
+    agregarXP(
+      id,
+      recompensaTotal
+    );
+
+  let texto =
+`🎁 *RECOMPENSA RECLAMADA*
+
+━━━━━━━━━━━━━━━━━━━━
+
+${nombres.join("\n")}
+
+━━━━━━━━━━━━━━━━━━━━
+⭐ XP recibida: +${recompensaTotal}
+📊 Nivel: ${resultado.usuario.nivel}`;
+
+  if (resultado.subioNivel) {
+
+    texto +=
+`\n🎉 *¡SUBISTE DE NIVEL!*`;
+  }
+
+  await sock.sendMessage(chat, {
+    text: texto
+  });
+}
+
+// =========================================
+// 🚀 CONTROL PRINCIPAL
+// =========================================
+
+async function misiones(
+  sock,
+  chat,
+  comando,
+  args = [],
+  id
+) {
+
+  const cmd =
+    String(comando || "")
+      .toLowerCase()
+      .trim();
+
+  if (cmd === "misiones") {
+
+    await mostrarMisiones(
+      sock,
+      chat,
+      id
+    );
+
+    return true;
+  }
+
+  if (cmd === "mision") {
+
+    await mostrarMision(
+      sock,
+      chat,
+      id,
+      args
+    );
+
+    return true;
+  }
+
+  if (cmd === "misionesinfo") {
+
+    await mostrarInfo(
+      sock,
+      chat
+    );
+
+    return true;
+  }
+
+  if (cmd === "misioncompletar") {
+
+    await comprobarMisiones(
+      sock,
+      chat,
+      id
+    );
+
+    return true;
+  }
+
+  if (cmd === "misionreclamar") {
+
+    await reclamarMision(
+      sock,
+      chat,
+      id,
+      args
+    );
+
+    return true;
+  }
+
+  return false;
+}
+
+// =========================================
+// 📦 EXPORTAR
 // =========================================
 
 module.exports = misiones;
 
-module.exports.misiones =
-  misiones;
-
-module.exports.avanzarMision =
-  avanzarMision;
-
-module.exports.obtenerMisiones =
-  obtenerMisiones;
+module.exports.misiones = misiones;
+module.exports.avanzarMision = avanzarMision;
+module.exports.obtenerMisiones = obtenerMisiones;
+module.exports.MISIONES = MISIONES;
