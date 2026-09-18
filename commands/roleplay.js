@@ -82,13 +82,12 @@ async function roleplay(sock, chat, comando, args = [], id, msg) {
 
     const accion = acciones[cmd];
 
-    // No es un comando de roleplay
     if (!accion) {
       return false;
     }
 
     // =========================================
-    // 🔎 BUSCAR MENCIÓN REAL DE WHATSAPP
+    // 🔎 MENCIÓN REAL DE WHATSAPP
     // =========================================
 
     const context =
@@ -117,14 +116,14 @@ Ejemplo:
     const objetivo = mencionados[0];
 
     // =========================================
-    // 🔑 API KEY DE GIPHY
+    // 🔑 GIPHY API
     // =========================================
 
     const apiKey = process.env.GIPHY_API_KEY;
 
     if (!apiKey) {
 
-      console.error("❌ Falta GIPHY_API_KEY en Render");
+      console.error("❌ Falta GIPHY_API_KEY");
 
       await sock.sendMessage(
         chat,
@@ -180,7 +179,7 @@ Ejemplo:
     }
 
     // =========================================
-    // 🎲 GIF ALEATORIO
+    // 🎲 ELEGIR GIF ALEATORIO
     // =========================================
 
     const gif =
@@ -188,38 +187,42 @@ Ejemplo:
         Math.floor(Math.random() * resultados.length)
       ];
 
+    // =========================================
+    // 🎥 USAR MP4 DE GIPHY
+    // =========================================
+
     const gifUrl =
-      gif?.images?.original?.url ||
-      gif?.images?.downsized?.url;
-    console.log("🎬 GIF ENCONTRADO:", gifUrl);
+      gif?.images?.original_mp4?.mp4 ||
+      gif?.images?.downsized_medium?.mp4 ||
+      gif?.images?.original?.mp4;
+
+    console.log("🎬 MP4 ENCONTRADO:", gifUrl);
 
     if (!gifUrl) {
-      throw new Error("GIPHY no devolvió una URL válida.");
+
+      throw new Error(
+        "GIPHY no devolvió una versión MP4."
+      );
     }
 
     // =========================================
-    // 👤 NÚMERO DEL USUARIO MENCIONADO
+    // 👤 USUARIO MENCIONADO
     // =========================================
 
     const numero =
       objetivo.split("@")[0];
 
     // =========================================
-    // 🎬 ENVIAR GIF + TEXTO
+    // 🎬 ENVIAR ANIMACIÓN
     // =========================================
 
-    const archivoGif = await 
-      axios.get(gifUrl, {
-        responseType: "arraybuffer",
-        timeout: 30000
-      });
+    await sock.sendMessage(
+      chat,
+      {
+        video: {
+          url: gifUrl
+        },
 
-      await sock.sendMessage(
-        chat,
-        {
-    video: Buffer.from(archivoGif.data),
-
-    gifPlayback: true,
         gifPlayback: true,
 
         caption:
