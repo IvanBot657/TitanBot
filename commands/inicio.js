@@ -83,6 +83,20 @@ async function inicio(
 ┃ • .troll
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+━━〔 🎭 PERSONALIDAD 〕━━━╮
+┃ • .personalidad
+┃ • .aventurero
+┃ • .intelectual
+┃ • .gracioso
+┃ • .travieso
+┃ • .heroe
+┃ • .misterioso
+┃ • .energetico
+┃ • .tranquilo
+┃ • .lider
+┃ • .creativo
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🎭 ROLEPLAY 〕━━━╮
 ┃ • .abrazar
 ┃ • .besar
