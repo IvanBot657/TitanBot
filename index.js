@@ -25,6 +25,7 @@ const grupos = require("./commands/grupos");
 const eventos = require("./commands/eventos");
 const sticker = require("./commands/sticker");
 const historia = require("./commands/historia");
+const rankingpremium = require("./commands/rankingpremium");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
@@ -1197,6 +1198,7 @@ ${resultadoXP.nivel}
            if (!ejecutado) {
 
             const resultado = await historia(
+          rankingpremium(
               sock,
               chat,
               comando,
@@ -1207,6 +1209,27 @@ ${resultadoXP.nivel}
 
             if (resultado) {
              ejecutado = true;
+          }
+
+        }
+            
+          // =========================================
+          // 👑 RANKING PREMIUM
+          // =========================================
+
+          if (!ejecutado) {
+
+           const resultado = await rankingpremium(
+             sock,
+             chat,
+             comando,
+             args,
+             id,
+             msg
+           );
+
+           if (resultado) {
+            ejecutado = true;
           }
 
        }
