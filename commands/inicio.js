@@ -194,6 +194,21 @@ async function inicio(
 ┃ • .leyenda
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 👑 RANKING PREMIUM 〕━━━╮
+┃
+┃ 🏆 COMANDOS DISPONIBLES
+┃
+┃ 👑 .rankingpremium
+┃ 📊 Ver el ranking premium
+┃
+┃ 🥇 .top
+┃ 📈 Ver los mejores usuarios
+┃
+┃ 👤 .mi-ranking
+┃ 🎖️ Ver tu posición
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
 ┃ • .promote @usuario
 ┃ • .demote @usuario
