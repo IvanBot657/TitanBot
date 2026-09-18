@@ -217,6 +217,19 @@ async function inicio(
 ┃
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🐾 RACHA ANIMAL 〕━━━╮
+┃
+┃ 🔥 .racha
+┃ ┗ Registra tu racha diaria
+┃
+┃ 📊 .rachaestado
+┃ ┗ Mira tu racha y récord
+┃
+┃ 🐾 .rachalista
+┃ ┗ Mira los 50 animales
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
 ┃ • .promote @usuario
 ┃ • .demote @usuario
