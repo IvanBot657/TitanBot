@@ -181,6 +181,19 @@ async function inicio(
 ┃ • .take
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+━━〔 📖 HISTORIA 〕━━━╮
+┃ • .historia
+┃ • .origen
+┃ • .aventura
+┃ • .progreso
+┃ • .niveles
+┃ • .logros
+┃ • .capitulos
+┃ • .destino
+┃ • .futuro
+┃ • .leyenda
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
 ┃ • .promote @usuario
 ┃ • .demote @usuario
