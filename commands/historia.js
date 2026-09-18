@@ -2,7 +2,10 @@
 // 📖 HISTORIA PERSONAL - TITANBOT
 // =========================================
 
-const usuarios = {};
+const {
+  obtenerUsuario,
+  agregarXP
+} = require("./datosUsuarios");
 
 function normalizar(texto) {
   return String(texto || "")
@@ -12,29 +15,23 @@ function normalizar(texto) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function obtenerUsuario(jid) {
-  if (!usuarios[jid]) {
-    usuarios[jid] = {
-      nivel: 1,
-      xp: 0,
-      logros: 0,
-      aventuras: 0,
-      capitulos: 1
-    };
-  }
-
-  return usuarios[jid];
-}
-
 function barra(progreso) {
   const total = 10;
-  const llenos = Math.round(progreso / 10);
+  const porcentaje = Math.max(0, Math.min(100, progreso));
+  const llenos = Math.round(porcentaje / 10);
 
   return "█".repeat(llenos) +
          "░".repeat(total - llenos);
 }
 
-async function historia(sock, chat, comando, args = [], id, msg) {
+async function historia(
+  sock,
+  chat,
+  comando,
+  args = [],
+  id,
+  msg
+) {
 
   const cmd = normalizar(comando);
 
@@ -62,18 +59,26 @@ async function historia(sock, chat, comando, args = [], id, msg) {
   const context =
     msg?.message?.extendedTextMessage?.contextInfo;
 
-  const mencionados = context?.mentionedJid || [];
+  const mencionados =
+    context?.mentionedJid || [];
 
-  const objetivo = mencionados.length > 0
-    ? mencionados[0]
-    : id;
+  const objetivo =
+    mencionados.length > 0
+      ? mencionados[0]
+      : id;
 
-  const numero = objetivo.split("@")[0];
-
-  const datos = obtenerUsuario(objetivo);
+  const numero =
+    objetivo.split("@")[0];
 
   // =========================================
-  // ⏳ CARGANDO
+  // 👤 OBTENER DATOS COMPARTIDOS
+  // =========================================
+
+  const datos =
+    obtenerUsuario(objetivo);
+
+  // =========================================
+  // ⏳ CARGANDO 20%
   // =========================================
 
   await sock.sendMessage(chat, {
@@ -88,7 +93,13 @@ ${barra(20)} 20%
     mentions: [objetivo]
   });
 
-  await new Promise(resolve => setTimeout(resolve, 700));
+  await new Promise(resolve =>
+    setTimeout(resolve, 700)
+  );
+
+  // =========================================
+  // ⏳ CARGANDO 50%
+  // =========================================
 
   await sock.sendMessage(chat, {
     text:
@@ -102,7 +113,13 @@ ${barra(50)} 50%
     mentions: [objetivo]
   });
 
-  await new Promise(resolve => setTimeout(resolve, 700));
+  await new Promise(resolve =>
+    setTimeout(resolve, 700)
+  );
+
+  // =========================================
+  // ⏳ CARGANDO 80%
+  // =========================================
 
   await sock.sendMessage(chat, {
     text:
@@ -116,21 +133,17 @@ ${barra(80)} 80%
     mentions: [objetivo]
   });
 
-  await new Promise(resolve => setTimeout(resolve, 700));
+  await new Promise(resolve =>
+    setTimeout(resolve, 700)
+  );
 
   // =========================================
   // 📈 ACTUALIZAR PROGRESO
   // =========================================
 
-  datos.xp += 10;
-  datos.aventuras += 1;
+  agregarXP(objetivo, 10);
 
-  if (datos.xp >= 100) {
-    datos.xp -= 100;
-    datos.nivel += 1;
-    datos.capitulos += 1;
-    datos.logros += 1;
-  }
+  datos.aventuras += 1;
 
   // =========================================
   // 📖 HISTORIA
@@ -266,9 +279,10 @@ ${barra(datos.xp)} ${datos.xp}%
 ━━━━━━━━━━━━━━━━━━━━
 
 📍 Nivel actual:
+
 ⭐ ${datos.nivel}
 
-🔮 Próximos niveles:
+🔮 *PRÓXIMOS NIVELES*
 
 ➡️ ${datos.nivel + 1}
 ➡️ ${datos.nivel + 2}
@@ -325,7 +339,7 @@ para desbloquear nuevos logros.`,
 📖 Capítulos desbloqueados:
 ${datos.capitulos}
 
-🔒 Próximos capítulos:
+🔒 *PRÓXIMOS CAPÍTULOS*
 
 📕 Capítulo ${datos.capitulos + 1}
 📕 Capítulo ${datos.capitulos + 2}
@@ -344,15 +358,19 @@ ${datos.capitulos}
   else if (cmd === "destino") {
 
     const destinos = [
-      "🌌 Un nuevo desafío está esperando.",
-      "🏆 Una gran oportunidad podría aparecer.",
-      "⚔️ Un nuevo capítulo está por comenzar.",
-      "🚀 El camino de @${numero} apunta hacia algo grande.",
-      "🗺️ Una nueva aventura está cerca."
+      `🌌 Un nuevo desafío está esperando a @${numero}.`,
+      `🏆 Una gran oportunidad podría aparecer para @${numero}.`,
+      `⚔️ Un nuevo capítulo está por comenzar para @${numero}.`,
+      `🚀 El camino de @${numero} apunta hacia algo grande.`,
+      `🗺️ Una nueva aventura está cerca para @${numero}.`
     ];
 
     const destino =
-      destinos[Math.floor(Math.random() * destinos.length)];
+      destinos[
+        Math.floor(
+          Math.random() * destinos.length
+        )
+      ];
 
     await sock.sendMessage(chat, {
       text:
