@@ -18,6 +18,7 @@ const juegos = require("./commands/juegos");
 const prediccion = require("./commands/prediccion");
 const roleplay = require("./commands/roleplay");
 const diversion = require("./commands/diversion");
+const personalidad = require("./commands/personalidad");
 const anime = require("./commands/anime");
 const musica = require("./commands/musica");
 const grupos = require("./commands/grupos");
@@ -1012,6 +1013,27 @@ ${resultadoXP.nivel}
           }
 
         }
+            
+           // =========================================
+           // 🎭 PERSONALIDAD
+           // =========================================
+
+           if (!ejecutado) {
+
+           const resultado = await personalidad(
+             sock,
+             chat,
+             comando,
+             args,
+             id,
+             msg
+           );
+
+           if (resultado) {
+            ejecutado = true;
+         }
+
+      }
 
            // =========================================
            // 🎭 ROLEPLAY
