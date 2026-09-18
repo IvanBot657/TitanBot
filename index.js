@@ -24,6 +24,7 @@ const musica = require("./commands/musica");
 const grupos = require("./commands/grupos");
 const eventos = require("./commands/eventos");
 const sticker = require("./commands/sticker");
+const historia = require("./commands/historia");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
@@ -1189,6 +1190,26 @@ ${resultadoXP.nivel}
               }
            }
         }
+            // =========================================
+           // 📖 HISTORIA
+           // =========================================
+
+           if (!ejecutado) {
+
+            const resultado = await historia(
+              sock,
+              chat,
+              comando,
+              args,
+              id,
+              msg
+            );
+
+            if (resultado) {
+             ejecutado = true;
+          }
+
+       }
             
             // =========================================
             // HERRAMIENTAS
