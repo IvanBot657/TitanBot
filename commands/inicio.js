@@ -230,6 +230,19 @@ async function inicio(
 ┃
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🎖️ TÍTULOS 〕━━━╮
+┃
+┃ 🎖️ .titulo
+┃ ┗ Ver tu título actual
+┃
+┃ 📜 .titulos
+┃ ┗ Ver todos los títulos
+┃
+┃ 📊 .tituloestado
+┃ ┗ Ver tu progreso
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
 ┃ • .promote @usuario
 ┃ • .demote @usuario
