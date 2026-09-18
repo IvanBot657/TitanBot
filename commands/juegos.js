@@ -21,21 +21,19 @@ async function darXP(
   cantidad
 ) {
 
-  const resultado =
-    agregarXP(
-      id,
-      cantidad
-    );
+  const resultado = agregarXP(
+    id,
+    cantidad
+  );
 
   let mensaje =
     `\n\n✨ +${cantidad} XP`;
 
-  if (
-    resultado.subioNivel
-  ) {
+  if (resultado.subioNivel) {
 
     mensaje +=
       `\n🎉 ¡SUBISTE AL NIVEL ${resultado.usuario.nivel}!`;
+
   }
 
   return mensaje;
@@ -61,20 +59,26 @@ function registrarMision(
 // 🎁 MENSAJE DE MISIÓN
 // ========================================
 
-function mensajeMision(
-  resultado
-) {
+function mensajeMision(resultado) {
 
   if (
     !resultado ||
-    !resultado.completada
+    !resultado.completada ||
+    resultado.yaCompletada
   ) {
     return "";
   }
 
-  return `\n\n🎯 *¡MISIÓN COMPLETADA!*
+  return `
+
+🎯 *¡MISIÓN COMPLETADA!*
 ${resultado.mision.nombre}
-🎁 Recompensa: +${resultado.mision.recompensa} XP`;
+
+🎁 Recompensa disponible:
++${resultado.mision.recompensa} XP
+
+💡 Usa:
+.misionreclamar`;
 }
 
 // ========================================
@@ -85,7 +89,7 @@ async function juegos(
   sock,
   chat,
   comando,
-  args,
+  args = [],
   id
 ) {
 
@@ -93,9 +97,7 @@ async function juegos(
   // 🎲 DADO
   // ========================================
 
-  if (
-    comando === "dado"
-  ) {
+  if (comando === "dado") {
 
     const resultado =
       Math.floor(
@@ -115,11 +117,10 @@ async function juegos(
         "dado"
       );
 
-    const misionGeneral =
-      registrarMision(
-        id,
-        "jugar"
-      );
+    registrarMision(
+      id,
+      "jugar"
+    );
 
     await sock.sendMessage(
       chat,
@@ -144,9 +145,7 @@ ${
   // 🪙 MONEDA
   // ========================================
 
-  if (
-    comando === "moneda"
-  ) {
+  if (comando === "moneda") {
 
     const resultado =
       Math.random() < 0.5
@@ -183,14 +182,10 @@ ${
   // 🔢 ADIVINA
   // ========================================
 
-  if (
-    comando === "adivina"
-  ) {
+  if (comando === "adivina") {
 
     const numero =
-      parseInt(
-        args[0]
-      );
+      parseInt(args[0]);
 
     if (
       isNaN(numero) ||
@@ -220,9 +215,7 @@ Ejemplo:
         Math.random() * 10
       ) + 1;
 
-    if (
-      numero === secreto
-    ) {
+    if (numero === secreto) {
 
       const xp =
         await darXP(
@@ -237,11 +230,10 @@ Ejemplo:
           "adivina"
         );
 
-      const general =
-        registrarMision(
-          id,
-          "jugar"
-        );
+      registrarMision(
+        id,
+        "jugar"
+      );
 
       await sock.sendMessage(
         chat,
@@ -264,11 +256,10 @@ Ejemplo:
           2
         );
 
-      const general =
-        registrarMision(
-          id,
-          "jugar"
-        );
+      registrarMision(
+        id,
+        "jugar"
+      );
 
       await sock.sendMessage(
         chat,
@@ -306,9 +297,7 @@ Ejemplo:
       args[0]?.toLowerCase();
 
     if (
-      !opciones.includes(
-        jugador
-      )
+      !opciones.includes(jugador)
     ) {
 
       await sock.sendMessage(
@@ -340,9 +329,7 @@ Usa:
     let cantidadXP = 5;
     let gano = false;
 
-    if (
-      jugador === bot
-    ) {
+    if (jugador === bot) {
 
       resultado =
         "🤝 *EMPATE*";
@@ -379,11 +366,10 @@ Usa:
         cantidadXP
       );
 
-    const general =
-      registrarMision(
-        id,
-        "jugar"
-      );
+    registrarMision(
+      id,
+      "jugar"
+    );
 
     let mision = null;
 
@@ -416,9 +402,7 @@ ${resultado}${xp}${mensajeMision(mision)}`
   // 🧠 TRIVIA
   // ========================================
 
-  if (
-    comando === "trivia"
-  ) {
+  if (comando === "trivia") {
 
     const preguntas = [
 
@@ -456,6 +440,7 @@ ${resultado}${xp}${mensajeMision(mision)}`
         respuesta:
           "pacifico"
       }
+
     ];
 
     const pregunta =
@@ -466,13 +451,7 @@ ${resultado}${xp}${mensajeMision(mision)}`
         )
       ];
 
-    // Guardamos temporalmente
-    // la respuesta dentro del
-    // proceso del bot
-
-    if (
-      !global.triviasActivas
-    ) {
+    if (!global.triviasActivas) {
       global.triviasActivas = {};
     }
 
@@ -525,7 +504,8 @@ Usa:
     }
 
     const respuesta =
-      args.join(" ")
+      args
+        .join(" ")
         .toLowerCase()
         .normalize("NFD")
         .replace(
@@ -556,11 +536,10 @@ Usa:
           "trivia"
         );
 
-      const general =
-        registrarMision(
-          id,
-          "jugar"
-        );
+      registrarMision(
+        id,
+        "jugar"
+      );
 
       await sock.sendMessage(
         chat,
@@ -568,9 +547,7 @@ Usa:
           text:
 `🎉 *¡CORRECTO!*
 
-🧠 Excelente respuesta.
-
-🏆 +15 XP${mensajeMision(mision)}`
+🧠 Excelente respuesta.${xp}${mensajeMision(mision)}`
         }
       );
 
@@ -583,11 +560,10 @@ Usa:
           2
         );
 
-      const general =
-        registrarMision(
-          id,
-          "jugar"
-        );
+      registrarMision(
+        id,
+        "jugar"
+      );
 
       await sock.sendMessage(
         chat,
@@ -607,14 +583,10 @@ Usa:
   // 🔢 NÚMERO ALEATORIO
   // ========================================
 
-  if (
-    comando === "numero"
-  ) {
+  if (comando === "numero") {
 
     let max =
-      parseInt(
-        args[0]
-      );
+      parseInt(args[0]);
 
     if (
       isNaN(max) ||
@@ -635,7 +607,7 @@ Usa:
         5
       );
 
-    const general =
+    const mision =
       registrarMision(
         id,
         "jugar"
@@ -649,7 +621,7 @@ Usa:
 
 🎯 Resultado: ${resultado}
 
-📊 Rango: 1-${max}${xp}`
+📊 Rango: 1-${max}${xp}${mensajeMision(mision)}`
       }
     );
 
@@ -660,9 +632,7 @@ Usa:
   // 🍀 SUERTE
   // ========================================
 
-  if (
-    comando === "suerte"
-  ) {
+  if (comando === "suerte") {
 
     const resultados = [
       "🍀 ¡Hoy tienes mucha suerte!",
@@ -687,7 +657,7 @@ Usa:
         5
       );
 
-    const general =
+    const mision =
       registrarMision(
         id,
         "jugar"
@@ -699,7 +669,7 @@ Usa:
         text:
 `🔮 *SUERTE*
 
-${resultado}${xp}`
+${resultado}${xp}${mensajeMision(mision)}`
       }
     );
 
@@ -740,7 +710,7 @@ ${resultado}${xp}`
         5
       );
 
-    const general =
+    const mision =
       registrarMision(
         id,
         "jugar"
@@ -752,7 +722,7 @@ ${resultado}${xp}`
         text:
 `🎱 *8 BALL*
 
-${respuesta}${xp}`
+${respuesta}${xp}${mensajeMision(mision)}`
       }
     );
 
@@ -763,9 +733,7 @@ ${respuesta}${xp}`
   // 🎮 LISTA DE JUEGOS
   // ========================================
 
-  if (
-    comando === "juegos"
-  ) {
+  if (comando === "juegos") {
 
     await sock.sendMessage(
       chat,
@@ -788,6 +756,7 @@ ${respuesta}${xp}`
 ⭐ Todos los juegos dan XP.
 
 🎯 Usa:
+
 .misiones
 
 para ver tus misiones diarias.`
@@ -803,5 +772,9 @@ para ver tus misiones diarias.`
 
   return false;
 }
+
+// ========================================
+// 📦 EXPORTAR
+// ========================================
 
 module.exports = juegos;
