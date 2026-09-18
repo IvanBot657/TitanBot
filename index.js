@@ -12,13 +12,13 @@ const fs = require("fs");
 const config = require("./config");
 
 const inicio = require("./commands/inicio");
-const ejecutarMisterio = require("./commands/misterio");
 const usuario = require("./commands/usuario");
 const economia = require("./commands/economia");
 const misiones = require("./commands/misiones");
 const juegos = require("./commands/juegos");
 const prediccion = require("./commands/prediccion");
 const roleplay = require("./commands/roleplay");
+const ejecutarMisterio = require("./commands/misterio");
 const diversion = require("./commands/diversion");
 const personalidad = require("./commands/personalidad");
 const anime = require("./commands/anime");
@@ -1082,6 +1082,29 @@ ${resultadoXP.nivel}
       }
  
     }  
+          
+          // =========================================
+          // 🔎 MISTERIO / DETECTIVE
+          // =========================================
+
+          if (!ejecutado) {
+
+           const resultado = await ejecutarMisterio(
+             sock,
+             chat,
+             comando,
+             args,
+             id,
+             esGrupo,
+             esAdmin,
+             msg
+           );
+
+           if (resultado) {
+            ejecutado = true;
+         }
+
+     }
 
             // =========================================
             // DIVERSIÓN
