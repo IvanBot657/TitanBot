@@ -27,6 +27,7 @@ const eventos = require("./commands/eventos");
 const sticker = require("./commands/sticker");
 const historia = require("./commands/historia");
 const rankingpremium = require("./commands/rankingpremium");
+const racha = require("./commands/racha");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
@@ -1255,6 +1256,26 @@ ${resultadoXP.nivel}
           }
 
        }
+            // =========================================
+            // 🐾 RACHA
+            // =========================================
+
+            if (!ejecutado) {
+
+             const resultado = await racha(
+               sock,
+               chat,
+               comando,
+               args,
+               id,
+               msg
+            );
+
+            if (resultado) {
+             ejecutado = true;
+           }
+
+        }
             
             // =========================================
             // HERRAMIENTAS
