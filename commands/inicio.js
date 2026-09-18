@@ -70,6 +70,19 @@ async function inicio(
 ┃ • .8ball
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+━━〔 🔮 PREDICCIÓN 〕━━━╮
+┃ • .prediccion
+┃ • .amor
+┃ • .suerte
+┃ • .random
+┃ • .dinero
+┃ • .gamer
+┃ • .social
+┃ • .nocturna
+┃ • .epica
+┃ • .troll
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🎭 ROLEPLAY 〕━━━╮
 ┃ • .abrazar
 ┃ • .besar
