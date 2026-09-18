@@ -12,6 +12,7 @@ const fs = require("fs");
 const config = require("./config");
 
 const inicio = require("./commands/inicio");
+const ejecutarMisterio = require("./commands/misterio");
 const usuario = require("./commands/usuario");
 const economia = require("./commands/economia");
 const misiones = require("./commands/misiones");
