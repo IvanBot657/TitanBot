@@ -264,10 +264,11 @@ async function inicio(
 
 ╭━━━〔 🏆 EJÉRCITO DORADO 〕━━━╮
 ┃ • .ejercito
-┃ • .tarjetaejercito
+┃ • .reclutar
 ┃ • .atacar @usuario
 ┃ • .defender
 ┃ • .fortaleza
+┃ • .entrenar
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
