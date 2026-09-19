@@ -4,6 +4,7 @@
 // ==========================================
 
 const config = require("../config");
+const fs = require("fs");
 
 async function inicio(
   sock,
@@ -20,9 +21,10 @@ async function inicio(
   // .menu
   // ==============================
   if (cmd === "menu" || cmd === "menú") {
+
     await sock.sendMessage(chat, {
-      image: fs.readFileSync('./titanbot.png'),
-  caption: `
+      image: fs.readFileSync("./titanbot.png"),
+      caption: `
 🤖 *TITANBOT*
 ⚡ *Versión:* 3.1.0
 
