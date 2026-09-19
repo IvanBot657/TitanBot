@@ -724,6 +724,18 @@ async function iniciarBot() {
             "🟢 TitanBot conectado correctamente"
           );
 
+           try {
+             await sock.updateProfilePicture(
+               sock.user.id,
+               fs.readFileSync("./titanbot.png")
+            );
+
+            console.log("✅ Foto de perfil actualizada");
+
+          } catch (e) {
+              console.log("❌ Error actualizando foto:", e);
+          }
+
           iniciando = false;
         }
 
