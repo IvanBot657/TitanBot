@@ -1617,7 +1617,7 @@ return false;
   });
 
   return true;
-}
+  }
 
 }
 
