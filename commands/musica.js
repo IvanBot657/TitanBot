@@ -1,37 +1,14 @@
 const axios = require("axios");
 
 // =========================================
-// 🎵 TITANBOT - MÚSICA CON AUDIUS
+// 🎵 TITANBOT - MÚSICA CON JAMENDO
 // =========================================
 
-const AUDIUS_API =
-  process.env.AUDIUS_API_URL ||
-  "https://api.audius.co/v1";
+const JAMENDO_API =
+  "https://api.jamendo.com/v3.0";
 
-const AUDIUS_API_KEY =
-  process.env.AUDIUS_API_KEY;
-
-const AUDIUS_BEARER_TOKEN =
-  process.env.AUDIUS_BEARER_TOKEN;
-
-// =========================================
-// 🔐 HEADERS
-// =========================================
-
-function getHeaders() {
-  const headers = {};
-
-  if (AUDIUS_API_KEY) {
-    headers["X-API-Key"] = AUDIUS_API_KEY;
-  }
-
-  if (AUDIUS_BEARER_TOKEN) {
-    headers["Authorization"] =
-      `Bearer ${AUDIUS_BEARER_TOKEN}`;
-  }
-
-  return headers;
-}
+const JAMENDO_CLIENT_ID =
+  process.env.JAMENDO_CLIENT_ID;
 
 // =========================================
 // 🔎 BUSCAR CANCIÓN
@@ -39,29 +16,44 @@ function getHeaders() {
 
 async function buscarCancion(busqueda) {
 
+  if (!JAMENDO_CLIENT_ID) {
+    throw new Error(
+      "Falta JAMENDO_CLIENT_ID en las variables de entorno."
+    );
+  }
+
   const respuesta = await axios.get(
-    `${AUDIUS_API}/tracks/search`,
+    `${JAMENDO_API}/tracks/`,
     {
       params: {
-        query: busqueda,
-        limit: 5,
-        sort_method: "relevant"
+        client_id: JAMENDO_CLIENT_ID,
+        format: "json",
+        limit: 10,
+        search: busqueda,
+        audioformat: "mp31",
+        imagesize: 300
       },
-
-      headers: getHeaders(),
 
       timeout: 30000
     }
   );
 
   const pistas =
-    respuesta.data?.data || [];
+    respuesta.data?.results || [];
 
   if (!pistas.length) {
     return null;
   }
 
-  return pistas[0];
+  // Preferimos una pista que permita descarga
+  const pistaDisponible =
+    pistas.find(
+      pista =>
+        pista.audiodownload_allowed === true &&
+        pista.audio
+    );
+
+  return pistaDisponible || pistas[0];
 }
 
 // =========================================
@@ -71,20 +63,54 @@ async function buscarCancion(busqueda) {
 function obtenerImagen(track) {
 
   return (
-    track.artwork?.["480x480"] ||
-    track.artwork?.["150x150"] ||
-    track.artwork?.["1000x1000"] ||
+    track.image ||
+    track.album_image ||
     null
   );
 }
 
 // =========================================
-// 🎵 OBTENER STREAM
+// 🎧 OBTENER AUDIO
 // =========================================
 
-function obtenerStream(track) {
+function obtenerAudio(track) {
 
-  return `${AUDIUS_API}/tracks/${track.id}/stream`;
+  // Jamendo entrega directamente la URL
+  // de streaming en el campo "audio".
+  return track.audio || null;
+}
+
+// =========================================
+// ⏱️ FORMATEAR DURACIÓN
+// =========================================
+
+function formatearDuracion(segundos) {
+
+  const total =
+    Number(segundos || 0);
+
+  const minutos =
+    Math.floor(total / 60);
+
+  const segundosRestantes =
+    String(total % 60)
+      .padStart(2, "0");
+
+  return `${minutos}:${segundosRestantes}`;
+}
+
+// =========================================
+// 🧹 LIMPIAR NOMBRE DEL ARCHIVO
+// =========================================
+
+function limpiarNombre(nombre) {
+
+  return String(nombre || "audio")
+    .replace(
+      /[\\/:*?"<>|]/g,
+      "_"
+    )
+    .slice(0, 80);
 }
 
 // =========================================
@@ -144,7 +170,7 @@ Ejemplo:
         chat,
         {
           text:
-            "🔎 Buscando en Audius..."
+            "🔎 Buscando en Jamendo..."
         }
       );
 
@@ -161,7 +187,7 @@ Ejemplo:
             text:
 `❌ *NO ENCONTRÉ LA CANCIÓN*
 
-No encontré una pista disponible en Audius para:
+No encontré una pista disponible en Jamendo para:
 
 🎵 ${busqueda}
 
@@ -173,31 +199,44 @@ Prueba con otro nombre.`
       }
 
       const titulo =
-        track.title ||
+        track.name ||
         "Canción desconocida";
 
       const artista =
-        track.user?.name ||
+        track.artist_name ||
         "Artista desconocido";
 
       const duracion =
-        Number(track.duration || 0);
-
-      const minutos =
-        Math.floor(
-          duracion / 60
+        formatearDuracion(
+          track.duration
         );
-
-      const segundos =
-        String(
-          duracion % 60
-        ).padStart(2, "0");
 
       const imagen =
         obtenerImagen(track);
 
-      const stream =
-        obtenerStream(track);
+      const audio =
+        obtenerAudio(track);
+
+      if (!audio) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`❌ *AUDIO NO DISPONIBLE*
+
+Encontré:
+
+🎵 ${titulo}
+
+pero Jamendo no entregó una URL de audio para esta pista.
+
+🔄 Prueba con otra canción.`
+          }
+        );
+
+        return true;
+      }
 
       // =================================
       // 🖼️ RESULTADO
@@ -210,15 +249,14 @@ Prueba con otro nombre.`
 ${artista}
 
 ⏱️ Duración:
-${minutos}:${segundos}
+${duracion}
 
 🎧 Fuente:
-Audius
+Jamendo
 
-▶️ *Reproducir:*
-${stream}
+🔗 ${track.shareurl || "Jamendo"}
 
-⚡ TITANBOT`;
+⚡ *TITANBOT*`;
 
       if (imagen) {
 
@@ -244,43 +282,35 @@ ${stream}
       }
 
       // =================================
-      // 🎧 AUDIO
+      // 🎧 ENVIAR AUDIO
       // =================================
 
       await sock.sendMessage(
         chat,
         {
           audio: {
-            url: stream
+            url: audio
           },
 
           mimetype:
             "audio/mpeg",
 
           fileName:
-            `${titulo
-              .replace(
-                /[\\/:*?"<>|]/g,
-                "_"
-              )
-              .slice(
-                0,
-                80
-              )}.mp3`,
+            `${limpiarNombre(titulo)}.mp3`,
 
           ptt: false
         }
       );
 
       console.log(
-        "✅ AUDIO AUDIUS ENVIADO:",
+        "✅ AUDIO JAMENDO ENVIADO:",
         titulo
       );
 
     } catch (error) {
 
       console.log(
-        "❌ ERROR PLAY AUDIUS:"
+        "❌ ERROR PLAY JAMENDO:"
       );
 
       console.log(
@@ -293,7 +323,7 @@ ${stream}
         chat,
         {
           text:
-`❌ *ERROR CON AUDIUS*
+`❌ *ERROR CON JAMENDO*
 
 No se pudo obtener el audio.
 
@@ -343,7 +373,7 @@ Ejemplo:
         chat,
         {
           text:
-            "🔎 Buscando en Audius..."
+            "🔎 Buscando en Jamendo..."
         }
       );
 
@@ -358,7 +388,7 @@ Ejemplo:
           chat,
           {
             text:
-              "❌ No encontré esa canción en Audius."
+              "❌ No encontré esa canción en Jamendo."
           }
         );
 
@@ -366,36 +396,41 @@ Ejemplo:
       }
 
       const titulo =
-        track.title ||
+        track.name ||
         "audio";
 
       const artista =
-        track.user?.name ||
-        "Audius";
+        track.artist_name ||
+        "Jamendo";
 
-      const stream =
-        obtenerStream(track);
+      const audio =
+        obtenerAudio(track);
+
+      if (!audio) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ Esta pista no tiene audio disponible."
+          }
+        );
+
+        return true;
+      }
 
       await sock.sendMessage(
         chat,
         {
           audio: {
-            url: stream
+            url: audio
           },
 
           mimetype:
             "audio/mpeg",
 
           fileName:
-            `${titulo
-              .replace(
-                /[\\/:*?"<>|]/g,
-                "_"
-              )
-              .slice(
-                0,
-                80
-              )}.mp3`,
+            `${limpiarNombre(titulo)}.mp3`,
 
           ptt: false
         }
@@ -411,20 +446,20 @@ Ejemplo:
 
 👤 ${artista}
 
-🎧 Audius
+🎧 Jamendo
 ⚡ TITANBOT`
         }
       );
 
       console.log(
-        "✅ MP3 AUDIUS ENVIADO:",
+        "✅ MP3 JAMENDO ENVIADO:",
         titulo
       );
 
     } catch (error) {
 
       console.log(
-        "❌ ERROR MP3 AUDIUS:"
+        "❌ ERROR MP3 JAMENDO:"
       );
 
       console.log(
@@ -439,7 +474,7 @@ Ejemplo:
           text:
 `❌ *ERROR AL GENERAR AUDIO*
 
-Audius no pudo entregar esta pista.
+Jamendo no pudo entregar esta pista.
 
 🔄 Intenta nuevamente.`
         }
