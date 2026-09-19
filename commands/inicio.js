@@ -268,8 +268,6 @@ async function inicio(
 ┃ • .atacar @usuario
 ┃ • .defender
 ┃ • .fortaleza
-┃ • .recolectar
-┃ • .reclutar
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
