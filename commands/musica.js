@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 const TUNELIO_KEY = process.env.TUNELIO_KEY;
-const TUNELIO_API = tnl_AHcI-EFfY4jw6wkGcAlMmU25f8umJa3T3_DBvvR5PL8
+const TUNELIO_API ="https://tunelio.dev/api";
 
 async function musica(sock, chat, comando, args, id) {
     const query = args.join(" ").trim();
