@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 // ==============================
-// 🎵 MÚSICA - TITANBOT v4.0
+// 🎵 MÚSICA - TITANBOT v4.1
 // Sin Tunelio / sin créditos
 // ==============================
 
@@ -22,7 +22,6 @@ if (!fs.existsSync(TEMP_DIR)) {
 function limpiarTemporales() {
   try {
     const ahora = Date.now();
-
     const archivos = fs.readdirSync(TEMP_DIR);
 
     for (const archivo of archivos) {
@@ -62,11 +61,10 @@ async function enviarAudio(
     ""
   );
 
-  const baseSalida =
-    path.join(
-      TEMP_DIR,
-      idSeguro
-    );
+  const baseSalida = path.join(
+    TEMP_DIR,
+    idSeguro
+  );
 
   try {
 
@@ -112,9 +110,11 @@ async function enviarAudio(
         ffmpegLocation:
           ffmpegPath,
 
-        // Runtime Node
-        jsRuntimes: "node",
+        // Runtime JavaScript
+        jsRuntimes:
+          "node",
 
+        // Componente EJS
         remoteComponents:
           "ejs:npm",
 
@@ -282,7 +282,6 @@ async function buscarVideo(
     return null;
   }
 
-  // Evitar clips extremadamente cortos
   const videos =
     resultado.videos.filter(
       (video) => {
@@ -367,7 +366,6 @@ Ejemplo:
         }
       );
 
-      // Buscar canción
       const video =
         await buscarVideo(
           busqueda
@@ -521,7 +519,6 @@ Ejemplo:
         return true;
       }
 
-      // Generar audio
       await enviarAudio(
         sock,
         chat,
@@ -551,27 +548,17 @@ Ejemplo:
         ).toLowerCase();
 
       if (
-        textoError.includes(
-          "sign in"
-        ) ||
-        textoError.includes(
-          "bot"
-        ) ||
-        textoError.includes(
-          "captcha"
-        )
+        textoError.includes("sign in") ||
+        textoError.includes("bot") ||
+        textoError.includes("captcha")
       ) {
 
         detalle =
           "YouTube rechazó temporalmente la solicitud desde el servidor.";
 
       } else if (
-        textoError.includes(
-          "ffmpeg"
-        ) ||
-        textoError.includes(
-          "postprocessing"
-        )
+        textoError.includes("ffmpeg") ||
+        textoError.includes("postprocessing")
       ) {
 
         detalle =
