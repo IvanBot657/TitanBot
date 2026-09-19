@@ -1,9 +1,9 @@
 {
   "name": "titan-bot",
   "version": "2.5.0",
-  "license": "MIT"
   "description": "TITANBOT ⚡ - WhatsApp Bot",
   "main": "index.js",
+  "license": "MIT",
   "scripts": {
     "start": "node index.js"
   },
