@@ -14,7 +14,5 @@ module.exports = {
 
   web: "https://tu-web.com",
 
-  soporte: "573508138894",
-
-  tunelioKey: "tnl_9zaB0QcTMoyO3PFDhxSh2eKqEsWQkKNXEA9whmrupLc"
+  soporte: "573508138894"
 };
