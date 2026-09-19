@@ -1,310 +1,95 @@
-const yts = require("yt-search");
-const youtubedl = require("youtube-dl-exec");
-const ffmpegPath = require("ffmpeg-static");
-const fs = require("fs");
-const path = require("path");
+const axios = require("axios");
 
-// ==============================
-// 🎵 MÚSICA - TITANBOT v4.1
-// Sin Tunelio / sin créditos
-// ==============================
+// =========================================
+// 🎵 TITANBOT - MÚSICA CON AUDIUS
+// =========================================
 
-const TEMP_DIR = path.join(__dirname, "..", "temp_audio");
+const AUDIUS_API =
+  process.env.AUDIUS_API_URL ||
+  "https://api.audius.co/v1";
 
-if (!fs.existsSync(TEMP_DIR)) {
-  fs.mkdirSync(TEMP_DIR, { recursive: true });
-}
+const AUDIUS_API_KEY =
+  process.env.AUDIUS_API_KEY;
 
-// ==============================
-// 🧹 LIMPIAR TEMPORALES
-// ==============================
+const AUDIUS_BEARER_TOKEN =
+  process.env.AUDIUS_BEARER_TOKEN;
 
-function limpiarTemporales() {
-  try {
-    const ahora = Date.now();
-    const archivos = fs.readdirSync(TEMP_DIR);
+// =========================================
+// 🔐 HEADERS
+// =========================================
 
-    for (const archivo of archivos) {
-      const ruta = path.join(TEMP_DIR, archivo);
-      const stats = fs.statSync(ruta);
+function getHeaders() {
+  const headers = {};
 
-      if (
-        ahora - stats.mtimeMs >
-        30 * 60 * 1000
-      ) {
-        fs.unlinkSync(ruta);
-      }
-    }
-
-  } catch (error) {
-    console.log(
-      "⚠️ Error limpiando temporales:",
-      error.message
-    );
+  if (AUDIUS_API_KEY) {
+    headers["X-API-Key"] = AUDIUS_API_KEY;
   }
+
+  if (AUDIUS_BEARER_TOKEN) {
+    headers["Authorization"] =
+      `Bearer ${AUDIUS_BEARER_TOKEN}`;
+  }
+
+  return headers;
 }
 
-// ==============================
-// 🎵 ENVIAR AUDIO
-// ==============================
+// =========================================
+// 🔎 BUSCAR CANCIÓN
+// =========================================
 
-async function enviarAudio(
-  sock,
-  chat,
-  video
-) {
+async function buscarCancion(busqueda) {
 
-  const idSeguro = String(
-    video.videoId || Date.now()
-  ).replace(
-    /[^a-zA-Z0-9_-]/g,
-    ""
-  );
-
-  const baseSalida = path.join(
-    TEMP_DIR,
-    idSeguro
-  );
-
-  try {
-
-    await sock.sendMessage(
-      chat,
-      {
-        text:
-`🎵 *${video.title}*
-
-⏳ Descargando y preparando el audio...`
-      }
-    );
-
-    console.log(
-      "🎵 DESCARGANDO:",
-      video.url
-    );
-
-    // ==============================
-    // 🎧 YT-DLP
-    // ==============================
-
-    await youtubedl(
-      video.url,
-      {
-
-        noPlaylist: true,
-
-        noWarnings: true,
-
-        // Extraer audio
-        extractAudio: true,
-
-        audioFormat: "mp3",
-
-        audioQuality: "5",
-
-        // Archivo de salida
-        output:
-          `${baseSalida}.%(ext)s`,
-
-        // FFmpeg
-        ffmpegLocation:
-          ffmpegPath,
-
-        // Runtime JavaScript
-        jsRuntimes:
-          "node",
-
-        // Componente EJS
-        remoteComponents:
-          "ejs:npm",
-
-        // Evitar archivos innecesarios
-        noWriteThumbnail: true,
-
-        noWriteInfoJson: true,
-
-        noWriteDescription: true
-
+  const respuesta = await axios.get(
+    `${AUDIUS_API}/tracks/search`,
+    {
+      params: {
+        query: busqueda,
+        limit: 5,
+        sort_method: "relevant"
       },
-      {
-        timeout: 180000
-      }
-    );
 
-    // ==============================
-    // 📁 COMPROBAR MP3
-    // ==============================
+      headers: getHeaders(),
 
-    const archivoFinal =
-      `${baseSalida}.mp3`;
-
-    if (
-      !fs.existsSync(
-        archivoFinal
-      )
-    ) {
-
-      throw new Error(
-        "yt-dlp terminó pero no se encontró el MP3."
-      );
+      timeout: 30000
     }
+  );
 
-    const stats =
-      fs.statSync(
-        archivoFinal
-      );
+  const pistas =
+    respuesta.data?.data || [];
 
-    console.log(
-      `✅ MP3 generado: ${
-        (
-          stats.size /
-          1024 /
-          1024
-        ).toFixed(2)
-      } MB`
-    );
-
-    // ==============================
-    // 📤 ENVIAR AUDIO
-    // ==============================
-
-    await sock.sendMessage(
-      chat,
-      {
-        audio:
-          fs.readFileSync(
-            archivoFinal
-          ),
-
-        mimetype:
-          "audio/mpeg",
-
-        fileName:
-          `${video.title
-            .replace(
-              /[\\/:*?"<>|]/g,
-              "_"
-            )
-            .slice(
-              0,
-              80
-            )}.mp3`,
-
-        ptt: false
-      }
-    );
-
-    console.log(
-      "✅ AUDIO ENVIADO A WHATSAPP"
-    );
-
-    // ==============================
-    // ✅ MENSAJE FINAL
-    // ==============================
-
-    await sock.sendMessage(
-      chat,
-      {
-        text:
-`✅ *AUDIO ENVIADO*
-
-🎵 ${video.title}
-
-📺 ${
-  video.author?.name ||
-  "YouTube"
-}
-
-⚡ TITANBOT`
-      }
-    );
-
-  } finally {
-
-    // ==============================
-    // 🧹 BORRAR ARCHIVO
-    // ==============================
-
-    try {
-
-      const archivos =
-        fs.readdirSync(
-          TEMP_DIR
-        );
-
-      for (
-        const archivo
-        of archivos
-      ) {
-
-        if (
-          archivo.startsWith(
-            idSeguro
-          )
-        ) {
-
-          fs.unlinkSync(
-            path.join(
-              TEMP_DIR,
-              archivo
-            )
-          );
-        }
-      }
-
-    } catch (error) {
-
-      console.log(
-        "⚠️ No se pudo limpiar el audio:",
-        error.message
-      );
-    }
-  }
-}
-
-// ==============================
-// 🔎 BUSCAR VIDEO
-// ==============================
-
-async function buscarVideo(
-  busqueda
-) {
-
-  const resultado =
-    await yts(busqueda);
-
-  if (
-    !resultado ||
-    !resultado.videos ||
-    !resultado.videos.length
-  ) {
-
+  if (!pistas.length) {
     return null;
   }
 
-  const videos =
-    resultado.videos.filter(
-      (video) => {
+  return pistas[0];
+}
 
-        const segundos =
-          Number(
-            video.seconds || 0
-          );
+// =========================================
+// 🖼️ OBTENER IMAGEN
+// =========================================
 
-        return segundos >= 30;
-      }
-    );
+function obtenerImagen(track) {
 
   return (
-    videos[0] ||
-    resultado.videos[0] ||
+    track.artwork?.["480x480"] ||
+    track.artwork?.["150x150"] ||
+    track.artwork?.["1000x1000"] ||
     null
   );
 }
 
-// ==============================
+// =========================================
+// 🎵 OBTENER STREAM
+// =========================================
+
+function obtenerStream(track) {
+
+  return `${AUDIUS_API}/tracks/${track.id}/stream`;
+}
+
+// =========================================
 // 🎵 COMANDO MÚSICA
-// ==============================
+// =========================================
 
 async function musica(
   sock,
@@ -315,22 +100,19 @@ async function musica(
 ) {
 
   const cmd =
-    String(
-      comando || ""
-    ).toLowerCase();
+    String(comando || "")
+      .toLowerCase();
 
   console.log(
     "🎵 MUSICA CMD:",
     cmd
   );
 
-  // ==============================
+  // =====================================
   // ▶️ .PLAY
-  // ==============================
+  // =====================================
 
-  if (
-    cmd === "play"
-  ) {
+  if (cmd === "play") {
 
     const busqueda =
       args
@@ -362,81 +144,147 @@ Ejemplo:
         chat,
         {
           text:
-            "🔍 Buscando la canción..."
+            "🔎 Buscando en Audius..."
         }
       );
 
-      const video =
-        await buscarVideo(
+      const track =
+        await buscarCancion(
           busqueda
         );
 
-      if (!video) {
+      if (!track) {
 
         await sock.sendMessage(
           chat,
           {
             text:
-              "❌ No encontré resultados."
+`❌ *NO ENCONTRÉ LA CANCIÓN*
+
+No encontré una pista disponible en Audius para:
+
+🎵 ${busqueda}
+
+Prueba con otro nombre.`
           }
         );
 
         return true;
       }
 
-      // ==============================
-      // 🖼️ MOSTRAR RESULTADO
-      // ==============================
+      const titulo =
+        track.title ||
+        "Canción desconocida";
+
+      const artista =
+        track.user?.name ||
+        "Artista desconocido";
+
+      const duracion =
+        Number(track.duration || 0);
+
+      const minutos =
+        Math.floor(
+          duracion / 60
+        );
+
+      const segundos =
+        String(
+          duracion % 60
+        ).padStart(2, "0");
+
+      const imagen =
+        obtenerImagen(track);
+
+      const stream =
+        obtenerStream(track);
+
+      // =================================
+      // 🖼️ RESULTADO
+      // =================================
+
+      const texto =
+`🎵 *${titulo}*
+
+👤 Artista:
+${artista}
+
+⏱️ Duración:
+${minutos}:${segundos}
+
+🎧 Fuente:
+Audius
+
+▶️ *Reproducir:*
+${stream}
+
+⚡ TITANBOT`;
+
+      if (imagen) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            image: {
+              url: imagen
+            },
+
+            caption: texto
+          }
+        );
+
+      } else {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text: texto
+          }
+        );
+      }
+
+      // =================================
+      // 🎧 AUDIO
+      // =================================
 
       await sock.sendMessage(
         chat,
         {
-          image: {
-            url:
-              video.thumbnail
+          audio: {
+            url: stream
           },
 
-          caption:
-`🎵 *${video.title}*
+          mimetype:
+            "audio/mpeg",
 
-📺 Canal:
-${
-  video.author?.name ||
-  "Desconocido"
-}
+          fileName:
+            `${titulo
+              .replace(
+                /[\\/:*?"<>|]/g,
+                "_"
+              )
+              .slice(
+                0,
+                80
+              )}.mp3`,
 
-⏱️ Duración:
-${
-  video.timestamp ||
-  "Desconocida"
-}
-
-▶️ ${
-  video.url
-}
-
-⏳ Preparando audio...`
+          ptt: false
         }
       );
 
-      // ==============================
-      // 🎧 GENERAR AUDIO
-      // ==============================
-
-      await enviarAudio(
-        sock,
-        chat,
-        video
+      console.log(
+        "✅ AUDIO AUDIUS ENVIADO:",
+        titulo
       );
 
     } catch (error) {
 
       console.log(
-        "❌ ERROR PLAY:"
+        "❌ ERROR PLAY AUDIUS:"
       );
 
       console.log(
-        error?.stderr ||
+        error?.response?.data ||
         error?.message ||
         error
       );
@@ -445,27 +293,25 @@ ${
         chat,
         {
           text:
-`❌ *ERROR AL GENERAR AUDIO*
+`❌ *ERROR CON AUDIUS*
 
-No se pudo preparar el audio de esta canción.
+No se pudo obtener el audio.
 
-🔄 Intenta nuevamente.`
+🔄 Intenta nuevamente.
+
+⚡ TITANBOT`
         }
       );
     }
 
-    limpiarTemporales();
-
     return true;
   }
 
-  // ==============================
+  // =====================================
   // 🎵 .MP3
-  // ==============================
+  // =====================================
 
-  if (
-    cmd === "mp3"
-  ) {
+  if (cmd === "mp3") {
 
     const busqueda =
       args
@@ -497,73 +343,95 @@ Ejemplo:
         chat,
         {
           text:
-            "🔍 Buscando..."
+            "🔎 Buscando en Audius..."
         }
       );
 
-      const video =
-        await buscarVideo(
+      const track =
+        await buscarCancion(
           busqueda
         );
 
-      if (!video) {
+      if (!track) {
 
         await sock.sendMessage(
           chat,
           {
             text:
-              "❌ No encontré resultados."
+              "❌ No encontré esa canción en Audius."
           }
         );
 
         return true;
       }
 
-      await enviarAudio(
-        sock,
+      const titulo =
+        track.title ||
+        "audio";
+
+      const artista =
+        track.user?.name ||
+        "Audius";
+
+      const stream =
+        obtenerStream(track);
+
+      await sock.sendMessage(
         chat,
-        video
+        {
+          audio: {
+            url: stream
+          },
+
+          mimetype:
+            "audio/mpeg",
+
+          fileName:
+            `${titulo
+              .replace(
+                /[\\/:*?"<>|]/g,
+                "_"
+              )
+              .slice(
+                0,
+                80
+              )}.mp3`,
+
+          ptt: false
+        }
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+`✅ *AUDIO ENVIADO*
+
+🎵 ${titulo}
+
+👤 ${artista}
+
+🎧 Audius
+⚡ TITANBOT`
+        }
+      );
+
+      console.log(
+        "✅ MP3 AUDIUS ENVIADO:",
+        titulo
       );
 
     } catch (error) {
 
       console.log(
-        "❌ ERROR MP3:"
+        "❌ ERROR MP3 AUDIUS:"
       );
 
       console.log(
-        error?.stderr ||
+        error?.response?.data ||
         error?.message ||
         error
       );
-
-      let detalle =
-        "No se pudo preparar el audio.";
-
-      const textoError =
-        String(
-          error?.stderr ||
-          error?.message ||
-          ""
-        ).toLowerCase();
-
-      if (
-        textoError.includes("sign in") ||
-        textoError.includes("bot") ||
-        textoError.includes("captcha")
-      ) {
-
-        detalle =
-          "YouTube rechazó temporalmente la solicitud desde el servidor.";
-
-      } else if (
-        textoError.includes("ffmpeg") ||
-        textoError.includes("postprocessing")
-      ) {
-
-        detalle =
-          "No se pudo completar la conversión del audio.";
-      }
 
       await sock.sendMessage(
         chat,
@@ -571,28 +439,26 @@ Ejemplo:
           text:
 `❌ *ERROR AL GENERAR AUDIO*
 
-${detalle}
+Audius no pudo entregar esta pista.
 
 🔄 Intenta nuevamente.`
         }
       );
     }
 
-    limpiarTemporales();
-
     return true;
   }
 
-  // ==============================
+  // =====================================
   // ❌ NO ES MÚSICA
-  // ==============================
+  // =====================================
 
   return false;
 }
 
-// ==============================
+// =========================================
 // 📦 EXPORTAR
-// ==============================
+// =========================================
 
 module.exports = musica;
 
