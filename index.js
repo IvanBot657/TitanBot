@@ -18,6 +18,7 @@ const usuario = require("./commands/usuario");
 const economia = require("./commands/economia");
 const misiones = require("./commands/misiones");
 const juegos = require("./commands/juegos");
+const ruleta = require("./commands/ruleta");
 const prediccion = require("./commands/prediccion");
 const roleplay = require("./commands/roleplay");
 const batallas = require("./commands/batallas");
@@ -1129,6 +1130,25 @@ ${resultadoXP.nivel}
               }
 
             }
+            
+            // =========================================
+            // 🎰 RULETA
+            // =========================================
+
+            if (!ejecutado) {
+             const resultado = await ruleta(
+               sock,
+               chat,
+               comando,
+               args,
+               id,
+               msg
+             );
+
+             if (resultado) {
+              ejecutado = true;
+             }
+          }
             
             // =========================================
             // 🔮 PREDICCIÓN
