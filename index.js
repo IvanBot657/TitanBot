@@ -1254,7 +1254,7 @@ ${resultadoXP.nivel}
                 id
               );
 
-             if (resultado) {
+            if (resultado !== false) {
                ejecutado = true;
                }
              }
