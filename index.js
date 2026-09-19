@@ -22,6 +22,7 @@ const ruleta = require("./commands/ruleta");
 const prediccion = require("./commands/prediccion");
 const roleplay = require("./commands/roleplay");
 const batallas = require("./commands/batallas");
+const ejercito = require("./commands/ejercito");
 const diversion = require("./commands/diversion");
 const personalidad = require("./commands/personalidad");
 const anime = require("./commands/anime");
