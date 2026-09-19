@@ -20,6 +20,7 @@ const misiones = require("./commands/misiones");
 const juegos = require("./commands/juegos");
 const prediccion = require("./commands/prediccion");
 const roleplay = require("./commands/roleplay");
+const batallas = require("./commands/batallas");
 const diversion = require("./commands/diversion");
 const personalidad = require("./commands/personalidad");
 const anime = require("./commands/anime");
@@ -1189,7 +1190,25 @@ ${resultadoXP.nivel}
        ejecutado = true;
       }
  
-    }  
+    } 
+        // =========================================
+        // ⚔️ BATALLAS
+        // =========================================
+
+        if (!ejecutado) {
+         const resultado = await batallas(
+           sock,
+           chat,
+           comando,
+           args,
+           id,
+           msg
+        );
+
+        if (resultado) {
+         ejecutado = true;
+        }
+     }
 
             // =========================================
             // DIVERSIÓN
