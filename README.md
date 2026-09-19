@@ -115,8 +115,40 @@ TitanBot recibirá una actualización cada 2 meses, incorporando nuevos comandos
 
 El objetivo de TitanBot es reunir diferentes sistemas en un solo bot para crear una experiencia completa dentro de los grupos de WhatsApp, combinando administración, entretenimiento, juegos, colecciones, progresión y sistemas interactivos.
 
-⚡ TITANBOT
+🌟 SISTEMAS ESPECIALES
 
-Un solo bot.
-Múltiples sistemas.
-Una experiencia completa para tu grupo.
+🎌 ANIME — 2 SISTEMAS DIFERENTES
+
+TitanBot cuenta con dos sistemas de Anime con dinámicas diferentes:
+
+🎌 Sistema Anime 1
+
+- 🖼️ Envía una imagen del personaje.
+- 👤 Permite interactuar con personajes.
+- 🎯 Incluye funciones de personajes y colección.
+
+🎌 Sistema Anime 2
+
+- 🖼️ También utiliza imágenes.
+- 🎲 Cuenta con una dinámica diferente y un poco peculiar.
+- 🎌 Está pensado para hacer más entretenida la interacción con personajes de anime.
+
+🃏 CARTAS — 2 SISTEMAS DIFERENTES
+
+TitanBot cuenta con dos sistemas de Cartas.
+
+🃏 Sistema de Cartas 1
+
+- 🔢 Cartas numeradas.
+- ⭐ Diferentes rarezas.
+- 👤 Nombre y características.
+- ⚔️ Estadísticas y habilidades.
+- 📦 Sistema de colección.
+- 🖼️ Las imágenes de las cartas todavía están en desarrollo y actualmente no se muestran.
+
+🃏 Sistema de Cartas 2
+
+- 🎲 Cuenta con una dinámica diferente para obtener y coleccionar cartas.
+- 🏆 Está pensado para ampliar el sistema de colección.
+
+🚧 Las imágenes de las cartas serán incorporadas progresivamente en futuras actualizaciones.
