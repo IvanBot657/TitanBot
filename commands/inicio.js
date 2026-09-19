@@ -142,17 +142,15 @@ async function inicio(
 ┃ • .husbando
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
-╭━━━〔 🎵 MÚSICA 〕━━━╮
-┃ • .play
-┃ • .lyrics
-┃ • .playlist
-┃ • .cancionrandom
-┃ • .artista
-┃ • .album
-┃ • .topmusic
-┃ • .genero
-┃ • .musica
-┃ • .recomendacion
+╭━━━ ⚔️ BATALLAS ━━━╮
+┃ • .batalla @usuario
+┃ • .aceptar
+┃ • .rechazar
+┃ • .atacar
+┃ • .defender
+┃ • .habilidad
+┃ • .batallainfo
+┃ • .rendirse
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━〔 👥 GRUPOS 〕━━━╮
