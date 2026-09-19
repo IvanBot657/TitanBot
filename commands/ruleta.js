@@ -1,5 +1,6 @@
 // =========================================
-// 🎡 TITANBOT - RULETA AVANZADA
+// 🎰 TITANBOT - RULETA
+// Máximo 4 participantes aleatorios
 // =========================================
 
 const resultados = [
@@ -67,7 +68,7 @@ const resultados = [
 ];
 
 // =========================================
-// ⏳ ESPERA
+// ⏳ ESPERAR
 // =========================================
 
 function esperar(ms) {
@@ -75,7 +76,7 @@ function esperar(ms) {
 }
 
 // =========================================
-// 🎲 MEZCLAR
+// 🔀 MEZCLAR LISTA
 // =========================================
 
 function mezclar(lista) {
@@ -91,64 +92,79 @@ function mezclar(lista) {
 }
 
 // =========================================
-// 🎡 ANIMACIÓN
+// 🎡 ANIMACIÓN DE RULETA
 // =========================================
 
 async function animacionRuleta(sock, chat, participantes) {
 
-  const cuadros = [
-    "⬜⬜⬜⬜⬜\n⬜🔵⬜⬜⬜\n⬜⬜🟣⬜⬜\n⬜⬜⬜🟢⬜",
-
-    "⬜🔵⬜⬜⬜\n⬜⬜🟣⬜⬜\n⬜⬜⬜🟢⬜\n⬜⬜⬜⬜🔵",
-
-    "⬜⬜🟣⬜⬜\n⬜⬜⬜🟢⬜\n⬜⬜⬜⬜🔵\n🟣⬜⬜⬜⬜",
-
-    "⬜⬜⬜🟢⬜\n⬜⬜⬜⬜🔵\n🟣⬜⬜⬜⬜\n⬜🟢⬜⬜⬜"
-  ];
-
   await sock.sendMessage(chat, {
     text:
-`🎡 RULETA TITANBOT
-
-🎯 Seleccionando participantes...
-
-👥 ${participantes.length} participantes
-🎲 Preparando resultados...`
+      `🎡 *RULETA TITANBOT* 🎡\n\n` +
+      `👥 Participantes seleccionados: *${participantes.length}*\n\n` +
+      `🎲 La ruleta está comenzando...`
   });
 
-  await esperar(1000);
+  await esperar(1200);
 
-  for (const cuadro of cuadros) {
+  const frames = [
+    "⬜⬜⬜⬜⬜\n⬜🔵⬜⬜⬜",
+    "⬜⬜⬜⬜⬜\n⬜⬜🟣⬜⬜",
+    "⬜⬜⬜⬜⬜\n⬜⬜⬜🟢⬜",
+    "⬜⬜⬜⬜⬜\n⬜⬜⬜⬜🔴",
+    "⬜⬜⬜⬜⬜\n⬜⬜⬜🟡⬜",
+    "⬜⬜⬜⬜⬜\n⬜⬜🟠⬜⬜"
+  ];
+
+  for (const frame of frames) {
 
     await sock.sendMessage(chat, {
       text:
-`🎰 GIRANDO...
-
-${cuadro}`
+        `🎡 *RULETA GIRANDO...*\n\n` +
+        frame
     });
 
-    await esperar(450);
+    await esperar(500);
   }
+
+  await sock.sendMessage(chat, {
+    text:
+      `🔥 *¡RULETA LISTA!*\n\n` +
+      `🎯 Se seleccionarán los participantes uno por uno...`
+  });
+
+  await esperar(1000);
 }
 
 // =========================================
-// 🎡 EJECUTAR RULETA
+// 🎰 FUNCIÓN PRINCIPAL
 // =========================================
 
-async function ruleta(sock, chat, comando, args, id, msg) {
+async function ruleta(
+  sock,
+  chat,
+  comando,
+  args,
+  id,
+  msg
+) {
+
+  // =========================================
+  // COMANDO
+  // =========================================
 
   if (comando !== "ruleta") {
     return false;
   }
 
   // =========================================
-  // 👥 SOLO GRUPOS
+  // SOLO GRUPOS
   // =========================================
 
   if (!chat.endsWith("@g.us")) {
 
     await sock.sendMessage(chat, {
-      text: "❌ La ruleta solo funciona en grupos."
+      text:
+        "❌ *Este comando solo funciona en grupos.*"
     });
 
     return true;
@@ -157,7 +173,7 @@ async function ruleta(sock, chat, comando, args, id, msg) {
   try {
 
     // =========================================
-    // 👥 INFORMACIÓN DEL GRUPO
+    // OBTENER INFORMACIÓN DEL GRUPO
     // =========================================
 
     const metadata = await sock.groupMetadata(chat);
@@ -165,86 +181,82 @@ async function ruleta(sock, chat, comando, args, id, msg) {
     let participantes = metadata.participants || [];
 
     // =========================================
-    // 🤖 IDENTIFICAR BOT
+    // OBTENER ID DEL BOT
     // =========================================
 
-    const botId = sock.user?.id || "";
-
-    const botNumero = botId
-      .split(":")[0]
-      .split("@")[0];
+    const botId = sock.user?.id
+      ? sock.user.id.split(":")[0] + "@s.whatsapp.net"
+      : null;
 
     // =========================================
-    // 🚫 EXCLUIR BOT
+    // QUITAR AL BOT
     // =========================================
 
-    participantes = participantes.filter(p => {
+    participantes = participantes.filter(
+      participante => {
 
-      const numero = p.id
-        ?.split(":")[0]
-        ?.split("@")[0];
+        const participanteId =
+          participante.id?.split(":")[0] +
+          "@s.whatsapp.net";
 
-      return numero && numero !== botNumero;
-    });
+        return participanteId !== botId;
+      }
+    );
 
     // =========================================
-    // 🚫 SIN PARTICIPANTES
+    // COMPROBAR PARTICIPANTES
     // =========================================
 
     if (participantes.length === 0) {
 
       await sock.sendMessage(chat, {
         text:
-`❌ No hay participantes disponibles.
-
-🎡 La ruleta necesita al menos un participante.`
+          "❌ No hay participantes disponibles para la ruleta."
       });
 
       return true;
     }
 
     // =========================================
-    // 👥 LISTA DE PARTICIPANTES
+    // 🎲 MEZCLAR PARTICIPANTES
     // =========================================
 
-    let lista = "";
+    participantes = mezclar(participantes);
 
-    for (let i = 0; i < participantes.length; i++) {
+    // =========================================
+    // ⭐ MÁXIMO 4 PARTICIPANTES
+    // =========================================
 
-      const numero = participantes[i].id
-        .split(":")[0]
-        .split("@")[0];
+    participantes = participantes.slice(0, 4);
 
-      lista +=
-        `${i + 1}. 👤 @${numero}\n`;
-    }
+    // =========================================
+    // MOSTRAR PARTICIPANTES
+    // =========================================
+
+    const menciones = participantes.map(
+      participante => `@${participante.id.split("@")[0]}`
+    );
 
     await sock.sendMessage(chat, {
       text:
-`╭━━━ 🎡 RULETA TITANBOT ━━━╮
-┃
-┃ 👥 PARTICIPANTES
-┃
-${lista}
-┃ 🎯 ¡Todos están dentro!
-┃
-╰━━━━━━━━━━━━━━━━━━━━╯`,
-      mentions: participantes.map(p => p.id)
+        `🎰 *RULETA TITANBOT* 🎰\n\n` +
+        `🎲 Se han seleccionado *${participantes.length} participantes* al azar.\n\n` +
+        `👥 *Participantes:*\n\n` +
+        menciones.map(
+          (nombre, index) =>
+            `${index + 1}. ${nombre}`
+        ).join("\n") +
+        `\n\n🎯 ¡La ruleta comenzará ahora!`,
+      mentions: participantes.map(
+        participante => participante.id
+      )
     });
 
-    // =========================================
-    // 🎲 PREPARAR RESULTADOS
-    // =========================================
-
-    let resultadosDisponibles = mezclar(resultados);
-
-    const resultadosFinales = [];
+    await esperar(1500);
 
     // =========================================
-    // 🎡 ANIMACIÓN GENERAL
+    // 🎡 ANIMACIÓN
     // =========================================
-
-    await esperar(1200);
 
     await animacionRuleta(
       sock,
@@ -253,89 +265,111 @@ ${lista}
     );
 
     // =========================================
+    // 🎲 PREPARAR RESULTADOS
+    // =========================================
+
+    let resultadosDisponibles = mezclar(
+      resultados
+    );
+
+    const resultadosFinales = [];
+
+    // =========================================
     // 🎯 SELECCIONAR CADA PARTICIPANTE
     // =========================================
 
-    for (let i = 0; i < participantes.length; i++) {
+    for (
+      let i = 0;
+      i < participantes.length;
+      i++
+    ) {
 
       const participante = participantes[i];
 
-      // Si se acabaran los resultados,
-      // volvemos a mezclar la lista.
+      const numero =
+        `@${participante.id.split("@")[0]}`;
+
+      // -----------------------------------------
+      // ANUNCIO
+      // -----------------------------------------
+
+      await sock.sendMessage(chat, {
+        text:
+          `🎯 *SELECCIONANDO...*\n\n` +
+          `👤 ${numero}\n\n` +
+          `🎡 La ruleta está girando...`,
+        mentions: [participante.id]
+      });
+
+      await esperar(1200);
+
+      // -----------------------------------------
+      // TOMAR RESULTADO
+      // -----------------------------------------
+
       if (resultadosDisponibles.length === 0) {
-        resultadosDisponibles = mezclar(resultados);
+        resultadosDisponibles = mezclar(
+          resultados
+        );
       }
 
       const resultado =
-        resultadosDisponibles.pop();
-
-      const numero = participante.id
-        .split(":")[0]
-        .split("@")[0];
-
-      // =========================================
-      // 🎯 SELECCIÓN
-      // =========================================
-
-      await sock.sendMessage(chat, {
-        text:
-`🎯 ¡SELECCIONANDO!
-
-🔄 La ruleta está buscando...
-
-👤 @${numero}`,
-        mentions: [participante.id]
-      });
-
-      await esperar(800);
-
-      // =========================================
-      // 🎉 RESULTADO
-      // =========================================
-
-      await sock.sendMessage(chat, {
-        text:
-`🎉 ¡SE DETUVO!
-
-👤 @${numero}
-
-${resultado[0]} ¡TE TOCÓ: ${resultado[1]}!`,
-        mentions: [participante.id]
-      });
+        resultadosDisponibles.shift();
 
       resultadosFinales.push({
-        id: participante.id,
-        numero,
+        participante,
         emoji: resultado[0],
-        nombre: resultado[1]
+        resultado: resultado[1]
       });
 
-      await esperar(900);
+      // -----------------------------------------
+      // RESULTADO
+      // -----------------------------------------
+
+      await sock.sendMessage(chat, {
+        text:
+          `🎉 *¡SE DETUVO!*\n\n` +
+          `👤 ${numero}\n\n` +
+          `${resultado[0]} *¡TE TOCÓ: ${resultado[1]}!*`,
+        mentions: [participante.id]
+      });
+
+      await esperar(1200);
     }
 
     // =========================================
-    // 🏆 RESUMEN FINAL
+    // 🏆 RESULTADO FINAL
     // =========================================
 
-    let resumen = "";
+    let resumen =
+      `╭━━━ 🎉 RESULTADOS ━━━╮\n`;
 
-    for (const resultado of resultadosFinales) {
+    for (
+      let i = 0;
+      i < resultadosFinales.length;
+      i++
+    ) {
+
+      const dato =
+        resultadosFinales[i];
+
+      const numero =
+        `@${dato.participante.id.split("@")[0]}`;
 
       resumen +=
-        `👤 @${resultado.numero} → ${resultado.emoji} ${resultado.nombre}\n`;
+        `┃ ${i + 1}. ${numero}\n` +
+        `┃    ${dato.emoji} ${dato.resultado}\n`;
     }
 
-    await sock.sendMessage(chat, {
-      text:
-`╭━━━ 🎉 RESULTADOS ━━━╮
-┃
-${resumen}
-┃
-╰━━━━━━━━━━━━━━━━━━━━╯
+    resumen +=
+      `╰━━━━━━━━━━━━━━━━━━━━╯\n\n` +
+      `🔥 *¡RULETA TERMINADA!* 🔥`;
 
-🔥 ¡RULETA TERMINADA!
-🎡 Gracias por participar.`,
-      mentions: resultadosFinales.map(r => r.id)
+    await sock.sendMessage(chat, {
+      text: resumen,
+      mentions: resultadosFinales.map(
+        dato => dato.participante.id
+      )
     });
 
     return true;
@@ -343,15 +377,13 @@ ${resumen}
   } catch (error) {
 
     console.error(
-      "❌ Error en la ruleta:",
+      "❌ Error en ruleta:",
       error
     );
 
     await sock.sendMessage(chat, {
       text:
-`❌ Ocurrió un error al ejecutar la ruleta.
-
-🔄 Inténtalo nuevamente.`
+        "❌ Ocurrió un error al ejecutar la ruleta."
     });
 
     return true;
