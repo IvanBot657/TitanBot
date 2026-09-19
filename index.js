@@ -34,7 +34,6 @@ const rankingpremium = require("./commands/rankingpremium");
 const racha = require("./commands/racha");
 const titulos = require("./commands/titulos");
 const cartas = require("./commands/cartas");
-const reclutar = require("./commands/reclutar");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
@@ -1451,12 +1450,12 @@ ${resultadoXP.nivel}
        }
             
          // =========================================
-         // ⚔️ BATALLAS
+         // 🏆 EJÉRCITO DORADO
          // =========================================
 
          if (!ejecutado) {
 
-          const resultado = await batallas(
+          const resultado = await ejercito(
             sock,
             chat,
             comando,
@@ -1467,7 +1466,7 @@ ${resultadoXP.nivel}
 
           if (resultado) {
            ejecutado = true;
-         }
+          }
        }
             
             // =========================================
