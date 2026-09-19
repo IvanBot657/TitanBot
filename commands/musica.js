@@ -27,10 +27,8 @@ function limpiarTemporales() {
 
     for (const archivo of archivos) {
       const ruta = path.join(TEMP_DIR, archivo);
-
       const stats = fs.statSync(ruta);
 
-      // Eliminar archivos de más de 30 minutos
       if (
         ahora - stats.mtimeMs >
         30 * 60 * 1000
@@ -98,8 +96,6 @@ async function enviarAudio(
         noPlaylist: true,
 
         noWarnings: true,
-
-        noCallHome: true,
 
         // Extraer audio
         extractAudio: true,
