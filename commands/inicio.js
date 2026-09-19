@@ -262,6 +262,16 @@ async function inicio(
 ┃
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🏆 EJÉRCITO DORADO 〕━━━╮
+┃ • .ejercito
+┃ • .tarjetaejercito
+┃ • .atacar @usuario
+┃ • .defender
+┃ • .fortaleza
+┃ • .recolectar
+┃ • .reclutar
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
 ┃ • .promote @usuario
 ┃ • .demote @usuario
