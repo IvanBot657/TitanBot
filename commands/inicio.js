@@ -92,6 +92,10 @@ async function inicio(
 ┃ • .troll
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━ 🎰 RULETA ━━━╮
+┃ • .ruleta
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ━━〔 🎭 PERSONALIDAD 〕━━━╮
 ┃ • .personalidad
 ┃ • .aventurero
