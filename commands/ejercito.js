@@ -1597,34 +1597,20 @@ ${unidad.emoji} ${unidad.nombre}s:
       usuarioId
     ]
   });
-
-  return true;
-}
-
-return false;
+  
+ return true;
+  
+}return false;
 
 } catch (error) {
-
-  console.error(
-    "❌ Error en Ejército Dorado:",
-    error
-  );
+  console.error("❌ Error en Ejército Dorado:", error);
 
   await sock.sendMessage(chat, {
-
-    text:
-      "❌ Ocurrió un error en el sistema de Ejército Dorado."
+    text: "❌ Ocurrió un error en el sistema de Ejército Dorado."
   });
 
   return true;
-  }
-
 }
-
-// =========================================
-// 📤 EXPORTAR
-// =========================================
-
 }
 
 module.exports = ejercito;
