@@ -23,7 +23,6 @@ const roleplay = require("./commands/roleplay");
 const diversion = require("./commands/diversion");
 const personalidad = require("./commands/personalidad");
 const anime = require("./commands/anime");
-const musica = require("./commands/musica");
 const grupos = require("./commands/grupos");
 const eventos = require("./commands/eventos");
 const sticker = require("./commands/sticker");
@@ -1241,26 +1240,6 @@ ${resultadoXP.nivel}
 
             }
 
-            // =========================================
-            // MÚSICA 
-            // =========================================
-
-            if (!ejecutado) {
-              const resultado = await musica(
-                sock,
-                chat,
-                comando,
-                args,
-                id
-              );
-
-             if (resultado) {
-               ejecutado = true;
-               }
-             }
-            
-             module.exports = musica;
-             module.exports.musica = musica;
             
             // =========================================
             // GRUPOS
