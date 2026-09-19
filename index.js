@@ -33,6 +33,7 @@ const rankingpremium = require("./commands/rankingpremium");
 const racha = require("./commands/racha");
 const titulos = require("./commands/titulos");
 const cartas = require("./commands/cartas");
+const reclutar = require("./commands/reclutar");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
@@ -1446,6 +1447,26 @@ ${resultadoXP.nivel}
            ejecutado = true;
          }
 
+       }
+            
+         // =========================================
+         // ⚔️ BATALLAS
+         // =========================================
+
+         if (!ejecutado) {
+
+          const resultado = await batallas(
+            sock,
+            chat,
+            comando,
+            args,
+            id,
+            msg
+          );
+
+          if (resultado) {
+           ejecutado = true;
+         }
        }
             
             // =========================================
