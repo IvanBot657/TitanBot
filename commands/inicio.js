@@ -21,11 +21,10 @@ async function inicio(
   // ==============================
   if (cmd === "menu" || cmd === "menú") {
     await sock.sendMessage(chat, {
-      text:
-`╔══════════════════════════╗
-        🤖 *${config.nombre}*
-          ⚡ v3.1.0
-╚══════════════════════════╝
+      image: fs.readFileSync('./titanbot.png'),
+  caption: `
+🤖 *TITANBOT*
+⚡ *Versión:* 3.1.0
 
 👋 *MENÚ PRINCIPAL*
 
