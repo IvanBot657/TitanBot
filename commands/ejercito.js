@@ -1,19 +1,5 @@
 // =========================================
-// 👑 TITANBOT - EJÉRCITO DORADO PREMIUM
-// ⚔️ SISTEMA COMPLETO DE EJÉRCITO
-// =========================================
-//
-// COMANDOS:
-//
-// .ejercito
-// .tarjetaejercito
-// .atacar @usuario
-// .defender
-// .fortaleza
-// .fortaleza mejorar
-// .recolectar
-// .reclutar
-//
+// 🏆 TITANBOT - EJÉRCITO DORADO
 // =========================================
 
 const fs = require("fs");
@@ -40,18 +26,12 @@ if (!fs.existsSync(DATA_FILE)) {
 
 function cargarEjercitos() {
   try {
-    const contenido =
-      fs.readFileSync(DATA_FILE, "utf8");
-
-    if (!contenido.trim()) {
-      return {};
-    }
-
-    return JSON.parse(contenido);
-
+    return JSON.parse(
+      fs.readFileSync(DATA_FILE, "utf8")
+    );
   } catch (error) {
     console.error(
-      "❌ Error cargando ejércitos:",
+      "❌ Error cargando ejercitos.json:",
       error
     );
 
@@ -74,8 +54,9 @@ function guardarEjercitos(datos) {
     return true;
 
   } catch (error) {
+
     console.error(
-      "❌ Error guardando ejércitos:",
+      "❌ Error guardando ejercitos.json:",
       error
     );
 
@@ -84,59 +65,33 @@ function guardarEjercitos(datos) {
 }
 
 // =========================================
-// 👤 OBTENER USUARIO
-// =========================================
-
-function obtenerUsuario(msg, id) {
-  return (
-    msg?.key?.participant ||
-    msg?.participant ||
-    id ||
-    null
-  );
-}
-
-// =========================================
-// 🏷️ MENCIÓN
-// =========================================
-
-function mencionar(id) {
-  if (!id) {
-    return "@usuario";
-  }
-
-  return `@${id
-    .split("@")[0]
-    .split(":")[0]}`;
-}
-
-// =========================================
-// 💰 FORMATO DE NÚMEROS
+// 🔢 FORMATO DE NÚMEROS
 // =========================================
 
 function numero(valor) {
-  return Number(
-    valor || 0
-  ).toLocaleString("es-CO");
+  return Number(valor || 0)
+    .toLocaleString("es-CO");
 }
 
 // =========================================
-// 👑 CREAR EJÉRCITO
+// 👤 MENCIONAR
 // =========================================
 
-function crearEjercito(
-  datos,
-  id,
-  nombre
-) {
+function mencionar(jid) {
+  return `@${String(jid).split("@")[0]}`;
+}
 
-  if (!datos[id]) {
+// =========================================
+// 👑 OBTENER / CREAR COMANDANTE
+// =========================================
 
-    datos[id] = {
+function obtenerUsuario(datos, jid) {
 
-      nombre:
-        nombre ||
-        "Comandante",
+  if (!datos[jid]) {
+
+    datos[jid] = {
+
+      nombre: "Comandante",
 
       nivel: 1,
 
@@ -153,6 +108,7 @@ function crearEjercito(
         guardianes: 2,
 
         caballeria: 0
+
       },
 
       generales: 0,
@@ -164,6 +120,7 @@ function crearEjercito(
         nivel: 1,
 
         defensa: 100
+
       },
 
       victorias: 0,
@@ -176,261 +133,124 @@ function crearEjercito(
 
       proteccionHasta: 0,
 
-      ultimoRecolecta: 0,
-
       ultimaActividad: null
+
     };
   }
 
-  const ejercito =
-    datos[id];
+  const jugador = datos[jid];
 
-  // =========================================
-  // 🔧 ASEGURAR ESTRUCTURA
-  // =========================================
+  // -----------------------------------------
+  // Reparar datos antiguos si existen
+  // -----------------------------------------
 
-  if (!ejercito.unidades) {
+  jugador.nombre ||= "Comandante";
 
-    ejercito.unidades = {
-      soldados: 0,
-      arqueros: 0,
-      guardianes: 0,
-      caballeria: 0
-    };
-  }
+  jugador.nivel ||= 1;
 
-  ejercito.unidades.soldados =
-    Number(
-      ejercito.unidades.soldados || 0
-    );
+  jugador.xp ||= 0;
 
-  ejercito.unidades.arqueros =
-    Number(
-      ejercito.unidades.arqueros || 0
-    );
+  jugador.oro ||= 0;
 
-  ejercito.unidades.guardianes =
-    Number(
-      ejercito.unidades.guardianes || 0
-    );
+  jugador.generales ||= 0;
 
-  ejercito.unidades.caballeria =
-    Number(
-      ejercito.unidades.caballeria || 0
-    );
+  jugador.territorios ||= 0;
 
-  if (!ejercito.fortaleza) {
+  jugador.victorias ||= 0;
 
-    ejercito.fortaleza = {
-      nivel: 1,
-      defensa: 100
-    };
-  }
+  jugador.derrotas ||= 0;
 
-  ejercito.fortaleza.nivel =
-    Number(
-      ejercito.fortaleza.nivel || 1
-    );
+  jugador.racha ||= 0;
 
-  ejercito.fortaleza.defensa =
-    Number(
-      ejercito.fortaleza.defensa || 100
-    );
+  jugador.protegido ||= false;
 
-  ejercito.nombre =
-    ejercito.nombre ||
-    nombre ||
-    "Comandante";
+  jugador.proteccionHasta ||= 0;
 
-  ejercito.nivel =
-    Number(
-      ejercito.nivel || 1
-    );
+  jugador.ultimaActividad ||= null;
 
-  ejercito.xp =
-    Number(
-      ejercito.xp || 0
-    );
+  jugador.unidades ||= {};
 
-  ejercito.oro =
-    Number(
-      ejercito.oro || 0
-    );
+  jugador.unidades.soldados ||= 0;
 
-  ejercito.generales =
-    Number(
-      ejercito.generales || 0
-    );
+  jugador.unidades.arqueros ||= 0;
 
-  ejercito.territorios =
-    Number(
-      ejercito.territorios || 0
-    );
+  jugador.unidades.guardianes ||= 0;
 
-  ejercito.victorias =
-    Number(
-      ejercito.victorias || 0
-    );
+  jugador.unidades.caballeria ||= 0;
 
-  ejercito.derrotas =
-    Number(
-      ejercito.derrotas || 0
-    );
+  jugador.fortaleza ||= {};
 
-  ejercito.racha =
-    Number(
-      ejercito.racha || 0
-    );
+  jugador.fortaleza.nivel ||= 1;
 
-  ejercito.protegido =
-    ejercito.protegido === true;
+  jugador.fortaleza.defensa ||= 100;
 
-  ejercito.proteccionHasta =
-    Number(
-      ejercito.proteccionHasta || 0
-    );
-
-  ejercito.ultimoRecolecta =
-    Number(
-      ejercito.ultimoRecolecta || 0
-    );
-
-  return ejercito;
+  return jugador;
 }
 
 // =========================================
 // ⚔️ CALCULAR PODER
 // =========================================
 
-function calcularPoder(ejercito) {
+function calcularPoder(jugador) {
 
   const soldados =
-    ejercito.unidades.soldados * 2;
+    jugador.unidades?.soldados || 0;
 
   const arqueros =
-    ejercito.unidades.arqueros * 4;
+    jugador.unidades?.arqueros || 0;
 
   const guardianes =
-    ejercito.unidades.guardianes * 8;
+    jugador.unidades?.guardianes || 0;
 
   const caballeria =
-    ejercito.unidades.caballeria * 12;
+    jugador.unidades?.caballeria || 0;
 
   const generales =
-    ejercito.generales * 50;
+    jugador.generales || 0;
 
-  const fortaleza =
-    ejercito.fortaleza.nivel * 100;
+  const nivelFortaleza =
+    jugador.fortaleza?.nivel || 1;
 
   const nivel =
-    ejercito.nivel * 25;
+    jugador.nivel || 1;
 
   return (
-    soldados +
-    arqueros +
-    guardianes +
-    caballeria +
-    generales +
-    fortaleza +
-    nivel
+
+    soldados * 2 +
+
+    arqueros * 4 +
+
+    guardianes * 8 +
+
+    caballeria * 12 +
+
+    generales * 50 +
+
+    nivelFortaleza * 100 +
+
+    nivel * 25
+
   );
 }
 
 // =========================================
-// 🪖 TOTAL DE UNIDADES
+// ⭐ SUBIR NIVEL
 // =========================================
 
-function totalUnidades(ejercito) {
+function subirNivel(jugador) {
 
-  return (
-    ejercito.unidades.soldados +
-    ejercito.unidades.arqueros +
-    ejercito.unidades.guardianes +
-    ejercito.unidades.caballeria
-  );
-}
-
-// =========================================
-// 🛡️ ACTUALIZAR PROTECCIÓN
-// =========================================
-
-function actualizarProteccion(ejercito) {
-
-  if (
-    ejercito.protegido &&
-    ejercito.proteccionHasta &&
-    Date.now() >=
-      ejercito.proteccionHasta
+  while (
+    jugador.xp >=
+    jugador.nivel * 500
   ) {
 
-    ejercito.protegido = false;
+    jugador.xp -=
+      jugador.nivel * 500;
 
-    ejercito.proteccionHasta = 0;
+    jugador.nivel++;
 
-    return true;
   }
-
-  return false;
 }
-
-// =========================================
-// ⚔️ TIPOS DE UNIDADES
-// =========================================
-
-const unidades = {
-
-  "1": {
-
-    nombre: "Soldado",
-
-    emoji: "🗡️",
-
-    propiedad: "soldados",
-
-    precio: 50,
-
-    poder: 2
-  },
-
-  "2": {
-
-    nombre: "Arquero",
-
-    emoji: "🏹",
-
-    propiedad: "arqueros",
-
-    precio: 100,
-
-    poder: 4
-  },
-
-  "3": {
-
-    nombre: "Guardián",
-
-    emoji: "🛡️",
-
-    propiedad: "guardianes",
-
-    precio: 250,
-
-    poder: 8
-  },
-
-  "4": {
-
-    nombre: "Caballería",
-
-    emoji: "🐎",
-
-    propiedad: "caballeria",
-
-    precio: 400,
-
-    poder: 12
-  }
-};
 
 // =========================================
 // 🏆 FUNCIÓN PRINCIPAL
@@ -455,11 +275,8 @@ async function ejercito(
 
     "defender",
 
-    "fortaleza",
+    "fortaleza"
 
-    "recolectar",
-
-    "reclutar"
   ];
 
   if (
@@ -467,73 +284,47 @@ async function ejercito(
   ) {
 
     return false;
-  }
 
-  // =========================================
-  // 👥 SOLO GRUPOS
-  // =========================================
-
-  if (
-    !chat.endsWith("@g.us")
-  ) {
-
-    await sock.sendMessage(chat, {
-
-      text:
-        "❌ *Ejército Dorado* solo funciona en grupos."
-    });
-
-    return true;
   }
 
   try {
 
     // =========================================
-    // 👤 USUARIO
-    // =========================================
-
-    const usuarioId =
-      obtenerUsuario(
-        msg,
-        id
-      );
-
-    if (!usuarioId) {
-
-      await sock.sendMessage(chat, {
-
-        text:
-          "❌ No pude identificar al comandante."
-      });
-
-      return true;
-    }
-
-    // =========================================
-    // 💾 DATOS
+    // 📂 CARGAR DATOS
     // =========================================
 
     const datos =
       cargarEjercitos();
 
-    const nombre =
-      msg?.pushName ||
-      "Comandante";
+    // =========================================
+    // 👤 IDENTIFICAR USUARIO
+    // =========================================
+
+    const usuarioId =
+
+      id ||
+
+      msg?.key?.participant ||
+
+      msg?.participant ||
+
+      msg?.key?.remoteJid;
+
+    if (!usuarioId) {
+
+      return false;
+
+    }
 
     // =========================================
-    // 👑 COMANDANTE
+    // 👑 OBTENER COMANDANTE
     // =========================================
 
     const jugador =
-      crearEjercito(
+      obtenerUsuario(
         datos,
-        usuarioId,
-        nombre
+        usuarioId
       );
-
-    actualizarProteccion(
-      jugador
-    );
 
     // =========================================
     // 🏆 .EJERCITO
@@ -544,91 +335,98 @@ async function ejercito(
     ) {
 
       const poder =
-        calcularPoder(
-          jugador
-        );
+        calcularPoder(jugador);
 
-      const total =
-        totalUnidades(
-          jugador
-        );
+      await sock.sendMessage(
+        chat,
+        {
 
-      guardarEjercitos(
-        datos
-      );
-
-      await sock.sendMessage(chat, {
-
-        text:
+          text:
 `╔════════════════════════════╗
-      🏆 *EJÉRCITO DORADO*
+       🏆 *EJÉRCITO DORADO*
 ╚════════════════════════════╝
 
 👑 *COMANDANTE*
-${jugador.nombre}
 
-━━━━━━━━━━━━━━━━━━━━
+${mencionar(usuarioId)}
 
-⭐ Nivel: *${jugador.nivel}*
-✨ XP: *${numero(jugador.xp)}*
+⭐ Nivel:
+*${numero(jugador.nivel)}*
 
-⚔️ Poder militar:
-*${numero(poder)}*
-
-🪖 Unidades:
-*${numero(total)}*
-
-━━━━━━━━━━━━━━━━━━━━
-
-🗡️ Soldados: ${numero(jugador.unidades.soldados)}
-🏹 Arqueros: ${numero(jugador.unidades.arqueros)}
-🛡️ Guardianes: ${numero(jugador.unidades.guardianes)}
-🐎 Caballería: ${numero(jugador.unidades.caballeria)}
-
-━━━━━━━━━━━━━━━━━━━━
+✨ XP:
+*${numero(jugador.xp)}*
 
 💰 Oro:
-*${numero(jugador.oro)}*
+*${numero(jugador.oro)} 🪙*
 
-🏰 Fortaleza:
-*Nivel ${jugador.fortaleza.nivel}*
+━━━━━━━━━━━━━━━━━━━━
 
-🛡️ Defensa:
-*${numero(jugador.fortaleza.defensa)}*
+⚔️ *PODER MILITAR*
+
+🔥 Poder total:
+*${numero(poder)}*
+
+━━━━━━━━━━━━━━━━━━━━
+
+🪖 *TROPAS*
+
+🗡️ Soldados:
+*${numero(jugador.unidades.soldados)}*
+
+🏹 Arqueros:
+*${numero(jugador.unidades.arqueros)}*
+
+🛡️ Guardianes:
+*${numero(jugador.unidades.guardianes)}*
+
+🐎 Caballería:
+*${numero(jugador.unidades.caballeria)}*
+
+━━━━━━━━━━━━━━━━━━━━
+
+👑 Generales:
+*${numero(jugador.generales)}*
 
 🌎 Territorios:
 *${numero(jugador.territorios)}*
 
 ━━━━━━━━━━━━━━━━━━━━
 
-🏆 Victorias: ${jugador.victorias}
-❌ Derrotas: ${jugador.derrotas}
-🔥 Racha: ${jugador.racha}
+🏰 *FORTALEZA*
 
-🛡️ Protección:
-${
-  jugador.protegido
-    ? "🟢 ACTIVA"
-    : "🔴 INACTIVA"
-}
+🏰 Nivel:
+*${numero(jugador.fortaleza.nivel)}*
+
+🛡️ Defensa:
+*${numero(jugador.fortaleza.defensa)}*
 
 ━━━━━━━━━━━━━━━━━━━━
 
-🃏 Usa:
-*.tarjetaejercito*
+⚔️ *HISTORIAL*
 
-⚔️ ¡Construye tu imperio!`,
+🏆 Victorias:
+*${numero(jugador.victorias)}*
 
-        mentions: [
-          usuarioId
-        ]
-      });
+💢 Derrotas:
+*${numero(jugador.derrotas)}*
+
+🔥 Racha:
+*${numero(jugador.racha)}*`,
+
+          mentions: [
+            usuarioId
+          ]
+
+        }
+      );
+
+      guardarEjercitos(datos);
 
       return true;
     }
 
     // =========================================
-    // 🃏 .TARJETAEJERCITO
+    // 🪪 .TARJETAEJERCITO
     // =========================================
 
     if (
@@ -636,422 +434,111 @@ ${
     ) {
 
       const poder =
-        calcularPoder(
-          jugador
-        );
+        calcularPoder(jugador);
 
-      guardarEjercitos(
-        datos
-      );
+      const totalTropas =
 
-      await sock.sendMessage(chat, {
+        (jugador.unidades.soldados || 0) +
 
-        text:
-`━━━〔 🏆 EJÉRCITO DORADO 〕━━━╮
-┃
-┃ 👑 .ejercito
-┃ 🃏 .tarjetaejercito
-┃ ⚔️ .atacar @usuario
-┃ 🛡️ .defender
-┃ 🏰 .fortaleza
-┃ 💰 .recolectar
-┃ 🪖 .reclutar
-┃
-╰━━━━━━━━━━━━━━━━━━━━╯
+        (jugador.unidades.arqueros || 0) +
 
-👑 *COMANDANTE*
-${jugador.nombre}
+        (jugador.unidades.guardianes || 0) +
 
-⭐ Nivel: ${jugador.nivel}
-
-⚔️ Poder:
-*${numero(poder)}*
-
-💰 Oro:
-*${numero(jugador.oro)}*
-
-🏰 Fortaleza:
-*Nivel ${jugador.fortaleza.nivel}*
-
-🏆 Victorias:
-*${jugador.victorias}*
-
-❌ Derrotas:
-*${jugador.derrotas}*
-
-━━━━━━━━━━━━━━━━━━━━
-
-🏆 *EJÉRCITO DORADO*
-
-⚔️ Construye
-🛡️ Defiende
-💰 Recolecta
-🏰 Mejora tu fortaleza`,
-
-        mentions: [
-          usuarioId
-        ]
-      });
-
-      return true;
-    }
-
-    // =========================================
-    // 🛡️ .DEFENDER
-    // =========================================
-
-    if (
-      comando === "defender"
-    ) {
-
-      if (
-        jugador.protegido &&
-        jugador.proteccionHasta >
-          Date.now()
-      ) {
-
-        const restante =
-          Math.ceil(
-            (
-              jugador.proteccionHasta -
-              Date.now()
-            ) / 60000
-          );
-
-        await sock.sendMessage(
-          chat,
-          {
-
-            text:
-`🛡️ *DEFENSA ACTIVA*
-
-👑 ${jugador.nombre}
-
-🏰 Tu ejército ya está protegido.
-
-⏳ Tiempo restante:
-*${restante} minutos*
-
-⚔️ Los ataques están bloqueados.`
-          }
-        );
-
-        return true;
-      }
-
-      const duracion =
-        10 * 60 * 1000;
-
-      jugador.protegido =
-        true;
-
-      jugador.proteccionHasta =
-        Date.now() +
-        duracion;
-
-      guardarEjercitos(
-        datos
-      );
+        (jugador.unidades.caballeria || 0);
 
       await sock.sendMessage(
         chat,
         {
 
           text:
-`🛡️ *DEFENSA ACTIVADA*
+`╔════════════════════════════╗
+       🏆 *EJÉRCITO DORADO*
+          🪪 *TARJETA*
+╚════════════════════════════╝
 
-👑 ${jugador.nombre}
+👑 *COMANDANTE*
+
+${mencionar(usuarioId)}
 
 ━━━━━━━━━━━━━━━━━━━━
 
-🏰 Fortaleza protegida.
+🎖️ Rango:
+*${jugador.nombre}*
 
-⏳ Duración:
-*10 minutos*
+⭐ Nivel:
+*${numero(jugador.nivel)}*
 
-⚔️ Durante este tiempo
-no podrán atacarte.
+✨ XP:
+*${numero(jugador.xp)}*
 
-🛡️ ¡Tu ejército está protegido!`,
+━━━━━━━━━━━━━━━━━━━━
+
+⚔️ *PODER MILITAR*
+
+🔥 Poder:
+*${numero(poder)}*
+
+━━━━━━━━━━━━━━━━━━━━
+
+🪖 *EJÉRCITO*
+
+🗡️ Soldados:
+*${numero(jugador.unidades.soldados)}*
+
+🏹 Arqueros:
+*${numero(jugador.unidades.arqueros)}*
+
+🛡️ Guardianes:
+*${numero(jugador.unidades.guardianes)}*
+
+🐎 Caballería:
+*${numero(jugador.unidades.caballeria)}*
+
+👥 Total tropas:
+*${numero(totalTropas)}*
+
+━━━━━━━━━━━━━━━━━━━━
+
+👑 *MANDO*
+
+🎖️ Generales:
+*${numero(jugador.generales)}*
+
+🌎 Territorios:
+*${numero(jugador.territorios)}*
+
+━━━━━━━━━━━━━━━━━━━━
+
+🏰 *FORTALEZA*
+
+🏰 Nivel:
+*${numero(jugador.fortaleza.nivel)}*
+
+🛡️ Defensa:
+*${numero(jugador.fortaleza.defensa)}*
+
+━━━━━━━━━━━━━━━━━━━━
+
+⚔️ *HISTORIAL*
+
+🏆 Victorias:
+*${numero(jugador.victorias)}*
+
+💢 Derrotas:
+*${numero(jugador.derrotas)}*
+
+🔥 Racha:
+*${numero(jugador.racha)}*
+
+━━━━━━━━━━━━━━━━━━━━
+
+💰 Oro:
+*${numero(jugador.oro)} 🪙*`,
 
           mentions: [
             usuarioId
           ]
-        }
-      );
 
-      return true;
-    }
-
-    // =========================================
-    // 🏰 .FORTALEZA
-    // =========================================
-
-    if (
-      comando === "fortaleza"
-    ) {
-
-      const accion =
-        String(
-          args?.[0] || ""
-        ).toLowerCase();
-
-      // =========================================
-      // 🔧 MEJORAR
-      // =========================================
-
-      if (
-        accion === "mejorar"
-      ) {
-
-        const nivelActual =
-          jugador.fortaleza.nivel;
-
-        const costo =
-          nivelActual * 500;
-
-        if (
-          jugador.oro <
-          costo
-        ) {
-
-          await sock.sendMessage(
-            chat,
-            {
-
-              text:
-`❌ *ORO INSUFICIENTE*
-
-🏰 Mejora:
-
-Nivel ${nivelActual}
-➡️ Nivel ${nivelActual + 1}
-
-💰 Costo:
-*${numero(costo)}*
-
-💰 Tu oro:
-*${numero(jugador.oro)}*
-
-💡 Usa *.recolectar* para conseguir más oro.`
-            }
-          );
-
-          return true;
-        }
-
-        jugador.oro -=
-          costo;
-
-        jugador.fortaleza.nivel++;
-
-        jugador.fortaleza.defensa +=
-          50;
-
-        jugador.xp +=
-          100;
-
-        jugador.ultimaActividad =
-          new Date().toISOString();
-
-        guardarEjercitos(
-          datos
-        );
-
-        await sock.sendMessage(
-          chat,
-          {
-
-            text:
-`🏰 *¡FORTALEZA MEJORADA!*
-
-👑 ${jugador.nombre}
-
-━━━━━━━━━━━━━━━━━━━━
-
-🏰 Nivel:
-${nivelActual} ➡️ *${jugador.fortaleza.nivel}*
-
-🛡️ Defensa:
-*${numero(jugador.fortaleza.defensa)}*
-
-✨ XP:
-*+100*
-
-💰 Costo:
-*${numero(costo)}*
-
-💰 Oro restante:
-*${numero(jugador.oro)}*
-
-━━━━━━━━━━━━━━━━━━━━
-
-🏰 ¡Tu fortaleza ha mejorado!`
-          }
-        );
-
-        return true;
-      }
-
-      // =========================================
-      // 🏰 MOSTRAR FORTALEZA
-      // =========================================
-
-      guardarEjercitos(
-        datos
-      );
-
-      await sock.sendMessage(
-        chat,
-        {
-
-          text:
-`╔════════════════════════════╗
-       🏰 *FORTALEZA*
-╚════════════════════════════╝
-
-👑 Comandante:
-*${jugador.nombre}*
-
-━━━━━━━━━━━━━━━━━━━━
-
-🏰 Nivel:
-*${jugador.fortaleza.nivel}*
-
-🛡️ Defensa:
-*${numero(jugador.fortaleza.defensa)}*
-
-💰 Oro:
-*${numero(jugador.oro)}*
-
-━━━━━━━━━━━━━━━━━━━━
-
-🔧 *MEJORAR*
-
-Usa:
-
-*.fortaleza mejorar*
-
-💰 Costo:
-*${numero(
-  jugador.fortaleza.nivel * 500
-)} oro*`
-        }
-      );
-
-      return true;
-    }
-
-    // =========================================
-    // 💰 .RECOLECTAR
-    // =========================================
-
-    if (
-      comando === "recolectar"
-    ) {
-
-      const ahora =
-        Date.now();
-
-      const espera =
-        30 * 60 * 1000;
-
-      if (
-        jugador.ultimoRecolecta &&
-        ahora -
-          jugador.ultimoRecolecta <
-          espera
-      ) {
-
-        const restante =
-          espera -
-          (
-            ahora -
-            jugador.ultimoRecolecta
-          );
-
-        const minutos =
-          Math.ceil(
-            restante /
-            60000
-          );
-
-        await sock.sendMessage(
-          chat,
-          {
-
-            text:
-`⏳ *RECOLECCIÓN EN ESPERA*
-
-👑 ${jugador.nombre}
-
-Ya recolectaste oro.
-
-🕐 Podrás volver a recolectar en:
-
-*${minutos} minutos*
-
-💰 ¡Espera para volver a recoger oro!`
-          }
-        );
-
-        return true;
-      }
-
-      const cantidad =
-        300 +
-        Math.floor(
-          Math.random() * 301
-        );
-
-      jugador.oro +=
-        cantidad;
-
-      jugador.xp +=
-        50;
-
-      jugador.ultimoRecolecta =
-        ahora;
-
-      jugador.ultimaActividad =
-        new Date().toISOString();
-
-      guardarEjercitos(
-        datos
-      );
-
-      await sock.sendMessage(
-        chat,
-        {
-
-          text:
-`╔════════════════════════════╗
-      💰 *RECOLECCIÓN*
-╚════════════════════════════╝
-
-👑 ${jugador.nombre}
-
-━━━━━━━━━━━━━━━━━━━━
-
-💰 Oro obtenido:
-
-*+${numero(cantidad)} 🪙*
-
-💰 Oro total:
-
-*${numero(jugador.oro)} 🪙*
-
-✨ XP obtenida:
-
-*+50 XP*
-
-━━━━━━━━━━━━━━━━━━━━
-
-⏳ Próxima recolección:
-
-*30 minutos*
-
-🏆 ¡Tu tesoro sigue creciendo!`
         }
       );
 
@@ -1066,14 +553,16 @@ Ya recolectaste oro.
       comando === "atacar"
     ) {
 
-      const menciones =
-        msg?.message
+      const mencionados =
+
+        msg
+          ?.message
           ?.extendedTextMessage
           ?.contextInfo
           ?.mentionedJid || [];
 
       if (
-        !menciones.length
+        mencionados.length === 0
       ) {
 
         await sock.sendMessage(
@@ -1081,14 +570,12 @@ Ya recolectaste oro.
           {
 
             text:
-`⚔️ *ATAQUE*
+`❌ *DEBES MENCIONAR A UN COMANDANTE*
 
-Debes mencionar al comandante
-que quieres atacar.
-
-📌 Ejemplo:
+Ejemplo:
 
 *.atacar @usuario*`
+
           }
         );
 
@@ -1096,11 +583,10 @@ que quieres atacar.
       }
 
       const enemigoId =
-        menciones[0];
+        mencionados[0];
 
       if (
-        enemigoId ===
-        usuarioId
+        enemigoId === usuarioId
       ) {
 
         await sock.sendMessage(
@@ -1109,6 +595,7 @@ que quieres atacar.
 
             text:
               "❌ No puedes atacar a tu propio ejército."
+
           }
         );
 
@@ -1116,82 +603,71 @@ que quieres atacar.
       }
 
       const enemigo =
-        crearEjercito(
+        obtenerUsuario(
           datos,
-          enemigoId,
-          "Comandante"
+          enemigoId
         );
-
-      actualizarProteccion(
-        enemigo
-      );
 
       // =========================================
       // 🛡️ PROTECCIÓN
       // =========================================
 
       if (
-        enemigo.protegido
+        enemigo.protegido &&
+        Date.now() <
+        enemigo.proteccionHasta
       ) {
 
-        const restante =
-          Math.max(
-            1,
-            Math.ceil(
-              (
-                enemigo.proteccionHasta -
-                Date.now()
-              ) / 60000
-            )
-          );
+        const minutos =
+          Math.ceil(
 
-        guardarEjercitos(
-          datos
-        );
+            (
+              enemigo.proteccionHasta -
+              Date.now()
+
+            ) / 60000
+
+          );
 
         await sock.sendMessage(
           chat,
           {
 
             text:
-`🛡️ *ATAQUE BLOQUEADO*
+`🛡️ *EJÉRCITO PROTEGIDO*
 
-👑 @${enemigoId.split("@")[0]}
+👑 ${mencionar(enemigoId)}
 
-Este ejército está protegido.
+Este comandante tiene
+protección activa.
 
-⏳ Protección restante:
-*${restante} minutos*
+⏳ Tiempo restante:
 
-⚔️ No puedes atacar mientras
-la defensa esté activa.`,
+*${minutos} minuto(s)*`,
 
             mentions: [
               enemigoId
             ]
+
           }
         );
 
         return true;
       }
 
+      // Protección vencida
+      enemigo.protegido = false;
+      enemigo.proteccionHasta = 0;
+
       // =========================================
       // ⚔️ PODERES
       // =========================================
 
       const poderJugador =
-        calcularPoder(
-          jugador
-        );
+        calcularPoder(jugador);
 
       const poderEnemigo =
-        calcularPoder(
-          enemigo
-        );
-
-      // =========================================
-      // 🎲 RESULTADO
-      // =========================================
+        calcularPoder(enemigo);
 
       let victoria;
 
@@ -1212,405 +688,435 @@ la defensa esté activa.`,
       } else {
 
         victoria =
-          Math.random() >=
-          0.5;
+          Math.random() < 0.5;
+
       }
-      
+
       // =========================================
-    // 🏆 VICTORIA
-    // =========================================
+      // 🏆 VICTORIA
+      // =========================================
 
-if (victoria) {
+      if (victoria) {
 
-  jugador.victorias++;
-  jugador.racha++;
+        jugador.victorias++;
 
-  enemigo.derrotas++;
-  enemigo.racha = 0;
+        jugador.racha++;
 
-  const recompensa =
-    Math.min(
-      300,
-      Math.max(
-        100,
-        Math.floor(
-          enemigo.oro * 0.15
-        )
-      )
-    );
+        enemigo.derrotas++;
 
-  enemigo.oro =
-    Math.max(
-      0,
-      enemigo.oro - recompensa
-    );
+        enemigo.racha = 0;
 
-  jugador.oro += recompensa;
-  jugador.xp += 150;
+        const recompensa =
 
-  jugador.ultimaActividad =
-    new Date().toISOString();
+          Math.min(
 
-  guardarEjercitos(datos);
+            300,
 
-  await sock.sendMessage(chat, {
+            Math.max(
 
-    text:
+              100,
+
+              Math.floor(
+                (enemigo.oro || 0) * 0.15
+              )
+
+            )
+
+          );
+
+        enemigo.oro =
+
+          Math.max(
+
+            0,
+
+            (enemigo.oro || 0) -
+            recompensa
+
+          );
+
+        jugador.oro +=
+          recompensa;
+
+        jugador.xp +=
+          150;
+
+        subirNivel(jugador);
+
+        jugador.ultimaActividad =
+          new Date().toISOString();
+
+        guardarEjercitos(datos);
+
+        await sock.sendMessage(
+          chat,
+          {
+
+            text:
 `🏆 *¡VICTORIA!*
 
 ⚔️ *BATALLA FINALIZADA*
 
-👑 ${jugador.nombre}
-⚔️ Poder: *${numero(poderJugador)}*
+👑 ${mencionar(usuarioId)}
+⚔️ Poder:
+*${numero(poderJugador)}*
 
 🆚
 
-👑 @${enemigoId.split("@")[0]}
-⚔️ Poder: *${numero(poderEnemigo)}*
+👑 ${mencionar(enemigoId)}
+⚔️ Poder:
+*${numero(poderEnemigo)}*
 
 ━━━━━━━━━━━━━━━━━━━━
 
 🏆 *VICTORIA*
 
 💰 Recompensa:
-*+${numero(recompensa)} oro*
+*+${numero(recompensa)} 🪙*
 
 ✨ XP:
 *+150*
 
 🔥 Racha:
-*${jugador.racha}*
+*${numero(jugador.racha)}*
 
 ━━━━━━━━━━━━━━━━━━━━
 
 ⚔️ ¡Tu ejército ha vencido!`,
 
-    mentions: [
-      enemigoId
-    ]
-  });
+            mentions: [
+              usuarioId,
+              enemigoId
+            ]
 
-  return true;
-}
+          }
+        );
 
-// =========================================
-// 🛡️ DERROTA
-// =========================================
+        return true;
+      }
 
-jugador.derrotas++;
-jugador.racha = 0;
+      // =========================================
+      // 🛡️ DERROTA
+      // =========================================
 
-enemigo.victorias++;
-enemigo.racha++;
+      jugador.derrotas++;
 
-jugador.xp += 50;
+      jugador.racha = 0;
 
-jugador.ultimaActividad =
-  new Date().toISOString();
+      enemigo.victorias++;
 
-guardarEjercitos(datos);
+      enemigo.racha++;
 
-await sock.sendMessage(chat, {
+      jugador.xp +=
+        50;
 
-  text:
+      subirNivel(jugador);
+
+      jugador.ultimaActividad =
+        new Date().toISOString();
+
+      guardarEjercitos(datos);
+
+      await sock.sendMessage(
+        chat,
+        {
+
+          text:
 `🛡️ *¡ATAQUE RECHAZADO!*
 
 ⚔️ *BATALLA FINALIZADA*
 
-👑 ${jugador.nombre}
-⚔️ Poder: *${numero(poderJugador)}*
+👑 ${mencionar(usuarioId)}
+⚔️ Poder:
+*${numero(poderJugador)}*
 
 🆚
 
-👑 @${enemigoId.split("@")[0]}
-⚔️ Poder: *${numero(poderEnemigo)}*
+👑 ${mencionar(enemigoId)}
+⚔️ Poder:
+*${numero(poderEnemigo)}*
 
 ━━━━━━━━━━━━━━━━━━━━
 
 🛡️ *DEFENSOR*
 
-${enemigo.nombre}
+${mencionar(enemigoId)}
 
 ❌ El ataque fue rechazado.
 
-✨ XP:
+✨ XP obtenido:
 *+50*
 
 ━━━━━━━━━━━━━━━━━━━━
 
 ⚔️ ¡Entrena más a tu ejército!`,
 
-  mentions: [
-    enemigoId
-  ]
-});
+          mentions: [
+            usuarioId,
+            enemigoId
+          ]
 
-return true;
+        }
+      );
 
+      return true;
+    }
 
-// =========================================
-// 🪖 .RECLUTAR
-// =========================================
+    // =========================================
+    // 🛡️ .DEFENDER
+    // =========================================
 
-if (comando === "reclutar") {
+    if (
+      comando === "defender"
+    ) {
 
-  if (!args || args.length === 0) {
+      const duracion =
+        10 * 60 * 1000;
 
-    await sock.sendMessage(chat, {
+      jugador.protegido =
+        true;
 
-      text:
+      jugador.proteccionHasta =
+        Date.now() + duracion;
+
+      jugador.ultimaActividad =
+        new Date().toISOString();
+
+      guardarEjercitos(datos);
+
+      await sock.sendMessage(
+        chat,
+        {
+
+          text:
 `╔════════════════════════════╗
-      ⚔️ *RECLUTAMIENTO*
-         💎 *PREMIUM*
+        🛡️ *DEFENSA*
+          ACTIVADA
 ╚════════════════════════════╝
 
 👑 Comandante:
+
 ${mencionar(usuarioId)}
 
-🪙 Oro disponible:
-*${numero(jugador.oro)}*
+🛡️ Tu ejército está protegido.
 
-━━━━━━━━━━━━━━━━━━━━━━
+⏳ Duración:
 
-1️⃣ 🗡️ *SOLDADO*
-💰 Precio: *50 🪙*
-⚔️ Poder: *+2*
+*10 minutos*
 
-2️⃣ 🏹 *ARQUERO*
-💰 Precio: *100 🪙*
-⚔️ Poder: *+4*
+━━━━━━━━━━━━━━━━━━━━
 
-3️⃣ 🛡️ *GUARDIÁN*
-💰 Precio: *250 🪙*
-⚔️ Poder: *+8*
+⚔️ Durante este tiempo
+ningún comandante podrá
+atacarte.`,
 
-4️⃣ 🐎 *CABALLERÍA*
-💰 Precio: *400 🪙*
-⚔️ Poder: *+12*
+          mentions: [
+            usuarioId
+          ]
 
-━━━━━━━━━━━━━━━━━━━━━━
+        }
+      );
 
-📌 *FORMA DE USO*
+      return true;
+    }
 
-*.reclutar 1 10*
-➡️ 10 soldados
+    // =========================================
+    // 🏰 .FORTALEZA
+    // =========================================
 
-*.reclutar 2 5*
-➡️ 5 arqueros
+    if (
+      comando === "fortaleza"
+    ) {
 
-*.reclutar 3 2*
-➡️ 2 guardianes
+      // =========================================
+      // 🏰 MEJORAR FORTALEZA
+      // =========================================
 
-*.reclutar 4 1*
-➡️ 1 caballería
+      if (
+        args?.[0]?.toLowerCase() ===
+        "mejorar"
+      ) {
 
-━━━━━━━━━━━━━━━━━━━━━━
+        const nivelActual =
+          jugador.fortaleza.nivel;
 
-🔥 ¡Construye tu Ejército Dorado!`,
+        const costo =
+          nivelActual * 500;
 
-      mentions: [
-        usuarioId
-      ]
-    });
+        if (
+          jugador.oro < costo
+        ) {
 
-    return true;
-  }
+          await sock.sendMessage(
+            chat,
+            {
 
-  const tipo =
-    String(args[0]);
-
-  if (!unidades[tipo]) {
-
-    await sock.sendMessage(chat, {
-
-      text:
-`❌ *TIPO DE UNIDAD INVÁLIDO*
-
-Usa:
-
-1️⃣ Soldado
-2️⃣ Arquero
-3️⃣ Guardián
-4️⃣ Caballería
-
-Ejemplo:
-
-*.reclutar 1 10*`
-    });
-
-    return true;
-  }
-
-  const cantidad =
-    Number(args[1]);
-
-  if (
-    !Number.isInteger(cantidad) ||
-    cantidad <= 0
-  ) {
-
-    await sock.sendMessage(chat, {
-
-      text:
-`❌ *CANTIDAD INVÁLIDA*
-
-Debes indicar una cantidad
-entera mayor que 0.
-
-Ejemplo:
-
-*.reclutar 1 10*`
-    });
-
-    return true;
-  }
-
-  if (cantidad > 1000) {
-
-    await sock.sendMessage(chat, {
-
-      text:
-`❌ *CANTIDAD DEMASIADO ALTA*
-
-El máximo por reclutamiento
-es de *1,000 unidades*.`
-    });
-
-    return true;
-  }
-
-  const unidad =
-    unidades[tipo];
-
-  const costo =
-    unidad.precio * cantidad;
-
-  if (jugador.oro < costo) {
-
-    const falta =
-      costo - jugador.oro;
-
-    await sock.sendMessage(chat, {
-
-      text:
+              text:
 `❌ *ORO INSUFICIENTE*
 
-👑 Comandante:
-${mencionar(usuarioId)}
+🏰 Mejora:
+
+Nivel ${nivelActual}
+➜
+Nivel ${nivelActual + 1}
+
+💰 Costo:
+
+*${numero(costo)} 🪙*
 
 🪙 Oro disponible:
-*${numero(jugador.oro)}*
 
-💰 Necesitas:
-*${numero(costo)}*
+*${numero(jugador.oro)} 🪙*`
 
-📉 Te faltan:
-*${numero(falta)}*
+            }
+          );
 
-💡 Usa *.recolectar* para conseguir más oro.`,
+          return true;
+        }
 
-      mentions: [
-        usuarioId
-      ]
-    });
+        jugador.oro -=
+          costo;
+
+        jugador.fortaleza.nivel++;
+
+        jugador.fortaleza.defensa +=
+          50;
+
+        jugador.xp +=
+          100;
+
+        subirNivel(jugador);
+
+        jugador.ultimaActividad =
+          new Date().toISOString();
+
+        guardarEjercitos(datos);
+
+        await sock.sendMessage(
+          chat,
+          {
+
+            text:
+`╔════════════════════════════╗
+       🏰 *FORTALEZA*
+        *MEJORADA*
+╚════════════════════════════╝
+
+📈 Nivel:
+
+*${nivelActual} ➜ ${jugador.fortaleza.nivel}*
+
+🛡️ Defensa:
+
+*${numero(jugador.fortaleza.defensa)}*
+
+💰 Costo:
+
+*${numero(costo)} 🪙*
+
+✨ XP:
+
+*+100*
+
+🪙 Oro restante:
+
+*${numero(jugador.oro)}*`
+
+          }
+        );
+
+        return true;
+      }
+
+      // =========================================
+      // 🏰 INFORMACIÓN DE FORTALEZA
+      // =========================================
+
+      await sock.sendMessage(
+        chat,
+        {
+
+          text:
+`╔════════════════════════════╗
+       🏰 *FORTALEZA*
+╚════════════════════════════╝
+
+👑 Comandante:
+
+${mencionar(usuarioId)}
+
+━━━━━━━━━━━━━━━━━━━━
+
+🏰 Nivel:
+
+*${numero(jugador.fortaleza.nivel)}*
+
+🛡️ Defensa:
+
+*${numero(jugador.fortaleza.defensa)}*
+
+━━━━━━━━━━━━━━━━━━━━
+
+💰 Próxima mejora:
+
+*${numero(
+  jugador.fortaleza.nivel * 500
+)} 🪙*
+
+📈 Para mejorar:
+
+*.fortaleza mejorar*`,
+
+          mentions: [
+            usuarioId
+          ]
+
+        }
+      );
+
+      return true;
+    }
+
+    // =========================================
+    // ❌ COMANDO NO PROCESADO
+    // =========================================
+
+    return false;
+
+  } catch (error) {
+
+    console.error(
+      "❌ ERROR EN EJÉRCITO DORADO:",
+      error
+    );
+
+    try {
+
+      await sock.sendMessage(
+        chat,
+        {
+
+          text:
+            "❌ Ocurrió un error en el sistema de Ejército Dorado."
+
+        }
+      );
+
+    } catch (errorEnvio) {
+
+      console.error(
+        "❌ Error enviando mensaje:",
+        errorEnvio
+      );
+
+    }
 
     return true;
   }
-
-  const poderAntes =
-    calcularPoder(jugador);
-
-  jugador.oro -= costo;
-
-  jugador.unidades[
-    unidad.propiedad
-  ] += cantidad;
-
-  jugador.poder =
-    calcularPoder(jugador);
-
-  const poderDespues =
-    jugador.poder;
-
-  const aumentoPoder =
-    poderDespues - poderAntes;
-
-  jugador.ultimaActividad =
-    new Date().toISOString();
-
-  guardarEjercitos(datos);
-
-  const totalUnidad =
-    jugador.unidades[
-      unidad.propiedad
-    ];
-
-  await sock.sendMessage(chat, {
-
-    text:
-`╔════════════════════════════╗
-       ⚔️ *RECLUTAMIENTO*
-          COMPLETADO
-╚════════════════════════════╝
-
-👑 *COMANDANTE*
-
-${mencionar(usuarioId)}
-
-━━━━━━━━━━━━━━━━━━━━━━
-
-${unidad.emoji} *¡NUEVAS TROPAS!*
-
-🎖️ Unidad:
-*${unidad.nombre}*
-
-👥 Cantidad:
-*${numero(cantidad)}*
-
-💰 Costo:
-*${numero(costo)} 🪙*
-
-━━━━━━━━━━━━━━━━━━━━━━
-
-📊 *ACTUALIZACIÓN*
-
-${unidad.emoji} ${unidad.nombre}s:
-*${numero(totalUnidad)}*
-
-⚔️ Poder anterior:
-*${numero(poderAntes)}*
-
-🔥 Poder actual:
-*${numero(poderDespues)}*
-
-📈 Aumento:
-*+${numero(aumentoPoder)}*
-
-🪙 Oro restante:
-*${numero(jugador.oro)}*
-
-━━━━━━━━━━━━━━━━━━━━━━
-
-👑 *¡Tus tropas están listas!*`,
-
-    mentions: [
-      usuarioId
-    ]
-  });
-  
- return true;
-  
-}return false;
-
-} catch (error) {
-  console.error("❌ Error en Ejército Dorado:", error);
-
-  await sock.sendMessage(chat, {
-    text: "❌ Ocurrió un error en el sistema de Ejército Dorado."
-  });
-
-  return true;
 }
-}
+
+// =========================================
+// 📤 EXPORTAR
+// =========================================
 
 module.exports = ejercito;
