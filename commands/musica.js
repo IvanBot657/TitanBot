@@ -1,9 +1,314 @@
-const axios = require("axios");
 const yts = require("yt-search");
-const config = require("../config");
+const youtubedl = require("youtube-dl-exec");
+const ffmpegPath = require("ffmpeg-static");
+const fs = require("fs");
+const path = require("path");
 
 // ==============================
-// 🎵 MÚSICA - TITANBOT v3.2
+// 🎵 MÚSICA - TITANBOT v4.0
+// Sin Tunelio / sin créditos
+// ==============================
+
+const TEMP_DIR = path.join(__dirname, "..", "temp_audio");
+
+if (!fs.existsSync(TEMP_DIR)) {
+  fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
+
+// ==============================
+// 🧹 LIMPIAR TEMPORALES
+// ==============================
+
+function limpiarTemporales() {
+  try {
+    const ahora = Date.now();
+
+    const archivos = fs.readdirSync(TEMP_DIR);
+
+    for (const archivo of archivos) {
+      const ruta = path.join(TEMP_DIR, archivo);
+
+      const stats = fs.statSync(ruta);
+
+      // Eliminar archivos de más de 30 minutos
+      if (
+        ahora - stats.mtimeMs >
+        30 * 60 * 1000
+      ) {
+        fs.unlinkSync(ruta);
+      }
+    }
+
+  } catch (error) {
+    console.log(
+      "⚠️ Error limpiando temporales:",
+      error.message
+    );
+  }
+}
+
+// ==============================
+// 🎵 ENVIAR AUDIO
+// ==============================
+
+async function enviarAudio(
+  sock,
+  chat,
+  video
+) {
+
+  const idSeguro = String(
+    video.videoId || Date.now()
+  ).replace(
+    /[^a-zA-Z0-9_-]/g,
+    ""
+  );
+
+  const baseSalida =
+    path.join(
+      TEMP_DIR,
+      idSeguro
+    );
+
+  try {
+
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+`🎵 *${video.title}*
+
+⏳ Descargando y preparando el audio...`
+      }
+    );
+
+    console.log(
+      "🎵 DESCARGANDO:",
+      video.url
+    );
+
+    // ==============================
+    // 🎧 YT-DLP
+    // ==============================
+
+    await youtubedl(
+      video.url,
+      {
+
+        noPlaylist: true,
+
+        noWarnings: true,
+
+        noCallHome: true,
+
+        // Extraer audio
+        extractAudio: true,
+
+        audioFormat: "mp3",
+
+        audioQuality: "5",
+
+        // Archivo de salida
+        output:
+          `${baseSalida}.%(ext)s`,
+
+        // FFmpeg
+        ffmpegLocation:
+          ffmpegPath,
+
+        // Runtime Node
+        jsRuntimes: "node",
+
+        remoteComponents:
+          "ejs:npm",
+
+        // Evitar archivos innecesarios
+        noWriteThumbnail: true,
+
+        noWriteInfoJson: true,
+
+        noWriteDescription: true
+
+      },
+      {
+        timeout: 180000
+      }
+    );
+
+    // ==============================
+    // 📁 COMPROBAR MP3
+    // ==============================
+
+    const archivoFinal =
+      `${baseSalida}.mp3`;
+
+    if (
+      !fs.existsSync(
+        archivoFinal
+      )
+    ) {
+
+      throw new Error(
+        "yt-dlp terminó pero no se encontró el MP3."
+      );
+    }
+
+    const stats =
+      fs.statSync(
+        archivoFinal
+      );
+
+    console.log(
+      `✅ MP3 generado: ${
+        (
+          stats.size /
+          1024 /
+          1024
+        ).toFixed(2)
+      } MB`
+    );
+
+    // ==============================
+    // 📤 ENVIAR AUDIO
+    // ==============================
+
+    await sock.sendMessage(
+      chat,
+      {
+        audio:
+          fs.readFileSync(
+            archivoFinal
+          ),
+
+        mimetype:
+          "audio/mpeg",
+
+        fileName:
+          `${video.title
+            .replace(
+              /[\\/:*?"<>|]/g,
+              "_"
+            )
+            .slice(
+              0,
+              80
+            )}.mp3`,
+
+        ptt: false
+      }
+    );
+
+    console.log(
+      "✅ AUDIO ENVIADO A WHATSAPP"
+    );
+
+    // ==============================
+    // ✅ MENSAJE FINAL
+    // ==============================
+
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+`✅ *AUDIO ENVIADO*
+
+🎵 ${video.title}
+
+📺 ${
+  video.author?.name ||
+  "YouTube"
+}
+
+⚡ TITANBOT`
+      }
+    );
+
+  } finally {
+
+    // ==============================
+    // 🧹 BORRAR ARCHIVO
+    // ==============================
+
+    try {
+
+      const archivos =
+        fs.readdirSync(
+          TEMP_DIR
+        );
+
+      for (
+        const archivo
+        of archivos
+      ) {
+
+        if (
+          archivo.startsWith(
+            idSeguro
+          )
+        ) {
+
+          fs.unlinkSync(
+            path.join(
+              TEMP_DIR,
+              archivo
+            )
+          );
+        }
+      }
+
+    } catch (error) {
+
+      console.log(
+        "⚠️ No se pudo limpiar el audio:",
+        error.message
+      );
+    }
+  }
+}
+
+// ==============================
+// 🔎 BUSCAR VIDEO
+// ==============================
+
+async function buscarVideo(
+  busqueda
+) {
+
+  const resultado =
+    await yts(busqueda);
+
+  if (
+    !resultado ||
+    !resultado.videos ||
+    !resultado.videos.length
+  ) {
+
+    return null;
+  }
+
+  // Evitar clips extremadamente cortos
+  const videos =
+    resultado.videos.filter(
+      (video) => {
+
+        const segundos =
+          Number(
+            video.seconds || 0
+          );
+
+        return segundos >= 30;
+      }
+    );
+
+  return (
+    videos[0] ||
+    resultado.videos[0] ||
+    null
+  );
+}
+
+// ==============================
+// 🎵 COMANDO MÚSICA
 // ==============================
 
 async function musica(
@@ -14,232 +319,299 @@ async function musica(
   id
 ) {
 
-  const cmd = String(comando || "").toLowerCase();
+  const cmd =
+    String(
+      comando || ""
+    ).toLowerCase();
 
-  console.log("🎵 MUSICA CMD:", cmd);
+  console.log(
+    "🎵 MUSICA CMD:",
+    cmd
+  );
 
   // ==============================
-  // ▶️ PLAY
+  // ▶️ .PLAY
   // ==============================
 
-  if (cmd === "play") {
+  if (
+    cmd === "play"
+  ) {
 
-    const busqueda = args.join(" ");
+    const busqueda =
+      args
+        .join(" ")
+        .trim();
 
     if (!busqueda) {
-      await sock.sendMessage(chat, {
-        text:
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `🎵 *MÚSICA*
 
 Escribe el nombre de una canción.
 
 Ejemplo:
+
 .play Believer`
-      });
+        }
+      );
 
       return true;
     }
 
     try {
 
-      const resultado = await yts(busqueda);
-      const video = resultado.videos[0];
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            "🔍 Buscando la canción..."
+        }
+      );
+
+      // Buscar canción
+      const video =
+        await buscarVideo(
+          busqueda
+        );
 
       if (!video) {
-        await sock.sendMessage(chat, {
-          text: "❌ No encontré resultados."
-        });
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ No encontré resultados."
+          }
+        );
 
         return true;
       }
 
-      await sock.sendMessage(chat, {
-        image: {
-          url: video.thumbnail
-        },
-        caption:
+      // ==============================
+      // 🖼️ MOSTRAR RESULTADO
+      // ==============================
+
+      await sock.sendMessage(
+        chat,
+        {
+          image: {
+            url:
+              video.thumbnail
+          },
+
+          caption:
 `🎵 *${video.title}*
 
-📺 Canal: ${video.author.name}
-⏱️ Duración: ${video.timestamp}
+📺 Canal:
+${
+  video.author?.name ||
+  "Desconocido"
+}
 
-🔗 YouTube:
-${video.url}`
-      });
+⏱️ Duración:
+${
+  video.timestamp ||
+  "Desconocida"
+}
+
+▶️ ${
+  video.url
+}
+
+⏳ Preparando audio...`
+        }
+      );
+
+      // ==============================
+      // 🎧 GENERAR AUDIO
+      // ==============================
+
+      await enviarAudio(
+        sock,
+        chat,
+        video
+      );
 
     } catch (error) {
 
-      console.log("ERROR PLAY:", error);
+      console.log(
+        "❌ ERROR PLAY:"
+      );
 
-      await sock.sendMessage(chat, {
-        text: "❌ Error al buscar la canción."
-      });
+      console.log(
+        error?.stderr ||
+        error?.message ||
+        error
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+`❌ *ERROR AL GENERAR AUDIO*
+
+No se pudo preparar el audio de esta canción.
+
+🔄 Intenta nuevamente.`
+        }
+      );
     }
+
+    limpiarTemporales();
 
     return true;
   }
 
   // ==============================
-  // 🎵 MP3
+  // 🎵 .MP3
   // ==============================
 
-  if (cmd === "mp3") {
+  if (
+    cmd === "mp3"
+  ) {
 
-    const busqueda = args.join(" ");
+    const busqueda =
+      args
+        .join(" ")
+        .trim();
 
     if (!busqueda) {
-      await sock.sendMessage(chat, {
-        text:
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `🎵 *MP3*
 
 Escribe el nombre de una canción.
 
 Ejemplo:
+
 .mp3 Believer`
-      });
+        }
+      );
 
       return true;
     }
 
     try {
 
-      // ------------------------------
-      // BUSCAR
-      // ------------------------------
-
-      await sock.sendMessage(chat, {
-        text: "🔍 Buscando..."
-      });
-
-      const resultado = await yts(busqueda);
-      const video = resultado.videos[0];
-
-      if (!video) {
-        await sock.sendMessage(chat, {
-          text: "❌ No encontré resultados."
-        });
-
-        return true;
-      }
-
-      // ------------------------------
-      // SOLICITUD A TUNELIO
-      // ------------------------------
-
-      await sock.sendMessage(chat, {
-        text:
-`🎵 *${video.title}*
-
-⏳ Procesando audio...`
-      });
-
-      const respuesta = await axios.get(
-        `https://tunelio.dev/create?quality=mp3&url=${encodeURIComponent(video.url)}`,
+      await sock.sendMessage(
+        chat,
         {
-          headers: {
-            Authorization:
-              `Bearer ${config.tunelioKey}`
-          },
-          timeout: 60000
+          text:
+            "🔍 Buscando..."
         }
       );
 
-      console.log("Tunelio:", respuesta.data);
+      const video =
+        await buscarVideo(
+          busqueda
+        );
 
-      const datos = respuesta.data;
+      if (!video) {
 
-      // ------------------------------
-      // ERROR DE TUNELIO
-      // ------------------------------
-
-      if (!datos || datos.status !== "ok") {
-
-        console.log("❌ TUNELIO NO DEVOLVIÓ AUDIO");
-
-        await sock.sendMessage(chat, {
-          text:
-`❌ No se pudo generar el audio.
-
-Estado:
-${datos?.status || "desconocido"}`
-        });
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ No encontré resultados."
+          }
+        );
 
         return true;
       }
 
-      // ------------------------------
-      // COMPROBAR URL
-      // ------------------------------
-
-      if (!datos.url) {
-
-        await sock.sendMessage(chat, {
-          text:
-`❌ Tunelio respondió correctamente,
-pero no entregó una URL de audio.`
-        });
-
-        return true;
-      }
-
-      console.log("🎵 URL DE AUDIO RECIBIDA");
-      console.log(datos.url);
-
-      // ------------------------------
-      // ENVIAR AUDIO
-      // ------------------------------
-
-      await sock.sendMessage(chat, {
-        audio: {
-          url: datos.url
-        },
-        mimetype: "audio/mpeg",
-        fileName:
-          datos.filename ||
-          "TITANBOT-Audio.mp3"
-      });
-
-      console.log("✅ AUDIO ENVIADO A WHATSAPP");
-
-      // ------------------------------
-      // INFORMACIÓN FINAL
-      // ------------------------------
-
-      await sock.sendMessage(chat, {
-        text:
-`✅ *AUDIO ENVIADO*
-
-🎵 ${datos.filename || video.title}
-
-📦 Tamaño: ${datos.file_size_str || "Desconocido"}
-
-⚡ TITANBOT`
-      });
+      // Generar audio
+      await enviarAudio(
+        sock,
+        chat,
+        video
+      );
 
     } catch (error) {
 
-      console.log("❌ ERROR TUNELIO:");
-
       console.log(
-        error.response?.data ||
-        error.message
+        "❌ ERROR MP3:"
       );
 
-      await sock.sendMessage(chat, {
-        text:
+      console.log(
+        error?.stderr ||
+        error?.message ||
+        error
+      );
+
+      let detalle =
+        "No se pudo preparar el audio.";
+
+      const textoError =
+        String(
+          error?.stderr ||
+          error?.message ||
+          ""
+        ).toLowerCase();
+
+      if (
+        textoError.includes(
+          "sign in"
+        ) ||
+        textoError.includes(
+          "bot"
+        ) ||
+        textoError.includes(
+          "captcha"
+        )
+      ) {
+
+        detalle =
+          "YouTube rechazó temporalmente la solicitud desde el servidor.";
+
+      } else if (
+        textoError.includes(
+          "ffmpeg"
+        ) ||
+        textoError.includes(
+          "postprocessing"
+        )
+      ) {
+
+        detalle =
+          "No se pudo completar la conversión del audio.";
+      }
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
 `❌ *ERROR AL GENERAR AUDIO*
 
-${error.response?.data?.status ||
- error.response?.data?.message ||
- error.message}`
-      });
+${detalle}
+
+🔄 Intenta nuevamente.`
+        }
+      );
     }
+
+    limpiarTemporales();
 
     return true;
   }
 
+  // ==============================
+  // ❌ NO ES MÚSICA
+  // ==============================
+
   return false;
 }
 
+// ==============================
+// 📦 EXPORTAR
+// ==============================
+
 module.exports = musica;
-module.exports.musica = musica;
+
+module.exports.musica =
+  musica;
