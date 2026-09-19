@@ -1,6 +1,14 @@
 const yts = require("yt-search");
 
 async function musica(sock, chat, comando, args, id) {
+
+    const cmd = comando.toLowerCase();
+
+    // Solo responder a estos comandos
+    if (cmd !== "play" && cmd !== "musica") {
+        return false;
+    }
+
     const query = args.join(" ").trim();
 
     if (!query) {
@@ -11,25 +19,25 @@ async function musica(sock, chat, comando, args, id) {
         return true;
     }
 
-    // 🔎 Mensaje mientras busca
     await sock.sendMessage(chat, {
         text: "🔎 Buscando canción..."
     });
 
     try {
+
         console.log("🔎 Buscando en YouTube:", query);
 
         const resultado = await yts(query);
 
         if (!resultado || !resultado.videos || resultado.videos.length === 0) {
+
             await sock.sendMessage(chat, {
-                text: `❌ No encontré la canción.`
+                text: "❌ No encontré la canción."
             });
 
             return true;
         }
 
-        // 🎵 Primer resultado
         const video = resultado.videos[0];
 
         const titulo = video.title || "Sin título";
@@ -38,26 +46,28 @@ async function musica(sock, chat, comando, args, id) {
         const duracion = video.timestamp || "Desconocida";
         const canal = video.author?.name || "Desconocido";
 
-        const mensaje =
-`🎵 *${titulo}*
+        const mensaje = `🎵 *${titulo}*
 
 👤 ${canal}
 ⏱️ ${duracion}
 
 🔗 ${link}`;
 
-        // 🖼️ Enviar miniatura + información
         if (miniatura) {
+
             await sock.sendMessage(chat, {
                 image: {
                     url: miniatura
                 },
                 caption: mensaje
             });
+
         } else {
+
             await sock.sendMessage(chat, {
                 text: mensaje
             });
+
         }
 
         console.log("✅ Canción encontrada:", titulo);
@@ -65,6 +75,7 @@ async function musica(sock, chat, comando, args, id) {
         return true;
 
     } catch (error) {
+
         console.error("❌ ERROR MUSICA:", error);
 
         await sock.sendMessage(chat, {
