@@ -59,6 +59,20 @@ async function inicio(
 ┃ • .transferir
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🐾 MASCOTAS 〕━━━╮
+┃ • .mascota
+┃ • .crearmascota
+┃ • .alimentar
+┃ • .jugar
+┃ • .bañar
+┃ • .dormir
+┃ • .estado
+┃ • .evolucionar
+┃ • .tienda
+┃ • .comprar
+┃ • .inventario
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ━━━〔 🎯 MISIONES 〕━━━╮
 ┃ • .misiones
 ┃ • .mision
