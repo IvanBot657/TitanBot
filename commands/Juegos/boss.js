@@ -158,11 +158,13 @@ const BOSSES = [
 // =========================================
 
 function elegirBoss() {
+
   return BOSSES[
     Math.floor(
       Math.random() * BOSSES.length
     )
   ];
+
 }
 
 // =========================================
@@ -170,12 +172,14 @@ function elegirBoss() {
 // =========================================
 
 function obtenerTexto(msg) {
+
   return (
     msg?.message?.conversation ||
     msg?.message?.extendedTextMessage?.text ||
     msg?.text ||
     ""
   ).trim();
+
 }
 
 // =========================================
@@ -210,29 +214,29 @@ ${boss.turno}
 🎭 ESTILO
 =========================================
 
-RESPUESTA MUY CORTA.
+RESPUESTA DE LONGITUD MEDIA.
 
 Escribe solamente 2 partes:
 
-1. Una narración breve de máximo 2 frases.
-2. Un diálogo breve del Boss de máximo 2 frases.
+1. Una narración de aproximadamente 2 a 4 frases.
+2. Un diálogo del Boss de aproximadamente 2 a 3 frases.
 
-No escribas párrafos largos.
+La narración debe sentirse como una escena
+de videojuego RPG.
 
-No hagas explicaciones.
+Describe el ambiente, la acción,
+la reacción del Boss y las consecuencias
+de lo que hizo el jugador.
+
+El diálogo debe tener personalidad
+y responder directamente a la acción
+del jugador.
+
+No escribas textos enormes.
+
+No hagas párrafos excesivamente largos.
 
 No repitas información innecesaria.
-
-La escena debe sentirse como un videojuego
-RPG y conservar personalidad.
-
-Ejemplo:
-
-🌑 Una sombra cubre la caverna y el suelo tiembla.
-
-😈 Rey Demonio:
-— ¡¿Eso es todo lo que tienes?!
-— ¡Ahora conocerás mi verdadero poder!
 
 =========================================
 ⚔️ REGLAS
@@ -299,9 +303,11 @@ async function consultarGroq(
 ) {
 
   if (!groq) {
+
     throw new Error(
       "GROQ_API_KEY no configurada"
     );
+
   }
 
   const mensajes = [
@@ -318,15 +324,25 @@ async function consultarGroq(
   ) {
 
     mensajes.push({
-      role: item.rol || item.role,
-      content: item.texto
+
+      role:
+        item.rol ||
+        item.role,
+
+      content:
+        item.texto
+
     });
 
   }
 
   mensajes.push({
+
     role: "user",
-    content: mensaje
+
+    content:
+      mensaje
+
   });
 
   const respuesta =
@@ -335,13 +351,18 @@ async function consultarGroq(
       model:
         "openai/gpt-oss-120b",
 
-      messages: mensajes,
+      messages:
+        mensajes,
 
-      temperature: 0.8,
+      temperature:
+        0.8,
 
-      max_tokens: 300,
+      // Respuesta de longitud media
+      max_tokens:
+        500,
 
-      reasoning_effort: "medium"
+      reasoning_effort:
+        "medium"
 
     });
 
@@ -351,6 +372,7 @@ async function consultarGroq(
       ?.message
       ?.content || ""
   );
+
 }
 
 // =========================================
@@ -367,9 +389,13 @@ function leerEstado(texto) {
   if (!bloque) {
 
     return {
+
       dano: 0,
+
       fase: 1,
+
       fin: false
+
     };
 
   }
@@ -406,10 +432,12 @@ function leerEstado(texto) {
 
     fin:
       finMatch
-        ? finMatch[1].toLowerCase() === "si"
+        ? finMatch[1]
+            .toLowerCase() === "si"
         : false
 
   };
+
 }
 
 // =========================================
@@ -481,11 +509,14 @@ async function iniciarBoss(
 `👹 *BOSS ACTIVO*
 
 ${boss.emoji} *${boss.nombre}*
+
 ❤️ ${boss.vidaActual.toLocaleString()} / ${boss.vidaMaxima.toLocaleString()}
+
 🔥 Fase ${boss.fase}`
     );
 
     return true;
+
   }
 
   // =====================================
@@ -497,7 +528,8 @@ ${boss.emoji} *${boss.nombre}*
 
   const boss = {
 
-    activo: true,
+    activo:
+      true,
 
     nombre:
       plantilla.nombre,
@@ -511,13 +543,17 @@ ${boss.emoji} *${boss.nombre}*
     vidaActual:
       plantilla.vida,
 
-    fase: 1,
+    fase:
+      1,
 
-    turno: 0,
+    turno:
+      0,
 
-    danoJugador: 0,
+    danoJugador:
+      0,
 
-    historial: [],
+    historial:
+      [],
 
     iniciado:
       Date.now()
@@ -537,16 +573,24 @@ ${boss.emoji} *${boss.nombre}*
 
     const intro =
       await consultarGroq(
+
         boss,
+
         [],
+
         `
 El jugador acaba de comenzar la batalla.
 
-Haz una introducción MUY CORTA.
+Haz una introducción de longitud media.
 
-Presenta al Boss en máximo 2 frases.
+Presenta al Boss en aproximadamente
+2 a 4 frases.
 
-Después haz que el Boss diga máximo 2 frases.
+Después haz que el Boss diga
+aproximadamente 2 a 3 frases.
+
+La escena debe sentirse épica,
+como el inicio de una batalla RPG.
 
 Termina con:
 ¿Qué vas a hacer?
@@ -630,6 +674,7 @@ Verifica GROQ_API_KEY en Render.`
   }
 
   return true;
+
 }
 
 // =========================================
@@ -666,9 +711,13 @@ async function continuarBoss(
 
     const respuesta =
       await consultarGroq(
+
         boss,
+
         boss.historial,
+
         mensajeJugador
+
       );
 
     const estado =
@@ -756,7 +805,9 @@ async function continuarBoss(
 `🏆 *¡BOSS DERROTADO!*
 
 👹 ${boss.nombre}
-⚔️ Daño: ${boss.danoJugador.toLocaleString()}
+
+⚔️ Daño total:
+${boss.danoJugador.toLocaleString()}
 
 🎁 +${monedas} monedas
 ✨ +${xp} XP`
@@ -767,6 +818,7 @@ async function continuarBoss(
       guardarDB(db);
 
       return true;
+
     }
 
     // ===================================
@@ -827,6 +879,8 @@ async function continuarBoss(
 
 🔥 Fase ${boss.fase}
 
+⚔️ Turno ${boss.turno}
+
 💬 *¿Qué haces?*`
     );
 
@@ -850,6 +904,7 @@ La batalla sigue activa.`
   }
 
   return true;
+
 }
 
 // =========================================
@@ -880,6 +935,7 @@ Usa:
     );
 
     return true;
+
   }
 
   await enviar(
@@ -890,12 +946,14 @@ Usa:
 ${boss.emoji} *${boss.nombre}*
 
 ❤️ ${boss.vidaActual.toLocaleString()} / ${boss.vidaMaxima.toLocaleString()}
+
 🔥 Fase: ${boss.fase}
 ⚔️ Daño: ${boss.danoJugador.toLocaleString()}
 🎬 Turno: ${boss.turno}`
   );
 
   return true;
+
 }
 
 // =========================================
@@ -918,9 +976,10 @@ async function boss(
   // NORMALIZAR COMANDO
   // =====================================
 
-  comando = String(comando || "")
-    .toLowerCase()
-    .replace(/^\./, "");
+  comando =
+    String(comando || "")
+      .toLowerCase()
+      .replace(/^\./, "");
 
   // =====================================
   // .BOSS
@@ -965,20 +1024,26 @@ async function boss(
     db[limpiarID(id)];
 
   // =====================================
-  // 🔒 NO CAPTURAR OTROS COMANDOS
+  // 🔒 PROTEGER OTROS COMANDOS
   // =====================================
+
+  const textoOriginal =
+    String(texto || "");
+
+  const comandoOriginal =
+    String(comando || "");
 
   const esComando =
-    String(comando || "").startsWith(".") ||
-    String(texto || "").startsWith(".");
+    textoOriginal.startsWith(".") ||
+    comandoOriginal.startsWith(".");
 
   // =====================================
-  // SOLO MENSAJES NORMALES
+  // ⚔️ SOLO MENSAJES NORMALES
   // =====================================
 
   if (
     bossActivo?.activo &&
-    texto &&
+    textoOriginal &&
     !esComando
   ) {
 
@@ -986,7 +1051,7 @@ async function boss(
       sock,
       chat,
       id,
-      texto
+      textoOriginal
     );
 
   }
@@ -996,6 +1061,7 @@ async function boss(
   // =====================================
 
   return false;
+
 }
 
 // =========================================
