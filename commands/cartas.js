@@ -15,28 +15,43 @@ const {
 } = require("./datosUsuarios");
 
 // =========================================
-// 🖼️ IMÁGENES DE CARTAS
+// 🖼️ CONFIGURACIÓN DE IMÁGENES
 // =========================================
-function obtenerImagen(id) {
 
-  const base =
-    "https://raw.githubusercontent.com/IvanBot657/TitanBot/main/Cartas/";
+const BASE_IMAGENES =
+  "https://raw.githubusercontent.com/IvanBot657/TitanBot/main/Cartas/";
+
+// =========================================
+// 🖼️ NOMBRES DE IMÁGENES
+// =========================================
+
+function obtenerNombreImagen(id) {
 
   const imagenes = {
+
+    // ⚪ COMUNES
     1: "caballero_de_acero.png",
     2: "elfo_arquero.png",
     3: "arquero_arcano.png",
+
+    // 🟢 POCO COMUNES
     4: "elfo_arquero_neon.png",
     5: "caballero_del_agua.png",
     6: "invocador_sombrio.png",
+
+    // 🔵 RARAS
     7: "mago_de_fuego.png",
     8: "cazador_nocturno.png",
     9: "caballero_de_las_sombras.png",
     10: "mago_sombrio.png",
+
+    // 🟣 ÉPICAS
     11: "esqueleto_guerrero.png",
     12: "nigromante_neon.png",
     13: "invocador_de_sombras.png",
     14: "senor_del_fuego_eterno.png",
+
+    // 🟠 LEGENDARIAS
     15: "guardian_del_bosque.png",
     16: "rey_de_la_muerte.png",
     17: "sacerdote_luminoso.png",
@@ -45,15 +60,78 @@ function obtenerImagen(id) {
     20: "rey_dragon.png",
     21: "guardian_de_la_luna.png",
     22: "dragon_dorado.png",
+
+    // 🔴 MÍTICAS
     23: "el_elegido_oscuro.png",
     24: "el_rey_caido.png"
   };
 
-  if (!imagenes[id]) {
+  return imagenes[id] || null;
+}
+
+// =========================================
+// 🔗 OBTENER URL DE IMAGEN
+// =========================================
+
+function obtenerImagen(id) {
+
+  const nombre = obtenerNombreImagen(id);
+
+  if (!nombre) {
     return null;
   }
 
-  return base + imagenes[id];
+  return BASE_IMAGENES + nombre;
+}
+
+// =========================================
+// ⬇️ DESCARGAR IMAGEN ANTES DE ENVIAR
+// =========================================
+
+async function descargarImagen(url) {
+
+  try {
+
+    console.log("🖼️ Descargando imagen:");
+    console.log(url);
+
+    const respuesta = await fetch(url);
+
+    if (!respuesta.ok) {
+
+      throw new Error(
+        `HTTP ${respuesta.status} ${respuesta.statusText}`
+      );
+    }
+
+    const arrayBuffer =
+      await respuesta.arrayBuffer();
+
+    const buffer =
+      Buffer.from(arrayBuffer);
+
+    if (!buffer.length) {
+
+      throw new Error(
+        "La imagen descargada está vacía."
+      );
+    }
+
+    console.log(
+      `✅ Imagen descargada correctamente (${buffer.length} bytes)`
+    );
+
+    return buffer;
+
+  } catch (error) {
+
+    console.error(
+      "❌ Error descargando imagen:",
+      error
+    );
+
+    return null;
+  }
 }
 
 // =========================================
@@ -226,7 +304,8 @@ const cartas = [
 
 function obtenerRareza() {
 
-  const numero = Math.random() * 100;
+  const numero =
+    Math.random() * 100;
 
   if (numero < 45) {
     return "⚪ Común";
@@ -252,26 +331,33 @@ function obtenerRareza() {
 }
 
 // =========================================
-// 🎴 CARTA ALEATORIA
+// 🎴 OBTENER CARTA ALEATORIA
 // =========================================
 
 function obtenerCartaAleatoria() {
 
-  const rareza = obtenerRareza();
+  const rareza =
+    obtenerRareza();
 
-  const disponibles = cartas.filter(
-    carta => carta.rareza === rareza
-  );
+  const disponibles =
+    cartas.filter(
+      carta =>
+        carta.rareza === rareza
+    );
 
   if (disponibles.length === 0) {
 
     return cartas[
-      Math.floor(Math.random() * cartas.length)
+      Math.floor(
+        Math.random() * cartas.length
+      )
     ];
   }
 
   return disponibles[
-    Math.floor(Math.random() * disponibles.length)
+    Math.floor(
+      Math.random() * disponibles.length
+    )
   ];
 }
 
@@ -281,7 +367,10 @@ function obtenerCartaAleatoria() {
 
 function obtenerTotalCartas(usuario) {
 
-  if (!usuario || !Array.isArray(usuario.cartas)) {
+  if (
+    !usuario ||
+    !Array.isArray(usuario.cartas)
+  ) {
     return 0;
   }
 
@@ -302,7 +391,10 @@ function obtenerTotalCartas(usuario) {
 
 function obtenerCartasDiferentes(usuario) {
 
-  if (!usuario || !Array.isArray(usuario.cartas)) {
+  if (
+    !usuario ||
+    !Array.isArray(usuario.cartas)
+  ) {
     return 0;
   }
 
@@ -310,18 +402,21 @@ function obtenerCartasDiferentes(usuario) {
 }
 
 // =========================================
-// 🖼️ ENVIAR IMAGEN DE CARTA
+// 🖼️ DESCARGAR Y ENVIAR IMAGEN
 // =========================================
 
 async function enviarImagenCarta(
   sock,
   chat,
-  imagen,
+  carta,
   caption,
   msg
 ) {
 
-  if (!imagen) {
+  const url =
+    obtenerImagen(carta.id);
+
+  if (!url) {
 
     await sock.sendMessage(
       chat,
@@ -338,19 +433,61 @@ async function enviarImagenCarta(
     return;
   }
 
-  try {
+  console.log(
+    `🃏 Carta #${carta.id}: ${carta.nombre}`
+  );
+
+  console.log(
+    `🔗 URL: ${url}`
+  );
+
+  // =====================================
+  // ⬇️ DESCARGAR PRIMERO
+  // =====================================
+
+  const buffer =
+    await descargarImagen(url);
+
+  if (!buffer) {
 
     await sock.sendMessage(
       chat,
       {
-        image: {
-          url: imagen
-        },
+        text:
+          caption +
+          "\n\n⚠️ No se pudo descargar la imagen."
+      },
+      {
+        quoted: msg
+      }
+    );
+
+    return;
+  }
+
+  // =====================================
+  // 📤 ENVIAR BUFFER A WHATSAPP
+  // =====================================
+
+  try {
+
+    console.log(
+      "📤 Enviando imagen descargada a WhatsApp..."
+    );
+
+    await sock.sendMessage(
+      chat,
+      {
+        image: buffer,
         caption: caption
       },
       {
         quoted: msg
       }
+    );
+
+    console.log(
+      "✅ Imagen enviada correctamente."
     );
 
   } catch (error) {
@@ -365,7 +502,7 @@ async function enviarImagenCarta(
       {
         text:
           caption +
-          "\n\n⚠️ No se pudo cargar la imagen."
+          "\n\n⚠️ Se descargó la imagen, pero WhatsApp no pudo enviarla."
       },
       {
         quoted: msg
@@ -393,7 +530,8 @@ async function ejecutarCartas(
 
   if (comando === "carta") {
 
-    const carta = obtenerCartaAleatoria();
+    const carta =
+      obtenerCartaAleatoria();
 
     if (!carta) {
 
@@ -415,7 +553,8 @@ async function ejecutarCartas(
 
     try {
 
-      usuario = obtenerUsuario(id);
+      usuario =
+        obtenerUsuario(id);
 
     } catch (error) {
 
@@ -442,7 +581,9 @@ async function ejecutarCartas(
       usuario = {};
     }
 
-    if (!Array.isArray(usuario.cartas)) {
+    if (
+      !Array.isArray(usuario.cartas)
+    ) {
       usuario.cartas = [];
     }
 
@@ -452,10 +593,12 @@ async function ejecutarCartas(
 
     const existente =
       usuario.cartas.find(
-        c => Number(c.id) === carta.id
+        c =>
+          Number(c.id) === carta.id
       );
 
-    const nuevaCarta = !existente;
+    const nuevaCarta =
+      !existente;
 
     if (existente) {
 
@@ -476,7 +619,10 @@ async function ejecutarCartas(
 
     try {
 
-      guardarUsuario(id, usuario);
+      guardarUsuario(
+        id,
+        usuario
+      );
 
     } catch (error) {
 
@@ -500,17 +646,22 @@ async function ejecutarCartas(
     }
 
     // =====================================
-    // 🖼️ OBTENER IMAGEN
+    // 📊 ESTADÍSTICAS
     // =====================================
 
-    const imagen =
-      obtenerImagen(carta.id);
-
     const diferentes =
-      obtenerCartasDiferentes(usuario);
+      obtenerCartasDiferentes(
+        usuario
+      );
 
     const total =
-      obtenerTotalCartas(usuario);
+      obtenerTotalCartas(
+        usuario
+      );
+
+    // =====================================
+    // 📝 MENSAJE
+    // =====================================
 
     const caption =
 `🃏 *¡CARTA OBTENIDA!*
@@ -529,13 +680,13 @@ ${
 📦 Cartas totales: *${total}*`;
 
     // =====================================
-    // 📤 ENVIAR
+    // 🖼️ DESCARGAR Y ENVIAR
     // =====================================
 
     await enviarImagenCarta(
       sock,
       chat,
-      imagen,
+      carta,
       caption,
       msg
     );
@@ -553,7 +704,8 @@ ${
 
     try {
 
-      usuario = obtenerUsuario(id);
+      usuario =
+        obtenerUsuario(id);
 
     } catch (error) {
 
@@ -605,11 +757,16 @@ Todavía no tienes cartas.
 
 `;
 
-    for (const coleccion of usuario.cartas) {
+    for (
+      const coleccion
+      of usuario.cartas
+    ) {
 
       const carta =
         cartas.find(
-          c => c.id === Number(coleccion.id)
+          c =>
+            c.id ===
+            Number(coleccion.id)
         );
 
       if (!carta) {
@@ -621,10 +778,14 @@ Todavía no tienes cartas.
     }
 
     const diferentes =
-      obtenerCartasDiferentes(usuario);
+      obtenerCartasDiferentes(
+        usuario
+      );
 
     const total =
-      obtenerTotalCartas(usuario);
+      obtenerTotalCartas(
+        usuario
+      );
 
     texto +=
 `
@@ -654,7 +815,10 @@ Todavía no tienes cartas.
   if (comando === "cartainfo") {
 
     const numero =
-      parseInt(args[0], 10);
+      parseInt(
+        args[0],
+        10
+      );
 
     if (
       isNaN(numero) ||
@@ -684,7 +848,8 @@ Ejemplo:
 
     const carta =
       cartas.find(
-        c => c.id === numero
+        c =>
+          c.id === numero
       );
 
     if (!carta) {
@@ -703,9 +868,6 @@ Ejemplo:
       return true;
     }
 
-    const imagen =
-      obtenerImagen(carta.id);
-
     const texto =
 `🃏 *INFORMACIÓN DE CARTA*
 
@@ -713,10 +875,14 @@ Ejemplo:
 ✨ Rareza: *${carta.rareza}*
 🔢 Carta: *#${carta.id}*`;
 
+    // =====================================
+    // 🖼️ DESCARGAR Y ENVIAR
+    // =====================================
+
     await enviarImagenCarta(
       sock,
       chat,
-      imagen,
+      carta,
       texto,
       msg
     );
@@ -740,7 +906,9 @@ Ejemplo:
 
     try {
 
-      if (fs.existsSync(archivo)) {
+      if (
+        fs.existsSync(archivo)
+      ) {
 
         const contenido =
           fs.readFileSync(
@@ -748,10 +916,14 @@ Ejemplo:
             "utf8"
           );
 
-        if (contenido.trim()) {
+        if (
+          contenido.trim()
+        ) {
 
           usuarios =
-            JSON.parse(contenido);
+            JSON.parse(
+              contenido
+            );
         }
       }
 
@@ -772,7 +944,9 @@ Ejemplo:
           ([jid, usuario]) => {
 
             const coleccion =
-              Array.isArray(usuario.cartas)
+              Array.isArray(
+                usuario.cartas
+              )
                 ? usuario.cartas
                 : [];
 
@@ -781,10 +955,17 @@ Ejemplo:
 
             const copias =
               coleccion.reduce(
-                (suma, carta) => {
+                (
+                  suma,
+                  carta
+                ) => {
 
                   return suma +
-                    (Number(carta.cantidad) || 0);
+                    (
+                      Number(
+                        carta.cantidad
+                      ) || 0
+                    );
 
                 },
                 0
@@ -824,14 +1005,19 @@ Ejemplo:
           }
         )
 
-        .slice(0, 10);
+        .slice(
+          0,
+          10
+        );
 
     let texto =
 `🏆 *RANKING DE COLECCIONISTAS*
 
 `;
 
-    if (ranking.length === 0) {
+    if (
+      ranking.length === 0
+    ) {
 
       texto +=
         "Todavía nadie tiene cartas.";
@@ -839,11 +1025,15 @@ Ejemplo:
     } else {
 
       ranking.forEach(
-        (jugador, index) => {
+        (
+          jugador,
+          index
+        ) => {
 
           const numero =
             String(
-              jugador.jid.split("@")[0]
+              jugador.jid
+                .split("@")[0]
             );
 
           texto +=
@@ -862,7 +1052,8 @@ Ejemplo:
         text: texto,
         mentions:
           ranking.map(
-            jugador => jugador.jid
+            jugador =>
+              jugador.jid
           )
       },
       {
@@ -884,4 +1075,5 @@ Ejemplo:
 // 📤 EXPORTAR
 // =========================================
 
-module.exports = ejecutarCartas;
+module.exports =
+  ejecutarCartas;
