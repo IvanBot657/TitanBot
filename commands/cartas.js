@@ -17,54 +17,43 @@ const {
 // =========================================
 // 🖼️ IMÁGENES DE CARTAS
 // =========================================
-
 function obtenerImagen(id) {
 
   const base =
     "https://raw.githubusercontent.com/IvanBot657/TitanBot/main/Cartas/";
 
   const imagenes = {
-
-    // ⚪ COMUNES
-    1: "caballero_de_acero_carta_comun.png",
-    2: "elfo_arquero_carta_comun.png",
-    3: "arquero_arcano_carta_comun.png",
-
-    // 🟢 POCO COMUNES
-    4: "elfo_arquero_neon_carta_poco_comun.png",
-    5: "caballero_del_agua_carta_poco_comun.png",
-    6: "invocador_sombrio_carta_poco_comun.png",
-
-    // 🔵 RARAS
-    7: "mago_de_fuego_carta_rara.png",
-    8: "cazador_nocturno_carta_rara.png",
-    9: "caballero_de_las_sombras_carta_rara.png",
-    10: "mago_sombrio_carta_rara.png",
-
-    // 🟣 ÉPICAS
-    11: "esqueleto_guerrero_carta_epica.png",
-    12: "nigromante_neon_carta_epica.png",
-    13: "invocador_de_sombras_carta_epica.png",
-    14: "senor_del_fuego_eterno_carta_epica.png",
-
-    // 🟠 LEGENDARIAS
-    15: "guardian_del_bosque_carta_legendaria.png",
-    16: "rey_de_la_muerte_carta_legendaria.png",
-    17: "sacerdote_luminoso_carta_legendaria.png",
-    18: "principe_de_la_noche_carta_legendaria.png",
-    19: "principe_de_la_oscuridad_carta_legendaria.png",
-    20: "rey_dragon_carta_legendaria.png",
-    21: "guardian_de_la_luna_carta_legendaria.png",
-    22: "dragon_dorado_carta_legendaria.png",
-
-    // 🔴 MÍTICAS
-    23: "el_elegido_oscuro_carta_mitica.png",
-    24: "el_rey_caido_carta_mitica.png"
+    1: "caballero_de_acero.png",
+    2: "elfo_arquero.png",
+    3: "arquero_arcano.png",
+    4: "elfo_arquero_neon.png",
+    5: "caballero_del_agua.png",
+    6: "invocador_sombrio.png",
+    7: "mago_de_fuego.png",
+    8: "cazador_nocturno.png",
+    9: "caballero_de_las_sombras.png",
+    10: "mago_sombrio.png",
+    11: "esqueleto_guerrero.png",
+    12: "nigromante_neon.png",
+    13: "invocador_de_sombras.png",
+    14: "senor_del_fuego_eterno.png",
+    15: "guardian_del_bosque.png",
+    16: "rey_de_la_muerte.png",
+    17: "sacerdote_luminoso.png",
+    18: "principe_de_la_noche.png",
+    19: "principe_de_la_oscuridad.png",
+    20: "rey_dragon.png",
+    21: "guardian_de_la_luna.png",
+    22: "dragon_dorado.png",
+    23: "el_elegido_oscuro.png",
+    24: "el_rey_caido.png"
   };
 
-  return imagenes[id]
-    ? base + imagenes[id]
-    : null;
+  if (!imagenes[id]) {
+    return null;
+  }
+
+  return base + imagenes[id];
 }
 
 // =========================================
