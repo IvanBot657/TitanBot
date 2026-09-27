@@ -496,7 +496,7 @@ async function enviar(
   await sock.sendMessage(
     chat,
     {
-      text
+      text: texto
     }
   );
 
