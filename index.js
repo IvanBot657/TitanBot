@@ -2485,24 +2485,7 @@ ${resultadoXP.nivel}
 
             }
             
-            // =========================================
-            // 📤 ENVIAR MENSAJE
-            // =========================================
-
-            async function enviar(
-              sock,
-              chat,
-              texto
-           ) {
-
-             await sock.sendMessage(
-              chat,
-            {
-              text: texto
-         }
-      );
-
-    }
+            
 
             // =========================================
             // DESCONOCIDO
