@@ -1221,6 +1221,37 @@ ${resultadoXP.nivel}
             }
             
             // =========================================
+            //  MASCOTA
+            // =========================================
+             
+                const comandosMascota = [
+                 "mascota",
+                 "crearmascota",
+                 "alimentar",
+                 "comer",
+                 "jugar",
+                 "banar",
+                 "bañar",
+                 "dormir",
+                 "estado",
+                 "evolucionar",
+                 "tienda",
+                 "comprar",
+                "inventario"
+              ];
+
+                if (comandosMascota.includes(command.toLowerCase())) {
+                 return mascotaCommand.ejecutarMascota(
+                 m,
+                 sock,
+                 command,
+                 args
+              );
+           }
+
+            
+            
+            // =========================================
             // 🎯 MISIONES
             // =========================================
 
