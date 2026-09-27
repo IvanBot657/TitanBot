@@ -52,9 +52,7 @@ function cargarUsuarios() {
 // 💾 GUARDAR USUARIOS
 // =========================================
 
-function guardarUsuarios(
-  usuarios
-) {
+function guardarUsuarios(usuarios) {
 
   try {
 
@@ -123,7 +121,33 @@ function crearUsuario() {
 
     nivelAnimal: 1,
 
-    rachaUltimoDia: ""
+    rachaUltimoDia: "",
+
+    // =====================================
+    // 🐾 MASCOTA
+    // =====================================
+
+    mascota: {
+
+      adoptada: false,
+
+      nombre: "",
+
+      tipo: "",
+
+      nivel: 1,
+
+      experiencia: 0,
+
+      felicidad: 100,
+
+      energia: 100,
+
+      hambre: 0,
+
+      fechaAdopcion: ""
+
+    }
 
   };
 
@@ -133,9 +157,7 @@ function crearUsuario() {
 // 👤 OBTENER USUARIO
 // =========================================
 
-function obtenerUsuario(
-  jid
-) {
+function obtenerUsuario(jid) {
 
   const usuarios =
     cargarUsuarios();
@@ -292,6 +314,115 @@ function obtenerUsuario(
   }
 
   // =====================================
+  // 🐾 MASCOTA
+  // =====================================
+
+  if (
+    !usuario.mascota ||
+    typeof usuario.mascota !== "object"
+  ) {
+
+    usuario.mascota = {
+
+      adoptada: false,
+
+      nombre: "",
+
+      tipo: "",
+
+      nivel: 1,
+
+      experiencia: 0,
+
+      felicidad: 100,
+
+      energia: 100,
+
+      hambre: 0,
+
+      fechaAdopcion: ""
+
+    };
+
+  }
+
+  // =====================================
+  // 🐾 DATOS DE MASCOTA
+  // =====================================
+
+  if (
+    typeof usuario.mascota.adoptada !== "boolean"
+  ) {
+
+    usuario.mascota.adoptada = false;
+
+  }
+
+  if (
+    typeof usuario.mascota.nombre !== "string"
+  ) {
+
+    usuario.mascota.nombre = "";
+
+  }
+
+  if (
+    typeof usuario.mascota.tipo !== "string"
+  ) {
+
+    usuario.mascota.tipo = "";
+
+  }
+
+  if (
+    typeof usuario.mascota.nivel !== "number"
+  ) {
+
+    usuario.mascota.nivel = 1;
+
+  }
+
+  if (
+    typeof usuario.mascota.experiencia !== "number"
+  ) {
+
+    usuario.mascota.experiencia = 0;
+
+  }
+
+  if (
+    typeof usuario.mascota.felicidad !== "number"
+  ) {
+
+    usuario.mascota.felicidad = 100;
+
+  }
+
+  if (
+    typeof usuario.mascota.energia !== "number"
+  ) {
+
+    usuario.mascota.energia = 100;
+
+  }
+
+  if (
+    typeof usuario.mascota.hambre !== "number"
+  ) {
+
+    usuario.mascota.hambre = 0;
+
+  }
+
+  if (
+    typeof usuario.mascota.fechaAdopcion !== "string"
+  ) {
+
+    usuario.mascota.fechaAdopcion = "";
+
+  }
+
+  // =====================================
   // 💾 GUARDAR CAMBIOS
   // =====================================
 
@@ -338,10 +469,6 @@ function agregarXP(
   const usuarios =
     cargarUsuarios();
 
-  // =====================================
-  // 👤 CREAR USUARIO SI NO EXISTE
-  // =====================================
-
   if (!usuarios[jid]) {
 
     usuarios[jid] =
@@ -351,10 +478,6 @@ function agregarXP(
 
   const usuario =
     usuarios[jid];
-
-  // =====================================
-  // ⭐ XP GANADO
-  // =====================================
 
   const xpGanado =
     Number(cantidad) || 0;
