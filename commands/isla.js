@@ -8,10 +8,6 @@ const path = require("path");
 const islasPath = path.join(__dirname, "..", "database", "islas.json");
 const usuariosPath = path.join(__dirname, "..", "database", "usuarios_isla.json");
 
-// =========================================
-// 📁 CREAR DATABASE SI NO EXISTE
-// =========================================
-
 const databaseDir = path.join(__dirname, "..", "database");
 
 if (!fs.existsSync(databaseDir)) {
@@ -63,7 +59,7 @@ function guardarJSON(ruta, datos) {
 }
 
 // =========================================
-// 🏝️ ISLAS DISPONIBLES
+// 🏝️ ISLAS
 // =========================================
 
 const ISLAS_POR_DEFECTO = [
@@ -114,10 +110,6 @@ const ISLAS_POR_DEFECTO = [
   }
 ];
 
-// =========================================
-// 🏝️ CARGAR ISLAS
-// =========================================
-
 function cargarIslas() {
 
   const islas = cargarJSON(
@@ -125,7 +117,6 @@ function cargarIslas() {
     ISLAS_POR_DEFECTO
   );
 
-  // Si el archivo estaba vacío o tenía otro formato
   if (!Array.isArray(islas) || !islas.length) {
     guardarJSON(
       islasPath,
@@ -139,23 +130,19 @@ function cargarIslas() {
 }
 
 // =========================================
-// 👤 DATOS DEL USUARIO
+// 👤 USUARIOS
 // =========================================
 
 function cargarUsuarios() {
   return cargarJSON(usuariosPath, {});
 }
 
-// =========================================
-// 💾 GUARDAR USUARIO
-// =========================================
-
 function guardarUsuarios(usuarios) {
   guardarJSON(usuariosPath, usuarios);
 }
 
 // =========================================
-// 🏝️ CREAR PERFIL DE ISLA
+// 🏝️ CREAR PERFIL
 // =========================================
 
 function crearPerfil(id) {
@@ -166,9 +153,7 @@ function crearPerfil(id) {
 
     usuarios[id] = {
       isla: null,
-
       nivel: 1,
-
       experiencia: 0,
 
       recursos: {
@@ -221,44 +206,27 @@ async function isla(sock, chat, comando, args, id, msg) {
 
     const perfil = crearPerfil(id);
 
-    // ---------------------------------------
-    // Si escribe .isla aurora/cristal/bosque
-    // ---------------------------------------
+    // =====================================
+    // SELECCIONAR ISLA
+    // =====================================
 
     if (args[0]) {
 
       const opcion = args[0].toLowerCase();
 
-      const islaElegida = islas.find(
+      let islaElegida = islas.find(
         isla =>
           isla.id.toLowerCase() === opcion ||
           isla.nombre.toLowerCase().includes(opcion)
       );
 
-      // También permite .isla 1, .isla 2, .isla 3
+      // .isla 1 / 2 / 3
       if (!islaElegida && ["1", "2", "3"].includes(opcion)) {
 
         const posicion = Number(opcion) - 1;
 
         if (islas[posicion]) {
-          usuarios[id].isla = islas[posicion].id;
-          guardarUsuarios(usuarios);
-
-          await sock.sendMessage(chat, {
-            text:
-`🏝️ *¡ISLA SELECCIONADA!*
-
-${islas[posicion].icono} *${islas[posicion].nombre}*
-
-${islas[posicion].descripcion}
-
-🌤️ Clima: ${islas[posicion].clima}
-✨ Ambiente: ${islas[posicion].ambiente}
-
-¡Esta es ahora tu isla! 🌴`
-          });
-
-          return true;
+          islaElegida = islas[posicion];
         }
       }
 
@@ -266,7 +234,7 @@ ${islas[posicion].descripcion}
 
         await sock.sendMessage(chat, {
           text:
-`❌ No encontré esa isla.
+`❌ *No encontré esa isla.*
 
 Puedes elegir:
 
@@ -281,6 +249,13 @@ Puedes elegir:
       usuarios[id].isla = islaElegida.id;
 
       guardarUsuarios(usuarios);
+
+      // =====================================
+      // 🌐 ENLACE PERSONALIZADO
+      // =====================================
+
+      const enlaceWeb =
+        `https://titanbot-mijc.onrender.com/isla?id=${encodeURIComponent(id)}`;
 
       await sock.sendMessage(chat, {
         text:
@@ -297,15 +272,20 @@ ${islaElegida.descripcion}
 • ${islaElegida.actividades.join("\n• ")}
 
 ━━━━━━━━━━━━━━━━━━━━
-🏝️ Esta es ahora tu isla.`
+🏝️ Esta es ahora tu isla.
+
+🌐 *VISITA TU ISLA*
+${enlaceWeb}
+
+⚡ Allí podrás ver tu progreso y estadísticas.`
       });
 
       return true;
     }
 
-    // ---------------------------------------
-    // Si ya tiene isla
-    // ---------------------------------------
+    // =====================================
+    // YA TIENE ISLA
+    // =====================================
 
     if (perfil.isla) {
 
@@ -314,6 +294,9 @@ ${islaElegida.descripcion}
       );
 
       if (actual) {
+
+        const enlaceWeb =
+          `https://titanbot-mijc.onrender.com/isla?id=${encodeURIComponent(id)}`;
 
         await sock.sendMessage(chat, {
           text:
@@ -326,7 +309,11 @@ ${actual.descripcion}
 
 🏝️ Ya tienes esta isla seleccionada.
 
+🌐 *Ver mi isla:*
+${enlaceWeb}
+
 Para cambiarla:
+
 🌅 *.isla aurora*
 💎 *.isla cristal*
 🌿 *.isla bosque*`
@@ -336,9 +323,9 @@ Para cambiarla:
       }
     }
 
-    // ---------------------------------------
-    // Mostrar islas
-    // ---------------------------------------
+    // =====================================
+    // MOSTRAR ISLAS
+    // =====================================
 
     await sock.sendMessage(chat, {
       text:
@@ -372,7 +359,7 @@ También puedes usar:
   }
 
   // =======================================
-  // 🐾 .ADOPTAR
+  // 🐾 ADOPTAR
   // =======================================
 
   if (comando === "adoptar") {
@@ -420,7 +407,7 @@ Ahora forma parte de tu isla 🏝️`
   }
 
   // =======================================
-  // 🧭 .EXPLORAR
+  // 🧭 EXPLORAR
   // =======================================
 
   if (comando === "explorar") {
@@ -471,7 +458,7 @@ Usa:
   }
 
   // =======================================
-  // 🏗️ .CONSTRUIR
+  // 🏗️ CONSTRUIR
   // =======================================
 
   if (comando === "construir") {
@@ -595,7 +582,7 @@ ${tipo === "puerto" ? "⚓ Puerto" : ""}
   }
 
   // =======================================
-  // 🎒 .INVENTARIO
+  // 🎒 INVENTARIO
   // =======================================
 
   if (comando === "inventario") {
@@ -628,7 +615,7 @@ Usa:
   }
 
   // =======================================
-  // 📊 .ISLASTATS
+  // 📊 ISLASTATS
   // =======================================
 
   if (comando === "islastats") {
@@ -672,7 +659,7 @@ ${actual ? actual.icono : "🏝️"} ${actual ? actual.nombre : "Isla"}
   }
 
   // =======================================
-  // 🏆 .ISLARANKING
+  // 🏆 ISLARANKING
   // =======================================
 
   if (comando === "islaranking") {
