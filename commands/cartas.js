@@ -26,47 +26,45 @@ function obtenerImagen(id) {
   const imagenes = {
 
     // ⚪ COMUNES
-    1: "caballero_de_acero.png",
-    2: "elfo_arquero.png",
-    3: "arquero_arcano.png",
+    1: "caballero_de_acero_carta_comun.png",
+    2: "elfo_arquero_carta_comun.png",
+    3: "arquero_arcano_carta_comun.png",
 
     // 🟢 POCO COMUNES
-    4: "elfo_arquero_neon.png",
-    5: "caballero_del_agua.png",
-    6: "invocador_sombrio.png",
+    4: "elfo_arquero_neon_carta_poco_comun.png",
+    5: "caballero_del_agua_carta_poco_comun.png",
+    6: "invocador_sombrio_carta_poco_comun.png",
 
     // 🔵 RARAS
-    7: "mago_de_fuego.png",
-    8: "cazador_nocturno.png",
-    9: "caballero_de_las_sombras.png",
-    10: "mago_sombrio.png",
+    7: "mago_de_fuego_carta_rara.png",
+    8: "cazador_nocturno_carta_rara.png",
+    9: "caballero_de_las_sombras_carta_rara.png",
+    10: "mago_sombrio_carta_rara.png",
 
     // 🟣 ÉPICAS
-    11: "esqueleto_guerrero.png",
-    12: "nigromante_neon.png",
-    13: "invocador_de_sombras.png",
-    14: "senor_del_fuego_eterno.png",
+    11: "esqueleto_guerrero_carta_epica.png",
+    12: "nigromante_neon_carta_epica.png",
+    13: "invocador_de_sombras_carta_epica.png",
+    14: "senor_del_fuego_eterno_carta_epica.png",
 
     // 🟠 LEGENDARIAS
-    15: "guardian_del_bosque.png",
-    16: "rey_de_la_muerte.png",
-    17: "sacerdote_luminoso.png",
-    18: "principe_de_la_noche.png",
-    19: "principe_de_la_oscuridad.png",
-    20: "rey_dragon.png",
-    21: "guardian_de_la_luna.png",
-    22: "dragon_dorado.png",
+    15: "guardian_del_bosque_carta_legendaria.png",
+    16: "rey_de_la_muerte_carta_legendaria.png",
+    17: "sacerdote_luminoso_carta_legendaria.png",
+    18: "principe_de_la_noche_carta_legendaria.png",
+    19: "principe_de_la_oscuridad_carta_legendaria.png",
+    20: "rey_dragon_carta_legendaria.png",
+    21: "guardian_de_la_luna_carta_legendaria.png",
+    22: "dragon_dorado_carta_legendaria.png",
 
     // 🔴 MÍTICAS
-    23: "el_elegido_oscuro.png",
-    24: "el_rey_caido.png"
+    23: "el_elegido_oscuro_carta_mitica.png",
+    24: "el_rey_caido_carta_mitica.png"
   };
 
-  if (!imagenes[id]) {
-    return null;
-  }
-
-  return base + imagenes[id];
+  return imagenes[id]
+    ? base + imagenes[id]
+    : null;
 }
 
 // =========================================
@@ -323,6 +321,71 @@ function obtenerCartasDiferentes(usuario) {
 }
 
 // =========================================
+// 🖼️ ENVIAR IMAGEN DE CARTA
+// =========================================
+
+async function enviarImagenCarta(
+  sock,
+  chat,
+  imagen,
+  caption,
+  msg
+) {
+
+  if (!imagen) {
+
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+          caption +
+          "\n\n🖼️ Imagen no disponible."
+      },
+      {
+        quoted: msg
+      }
+    );
+
+    return;
+  }
+
+  try {
+
+    await sock.sendMessage(
+      chat,
+      {
+        image: {
+          url: imagen
+        },
+        caption: caption
+      },
+      {
+        quoted: msg
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Error enviando imagen:",
+      error
+    );
+
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+          caption +
+          "\n\n⚠️ No se pudo cargar la imagen."
+      },
+      {
+        quoted: msg
+      }
+    );
+  }
+}
+
+// =========================================
 // 🃏 EJECUTAR SISTEMA DE CARTAS
 // =========================================
 
@@ -348,7 +411,8 @@ async function ejecutarCartas(
       await sock.sendMessage(
         chat,
         {
-          text: "❌ No se pudo generar una carta."
+          text:
+            "❌ No se pudo generar una carta."
         },
         {
           quoted: msg
@@ -393,7 +457,9 @@ async function ejecutarCartas(
       usuario.cartas = [];
     }
 
-    // Buscar carta existente
+    // =====================================
+    // 🔎 BUSCAR CARTA EXISTENTE
+    // =====================================
 
     const existente =
       usuario.cartas.find(
@@ -416,7 +482,7 @@ async function ejecutarCartas(
     }
 
     // =====================================
-    // 💾 GUARDAR
+    // 💾 GUARDAR COLECCIÓN
     // =====================================
 
     try {
@@ -445,7 +511,7 @@ async function ejecutarCartas(
     }
 
     // =====================================
-    // 🖼️ IMAGEN
+    // 🖼️ OBTENER IMAGEN
     // =====================================
 
     const imagen =
@@ -474,60 +540,16 @@ ${
 📦 Cartas totales: *${total}*`;
 
     // =====================================
-    // 🖼️ ENVIAR IMAGEN
+    // 📤 ENVIAR
     // =====================================
 
-    if (imagen) {
-
-      try {
-
-        await sock.sendMessage(
-          chat,
-          {
-            image: {
-              url: imagen
-            },
-            caption: caption
-          },
-          {
-            quoted: msg
-          }
-        );
-
-      } catch (error) {
-
-        console.error(
-          "❌ Error enviando imagen:",
-          error
-        );
-
-        await sock.sendMessage(
-          chat,
-          {
-            text:
-              caption +
-              "\n\n⚠️ No se pudo cargar la imagen."
-          },
-          {
-            quoted: msg
-          }
-        );
-      }
-
-    } else {
-
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            caption +
-            "\n\n🖼️ Imagen no disponible."
-        },
-        {
-          quoted: msg
-        }
-      );
-    }
+    await enviarImagenCarta(
+      sock,
+      chat,
+      imagen,
+      caption,
+      msg
+    );
 
     return true;
   }
@@ -702,57 +724,13 @@ Ejemplo:
 ✨ Rareza: *${carta.rareza}*
 🔢 Carta: *#${carta.id}*`;
 
-    if (imagen) {
-
-      try {
-
-        await sock.sendMessage(
-          chat,
-          {
-            image: {
-              url: imagen
-            },
-            caption: texto
-          },
-          {
-            quoted: msg
-          }
-        );
-
-      } catch (error) {
-
-        console.error(
-          "❌ Error enviando imagen:",
-          error
-        );
-
-        await sock.sendMessage(
-          chat,
-          {
-            text:
-              texto +
-              "\n\n⚠️ No se pudo cargar la imagen."
-          },
-          {
-            quoted: msg
-          }
-        );
-      }
-
-    } else {
-
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            texto +
-            "\n\n🖼️ Imagen no disponible."
-        },
-        {
-          quoted: msg
-        }
-      );
-    }
+    await enviarImagenCarta(
+      sock,
+      chat,
+      imagen,
+      texto,
+      msg
+    );
 
     return true;
   }
