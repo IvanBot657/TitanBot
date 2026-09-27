@@ -1,0 +1,32 @@
+[
+  {
+    "id": "aurora",
+    "nombre": "Isla Aurora",
+    "descripcion": "Una isla tranquila con playas luminosas, palmeras y noches llenas de estrellas.",
+    "clima": "Cálido y despejado",
+    "ambiente": "Relajado y mágico",
+    "color": "#6c63ff",
+    "icono": "🌅",
+    "actividades": ["Explorar la playa", "Ver el atardecer", "Observar estrellas"]
+  },
+  {
+    "id": "cristal",
+    "nombre": "Isla Cristal",
+    "descripcion": "Famosa por sus aguas transparentes y pequeñas cuevas junto a la costa.",
+    "clima": "Tropical",
+    "ambiente": "Aventura y exploración",
+    "color": "#00bcd4",
+    "icono": "💎",
+    "actividades": ["Explorar cuevas", "Nadar", "Buscar tesoros"]
+  },
+  {
+    "id": "bosque",
+    "nombre": "Isla Bosque",
+    "descripcion": "Una isla cubierta de vegetación, senderos y zonas naturales para descubrir.",
+    "clima": "Húmedo y fresco",
+    "ambiente": "Natural y misterioso",
+    "color": "#43a047",
+    "icono": "🌿",
+    "actividades": ["Caminar por senderos", "Explorar la selva", "Descubrir animales"]
+  }
+]
