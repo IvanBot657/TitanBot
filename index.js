@@ -447,23 +447,95 @@ setInterval(
 
 
 
-   // ===================================================
+    // ===================================================
 // 🏝️ ISLA WEB
 // ===================================================
 
-if (req.url === "/isla") {
+if (req.url.startsWith("/isla")) {
 
-  res.writeHead(200, {
-    "Content-Type": "text/html; charset=utf-8"
-  });
+  const fs = require("fs");
+  const path = require("path");
 
-  res.end(`
+  const usuariosPath = path.join(
+    __dirname,
+    "database",
+    "usuarios_isla.json"
+  );
+
+  const islasPath = path.join(
+    __dirname,
+    "database",
+    "islas.json"
+  );
+
+  // =========================================
+  // 🔎 LEER ID DE LA URL
+  // =========================================
+
+  const urlActual = new URL(
+    req.url,
+    `http://${req.headers.host || "localhost"}`
+  );
+
+  const usuarioId = urlActual.searchParams.get("id");
+
+  // =========================================
+  // 📖 CARGAR DATOS
+  // =========================================
+
+  let usuarios = {};
+  let islas = [];
+
+  try {
+    if (fs.existsSync(usuariosPath)) {
+      usuarios = JSON.parse(
+        fs.readFileSync(usuariosPath, "utf8")
+      );
+    }
+
+    if (fs.existsSync(islasPath)) {
+      islas = JSON.parse(
+        fs.readFileSync(islasPath, "utf8")
+      );
+    }
+  } catch (error) {
+
+    console.error(
+      "❌ Error cargando datos de isla:",
+      error
+    );
+  }
+
+  // =========================================
+  // 🏝️ DATOS DEL USUARIO
+  // =========================================
+
+  const perfil = usuarioId
+    ? usuarios[usuarioId]
+    : null;
+
+  // =========================================
+  // 🌅 SI NO HAY USUARIO
+  // =========================================
+
+  if (!perfil) {
+
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8"
+    });
+
+    res.end(`
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
 
 <title>🏝️ Isla Titan</title>
 
@@ -476,166 +548,399 @@ if (req.url === "/isla") {
 body {
   margin: 0;
   min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
   font-family: Arial, sans-serif;
+
   color: white;
 
   background:
-    radial-gradient(circle at top, #3b82f6 0%, transparent 35%),
-    linear-gradient(135deg, #07111f, #102a43, #174e63);
-
-  padding: 30px 15px;
-}
-
-.container {
-  width: min(100%, 1000px);
-  margin: auto;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 35px;
-}
-
-.header h1 {
-  font-size: clamp(36px, 8vw, 64px);
-  margin: 0 0 10px;
-}
-
-.header p {
-  color: #dbeafe;
-  font-size: 17px;
-}
-
-.islas {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
-  gap: 22px;
+    radial-gradient(
+      circle at top,
+      #2563eb,
+      transparent 40%
+    ),
+    linear-gradient(
+      135deg,
+      #07111f,
+      #102a43,
+      #174e63
+    );
 }
 
 .card {
-  position: relative;
-  overflow: hidden;
 
-  padding: 25px;
+  width: min(100%, 600px);
 
-  border-radius: 25px;
+  padding: 40px 25px;
 
-  background: rgba(0, 0, 0, .38);
+  text-align: center;
+
+  border-radius: 28px;
+
+  background: rgba(0,0,0,.38);
 
   border: 1px solid rgba(255,255,255,.15);
 
   box-shadow:
-    0 15px 40px rgba(0,0,0,.35);
+    0 20px 50px rgba(0,0,0,.4);
 
   backdrop-filter: blur(10px);
-
-  transition: .3s;
-}
-
-.card:hover {
-  transform: translateY(-8px);
-  box-shadow:
-    0 20px 50px rgba(0,0,0,.5);
 }
 
 .icon {
-  font-size: 65px;
-  text-align: center;
-  margin-bottom: 10px;
+  font-size: 75px;
 }
 
-.card h2 {
+h1 {
+  font-size: 38px;
+}
+
+p {
+  color: #dbeafe;
+  line-height: 1.6;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+  <div class="icon">🏝️</div>
+
+  <h1>Isla Titan</h1>
+
+  <p>
+    No encontramos un perfil de isla.
+  </p>
+
+  <p>
+    Abre el enlace que TITANBOT te envió
+    después de seleccionar tu isla.
+  </p>
+
+</div>
+
+</body>
+
+</html>
+`);
+
+    return;
+  }
+
+  // =========================================
+  // 🏝️ BUSCAR ISLA
+  // =========================================
+
+  const islaActual = islas.find(
+    isla => isla.id === perfil.isla
+  );
+
+  // =========================================
+  // ❌ ISLA NO ENCONTRADA
+  // =========================================
+
+  if (!islaActual) {
+
+    res.writeHead(200, {
+      "Content-Type": "text/html; charset=utf-8"
+    });
+
+    res.end(`
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+
+<title>🏝️ Isla Titan</title>
+
+<style>
+
+body {
+  margin: 0;
+  min-height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: Arial, sans-serif;
+
+  color: white;
+
+  background:
+    linear-gradient(
+      135deg,
+      #07111f,
+      #102a43,
+      #174e63
+    );
+}
+
+.card {
+  width: min(90%, 600px);
+  padding: 35px;
   text-align: center;
-  font-size: 27px;
+  border-radius: 25px;
+  background: rgba(0,0,0,.4);
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+  <h1>🏝️</h1>
+
+  <h2>No tienes una isla seleccionada</h2>
+
+  <p>
+    Ve a TITANBOT y utiliza:
+  </p>
+
+  <p>
+    <b>.isla</b>
+  </p>
+
+</div>
+
+</body>
+
+</html>
+`);
+
+    return;
+  }
+
+  // =========================================
+  // 📊 DATOS
+  // =========================================
+
+  const recursos = perfil.recursos || {};
+
+  const construcciones =
+    perfil.construcciones || {};
+
+  const mascota =
+    perfil.mascota || "Ninguna";
+
+  // =========================================
+  // 🌐 PÁGINA DE LA ISLA
+  // =========================================
+
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8"
+  });
+
+  res.end(`
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+${islaActual.icono} ${islaActual.nombre}
+</title>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+
+  margin: 0;
+
+  min-height: 100vh;
+
+  font-family: Arial, sans-serif;
+
+  color: white;
+
+  padding: 25px 15px;
+
+  background:
+    radial-gradient(
+      circle at top,
+      ${islaActual.color || "#2563eb"},
+      transparent 40%
+    ),
+    linear-gradient(
+      135deg,
+      #07111f,
+      #102a43,
+      #174e63
+    );
+}
+
+.container {
+
+  width: min(100%, 1000px);
+
+  margin: auto;
+}
+
+.header {
+
+  text-align: center;
+
+  padding: 30px 10px;
+}
+
+.icon {
+
+  font-size: 80px;
+
+  filter:
+    drop-shadow(
+      0 10px 20px rgba(0,0,0,.4)
+    );
+}
+
+h1 {
+
+  font-size: clamp(
+    35px,
+    8vw,
+    58px
+  );
+
   margin: 10px 0;
 }
 
 .descripcion {
+
+  max-width: 650px;
+
+  margin: auto;
+
   color: #dbeafe;
-  line-height: 1.6;
-  text-align: center;
+
+  line-height: 1.7;
+
+  font-size: 17px;
 }
 
-.info {
-  margin-top: 20px;
+.grid {
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      auto-fit,
+      minmax(220px, 1fr)
+    );
+
+  gap: 18px;
+
+  margin-top: 25px;
 }
 
-.info p {
-  margin: 8px 0;
+.card {
+
+  padding: 23px;
+
+  border-radius: 22px;
+
+  background:
+    rgba(0,0,0,.38);
+
+  border:
+    1px solid
+    rgba(255,255,255,.14);
+
+  box-shadow:
+    0 15px 35px
+    rgba(0,0,0,.3);
+
+  backdrop-filter: blur(10px);
 }
 
-.actividades {
-  margin-top: 18px;
+.card h2 {
+
+  margin-top: 0;
+
+  font-size: 22px;
 }
 
-.actividades h3 {
-  margin-bottom: 10px;
+.stat {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  padding: 9px 0;
+
+  border-bottom:
+    1px solid
+    rgba(255,255,255,.08);
 }
 
-.actividades ul {
-  padding-left: 20px;
-  line-height: 1.8;
+.stat:last-child {
+
+  border-bottom: none;
 }
 
-.boton {
-  display: block;
-
-  margin-top: 22px;
-
-  padding: 13px;
-
-  border-radius: 13px;
-
-  text-align: center;
-
-  color: white;
-
-  text-decoration: none;
+.numero {
 
   font-weight: bold;
 
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-
-  transition: .2s;
+  color: #fff;
 }
 
-.boton:hover {
-  transform: scale(1.03);
+.actividades {
+
+  line-height: 1.9;
+
+  color: #dbeafe;
 }
 
-.aurora {
-  border-top: 5px solid #6c63ff;
-}
+.badge {
 
-.cristal {
-  border-top: 5px solid #00bcd4;
-}
+  display: inline-block;
 
-.bosque {
-  border-top: 5px solid #43a047;
-}
+  padding: 8px 14px;
 
-.volver {
-  display: block;
+  margin-top: 8px;
 
-  width: fit-content;
+  border-radius: 20px;
 
-  margin: 35px auto 0;
-
-  padding: 13px 22px;
-
-  border-radius: 13px;
-
-  background: rgba(255,255,255,.12);
-
-  color: white;
-
-  text-decoration: none;
+  background:
+    rgba(255,255,255,.12);
 
   font-weight: bold;
 }
 
 .footer {
+
   text-align: center;
 
   margin-top: 30px;
@@ -653,183 +958,209 @@ body {
 
 <div class="container">
 
+  <!-- ================================= -->
+  <!-- 🏝️ ENCABEZADO -->
+  <!-- ================================= -->
+
   <div class="header">
 
-    <h1>🏝️ Isla Titan</h1>
+    <div class="icon">
+      ${islaActual.icono}
+    </div>
 
-    <p>
-      Elige tu isla y comienza tu aventura en TITANBOT ⚡
+    <h1>
+      ${islaActual.nombre}
+    </h1>
+
+    <p class="descripcion">
+      ${islaActual.descripcion}
     </p>
 
-  </div>
-
-
-  <div class="islas">
-
-
-    <!-- 🌅 AURORA -->
-
-    <div class="card aurora">
-
-      <div class="icon">🌅</div>
-
-      <h2>Isla Aurora</h2>
-
-      <p class="descripcion">
-        Una isla tranquila con playas luminosas,
-        palmeras y noches llenas de estrellas.
-      </p>
-
-      <div class="info">
-
-        <p>☀️ <b>Clima:</b> Cálido y despejado</p>
-
-        <p>✨ <b>Ambiente:</b> Relajado y mágico</p>
-
-      </div>
-
-      <div class="actividades">
-
-        <h3>🌴 Actividades</h3>
-
-        <ul>
-          <li>Explorar la playa</li>
-          <li>Ver el atardecer</li>
-          <li>Observar estrellas</li>
-        </ul>
-
-      </div>
-
-      <a class="boton" href="#aurora">
-        🌅 Elegir Aurora
-      </a>
-
+    <div class="badge">
+      🌤️ ${islaActual.clima}
     </div>
 
-
-    <!-- 💎 CRISTAL -->
-
-    <div class="card cristal">
-
-      <div class="icon">💎</div>
-
-      <h2>Isla Cristal</h2>
-
-      <p class="descripcion">
-        Famosa por sus aguas transparentes
-        y pequeñas cuevas junto a la costa.
-      </p>
-
-      <div class="info">
-
-        <p>🌊 <b>Clima:</b> Tropical</p>
-
-        <p>🗺️ <b>Ambiente:</b> Aventura y exploración</p>
-
-      </div>
-
-      <div class="actividades">
-
-        <h3>🏴‍☠️ Actividades</h3>
-
-        <ul>
-          <li>Explorar cuevas</li>
-          <li>Nadar</li>
-          <li>Buscar tesoros</li>
-        </ul>
-
-      </div>
-
-      <a class="boton" href="#cristal">
-        💎 Elegir Cristal
-      </a>
-
+    <div class="badge">
+      ✨ ${islaActual.ambiente}
     </div>
-
-
-    <!-- 🌿 BOSQUE -->
-
-    <div class="card bosque">
-
-      <div class="icon">🌿</div>
-
-      <h2>Isla Bosque</h2>
-
-      <p class="descripcion">
-        Una isla cubierta de vegetación,
-        senderos y zonas naturales para descubrir.
-      </p>
-
-      <div class="info">
-
-        <p>🌧️ <b>Clima:</b> Húmedo y fresco</p>
-
-        <p>🌲 <b>Ambiente:</b> Natural y misterioso</p>
-
-      </div>
-
-      <div class="actividades">
-
-        <h3>🐾 Actividades</h3>
-
-        <ul>
-          <li>Caminar por senderos</li>
-          <li>Explorar la selva</li>
-          <li>Descubrir animales</li>
-        </ul>
-
-      </div>
-
-      <a class="boton" href="#bosque">
-        🌿 Elegir Bosque
-      </a>
-
-    </div>
-
 
   </div>
 
 
-  <a class="volver" href="/">
-    🤖 Volver a TITANBOT
-  </a>
+  <!-- ================================= -->
+  <!-- 📊 ESTADÍSTICAS -->
+  <!-- ================================= -->
+
+  <div class="grid">
+
+    <div class="card">
+
+      <h2>⭐ Progreso</h2>
+
+      <div class="stat">
+        <span>Nivel</span>
+        <span class="numero">
+          ${perfil.nivel || 1}
+        </span>
+      </div>
+
+      <div class="stat">
+        <span>Experiencia</span>
+        <span class="numero">
+          ${perfil.experiencia || 0} XP
+        </span>
+      </div>
+
+      <div class="stat">
+        <span>Exploraciones</span>
+        <span class="numero">
+          ${perfil.exploraciones || 0}
+        </span>
+      </div>
+
+    </div>
+
+
+    <!-- ================================= -->
+    <!-- 🎒 RECURSOS -->
+    <!-- ================================= -->
+
+    <div class="card">
+
+      <h2>🎒 Recursos</h2>
+
+      <div class="stat">
+        <span>🌳 Madera</span>
+        <span class="numero">
+          ${recursos.madera || 0}
+        </span>
+      </div>
+
+      <div class="stat">
+        <span>🪨 Piedra</span>
+        <span class="numero">
+          ${recursos.piedra || 0}
+        </span>
+      </div>
+
+      <div class="stat">
+        <span>🍎 Comida</span>
+        <span class="numero">
+          ${recursos.comida || 0}
+        </span>
+      </div>
+
+    </div>
+
+
+    <!-- ================================= -->
+    <!-- 🏗️ CONSTRUCCIONES -->
+    <!-- ================================= -->
+
+    <div class="card">
+
+      <h2>🏗️ Construcciones</h2>
+
+      <div class="stat">
+        <span>🏠 Casa</span>
+        <span class="numero">
+          ${construcciones.casa || 0}
+        </span>
+      </div>
+
+      <div class="stat">
+        <span>🌾 Granja</span>
+        <span class="numero">
+          ${construcciones.granja || 0}
+        </span>
+      </div>
+
+      <div class="stat">
+        <span>⚓ Puerto</span>
+        <span class="numero">
+          ${construcciones.puerto || 0}
+        </span>
+      </div>
+
+    </div>
+
+
+    <!-- ================================= -->
+    <!-- 🐯 MASCOTA -->
+    <!-- ================================= -->
+
+    <div class="card">
+
+      <h2>🐾 Mascota</h2>
+
+      <p>
+
+        ${
+          mascota === "Tigre"
+            ? "🐯"
+            : "🐾"
+        }
+
+        <b>${mascota}</b>
+
+      </p>
+
+      ${
+        mascota === "Tigre"
+          ? `
+          <p class="actividades">
+            Tu compañero forma parte
+            de tu aventura en la isla.
+          </p>
+          `
+          : `
+          <p class="actividades">
+            Todavía no tienes una mascota.
+            <br><br>
+            Usa <b>.adoptar</b> en TITANBOT.
+          </p>
+          `
+      }
+
+    </div>
+
+  </div>
+
+
+  <!-- ================================= -->
+  <!-- 🎯 ACTIVIDADES -->
+  <!-- ================================= -->
+
+  <div class="card" style="margin-top:18px;">
+
+    <h2>🎯 Actividades de ${islaActual.nombre}</h2>
+
+    <div class="actividades">
+
+      ${islaActual.actividades
+        .map(actividad => `• ${actividad}`)
+        .join("<br>")}
+
+    </div>
+
+  </div>
 
 
   <div class="footer">
 
-    🏝️ TITANBOT — Sistema de Islas
+    🏝️ TITANBOT — Tu isla, tu aventura ⚡
 
   </div>
 
 </div>
 
 </body>
+
 </html>
 `);
 
   return;
-}
-
-  // ===================================================
-  // QR DATA
-  // ===================================================
-
-  if (req.url === "/qr-data") {
-
-    res.writeHead(200, {
-      "Content-Type": "application/json"
-    });
-
-    res.end(
-      JSON.stringify({
-        estado,
-        qr: qrActual,
-        codigo: codigoVinculacion
-      })
-    );
-
-    return;
-  }
+    }
 
 
   // ===================================================
