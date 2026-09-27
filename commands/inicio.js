@@ -295,6 +295,16 @@ async function inicio(
 ┃ • .warn @usuario
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🏝️ ISLA 〕━━━╮
+┃ • .isla
+┃ • .adoptar
+┃ • .explorar
+┃ • .construir
+┃ • .inventario
+┃ • .islastats
+┃ • .islaranking
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 ⚙️ CONFIGURACIÓN DEL GRUPO 〕━━━╮
 ┃ • .linkgrupo
 ┃ • .setnombre
