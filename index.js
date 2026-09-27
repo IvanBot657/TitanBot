@@ -447,69 +447,368 @@ setInterval(
 
 
 
-  // ===================================================
-  // 🏝️ ISLA WEB
-  // ===================================================
+   // ===================================================
+// 🏝️ ISLA WEB
+// ===================================================
 
-  if (req.url === "/isla") {
+if (req.url === "/isla") {
 
-    res.writeHead(200, {
-      "Content-Type": "text/html; charset=utf-8"
-    });
+  res.writeHead(200, {
+    "Content-Type": "text/html; charset=utf-8"
+  });
 
-    res.end(`
+  res.end(`
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>🏝️ Isla Titan</title>
+
 <style>
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #0b132b, #1c2541, #3a506b);
-  color: white;
   font-family: Arial, sans-serif;
+  color: white;
+
+  background:
+    radial-gradient(circle at top, #3b82f6 0%, transparent 35%),
+    linear-gradient(135deg, #07111f, #102a43, #174e63);
+
+  padding: 30px 15px;
 }
-.card {
-  width: min(90%, 520px);
-  padding: 30px;
+
+.container {
+  width: min(100%, 1000px);
+  margin: auto;
+}
+
+.header {
   text-align: center;
-  border-radius: 24px;
-  background: rgba(0,0,0,.35);
-  box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  margin-bottom: 35px;
 }
-h1 { font-size: 42px; margin-bottom: 10px; }
-p { line-height: 1.6; }
-a {
-  display: inline-block;
-  margin-top: 15px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  background: #2ecc71;
-  color: #081c15;
+
+.header h1 {
+  font-size: clamp(36px, 8vw, 64px);
+  margin: 0 0 10px;
+}
+
+.header p {
+  color: #dbeafe;
+  font-size: 17px;
+}
+
+.islas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 22px;
+}
+
+.card {
+  position: relative;
+  overflow: hidden;
+
+  padding: 25px;
+
+  border-radius: 25px;
+
+  background: rgba(0, 0, 0, .38);
+
+  border: 1px solid rgba(255,255,255,.15);
+
+  box-shadow:
+    0 15px 40px rgba(0,0,0,.35);
+
+  backdrop-filter: blur(10px);
+
+  transition: .3s;
+}
+
+.card:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 20px 50px rgba(0,0,0,.5);
+}
+
+.icon {
+  font-size: 65px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.card h2 {
+  text-align: center;
+  font-size: 27px;
+  margin: 10px 0;
+}
+
+.descripcion {
+  color: #dbeafe;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.info {
+  margin-top: 20px;
+}
+
+.info p {
+  margin: 8px 0;
+}
+
+.actividades {
+  margin-top: 18px;
+}
+
+.actividades h3 {
+  margin-bottom: 10px;
+}
+
+.actividades ul {
+  padding-left: 20px;
+  line-height: 1.8;
+}
+
+.boton {
+  display: block;
+
+  margin-top: 22px;
+
+  padding: 13px;
+
+  border-radius: 13px;
+
+  text-align: center;
+
+  color: white;
+
   text-decoration: none;
+
+  font-weight: bold;
+
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+
+  transition: .2s;
+}
+
+.boton:hover {
+  transform: scale(1.03);
+}
+
+.aurora {
+  border-top: 5px solid #6c63ff;
+}
+
+.cristal {
+  border-top: 5px solid #00bcd4;
+}
+
+.bosque {
+  border-top: 5px solid #43a047;
+}
+
+.volver {
+  display: block;
+
+  width: fit-content;
+
+  margin: 35px auto 0;
+
+  padding: 13px 22px;
+
+  border-radius: 13px;
+
+  background: rgba(255,255,255,.12);
+
+  color: white;
+
+  text-decoration: none;
+
   font-weight: bold;
 }
+
+.footer {
+  text-align: center;
+
+  margin-top: 30px;
+
+  color: #94a3b8;
+
+  font-size: 14px;
+}
+
 </style>
+
 </head>
+
 <body>
-  <div class="card">
+
+<div class="container">
+
+  <div class="header">
+
     <h1>🏝️ Isla Titan</h1>
-    <p>Una isla misteriosa donde comienza la aventura de TitanBot.</p>
-    <p>Explora, descubre y prepárate para nuevas funciones.</p>
-    <a href="/">🤖 Volver a TitanBot</a>
+
+    <p>
+      Elige tu isla y comienza tu aventura en TITANBOT ⚡
+    </p>
+
   </div>
+
+
+  <div class="islas">
+
+
+    <!-- 🌅 AURORA -->
+
+    <div class="card aurora">
+
+      <div class="icon">🌅</div>
+
+      <h2>Isla Aurora</h2>
+
+      <p class="descripcion">
+        Una isla tranquila con playas luminosas,
+        palmeras y noches llenas de estrellas.
+      </p>
+
+      <div class="info">
+
+        <p>☀️ <b>Clima:</b> Cálido y despejado</p>
+
+        <p>✨ <b>Ambiente:</b> Relajado y mágico</p>
+
+      </div>
+
+      <div class="actividades">
+
+        <h3>🌴 Actividades</h3>
+
+        <ul>
+          <li>Explorar la playa</li>
+          <li>Ver el atardecer</li>
+          <li>Observar estrellas</li>
+        </ul>
+
+      </div>
+
+      <a class="boton" href="#aurora">
+        🌅 Elegir Aurora
+      </a>
+
+    </div>
+
+
+    <!-- 💎 CRISTAL -->
+
+    <div class="card cristal">
+
+      <div class="icon">💎</div>
+
+      <h2>Isla Cristal</h2>
+
+      <p class="descripcion">
+        Famosa por sus aguas transparentes
+        y pequeñas cuevas junto a la costa.
+      </p>
+
+      <div class="info">
+
+        <p>🌊 <b>Clima:</b> Tropical</p>
+
+        <p>🗺️ <b>Ambiente:</b> Aventura y exploración</p>
+
+      </div>
+
+      <div class="actividades">
+
+        <h3>🏴‍☠️ Actividades</h3>
+
+        <ul>
+          <li>Explorar cuevas</li>
+          <li>Nadar</li>
+          <li>Buscar tesoros</li>
+        </ul>
+
+      </div>
+
+      <a class="boton" href="#cristal">
+        💎 Elegir Cristal
+      </a>
+
+    </div>
+
+
+    <!-- 🌿 BOSQUE -->
+
+    <div class="card bosque">
+
+      <div class="icon">🌿</div>
+
+      <h2>Isla Bosque</h2>
+
+      <p class="descripcion">
+        Una isla cubierta de vegetación,
+        senderos y zonas naturales para descubrir.
+      </p>
+
+      <div class="info">
+
+        <p>🌧️ <b>Clima:</b> Húmedo y fresco</p>
+
+        <p>🌲 <b>Ambiente:</b> Natural y misterioso</p>
+
+      </div>
+
+      <div class="actividades">
+
+        <h3>🐾 Actividades</h3>
+
+        <ul>
+          <li>Caminar por senderos</li>
+          <li>Explorar la selva</li>
+          <li>Descubrir animales</li>
+        </ul>
+
+      </div>
+
+      <a class="boton" href="#bosque">
+        🌿 Elegir Bosque
+      </a>
+
+    </div>
+
+
+  </div>
+
+
+  <a class="volver" href="/">
+    🤖 Volver a TITANBOT
+  </a>
+
+
+  <div class="footer">
+
+    🏝️ TITANBOT — Sistema de Islas
+
+  </div>
+
+</div>
+
 </body>
 </html>
 `);
 
-    return;
-  }
+  return;
+}
 
   // ===================================================
   // QR DATA
