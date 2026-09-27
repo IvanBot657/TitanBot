@@ -1,10 +1,8 @@
 // =========================================
 // 👹 TITANBOT - BOSS IA CON GROQ
 // =========================================
-// Comando:
+// Comandos:
 // .boss
-//
-// Estado:
 // .bossestado
 //
 // Requiere:
@@ -341,7 +339,6 @@ async function consultarGroq(
 
       temperature: 0.8,
 
-      // Respuesta corta
       max_tokens: 300,
 
       reasoning_effort: "medium"
@@ -902,7 +899,7 @@ ${boss.emoji} *${boss.nombre}*
 }
 
 // =========================================
-// 🎮 COMANDO
+// 🎮 COMANDO PRINCIPAL
 // =========================================
 
 async function boss(
@@ -916,6 +913,14 @@ async function boss(
 
   const texto =
     obtenerTexto(msg);
+
+  // =====================================
+  // NORMALIZAR COMANDO
+  // =====================================
+
+  comando = String(comando || "")
+    .toLowerCase()
+    .replace(/^\./, "");
 
   // =====================================
   // .BOSS
@@ -959,9 +964,22 @@ async function boss(
   const bossActivo =
     db[limpiarID(id)];
 
+  // =====================================
+  // 🔒 NO CAPTURAR OTROS COMANDOS
+  // =====================================
+
+  const esComando =
+    String(comando || "").startsWith(".") ||
+    String(texto || "").startsWith(".");
+
+  // =====================================
+  // SOLO MENSAJES NORMALES
+  // =====================================
+
   if (
     bossActivo?.activo &&
-    texto
+    texto &&
+    !esComando
   ) {
 
     return continuarBoss(
@@ -972,6 +990,10 @@ async function boss(
     );
 
   }
+
+  // =====================================
+  // NO ES DEL BOSS
+  // =====================================
 
   return false;
 }
