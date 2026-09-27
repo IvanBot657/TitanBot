@@ -305,6 +305,11 @@ async function inicio(
 ┃ • .islaranking
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+━━〔 👹 BOSS 〕━━━━━━━━╮
+┃ • .boss
+┃ • .bossestado
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 ⚙️ CONFIGURACIÓN DEL GRUPO 〕━━━╮
 ┃ • .linkgrupo
 ┃ • .setnombre
