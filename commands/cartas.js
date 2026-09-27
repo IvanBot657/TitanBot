@@ -8,7 +8,7 @@ const path = require("path");
 // =========================================
 // 👤 SISTEMA DE USUARIOS
 // =========================================
-// datosUsuarios.js está dentro de /commands/
+
 const {
   obtenerUsuario,
   guardarUsuario
@@ -19,82 +19,210 @@ const {
 // =========================================
 
 function obtenerImagen(id) {
-  // Carta #20 - Mago de Hielo
-  if (id === 20) {
-    return "https://raw.githubusercontent.com/IvanBot657/TitanBot/main/Cartas/mago_hielo_20.png";
-  }
 
-  // Las demás cartas todavía no tienen imagen
-  return null;
+  const base =
+    "https://raw.githubusercontent.com/IvanBot657/TitanBot/main/Cartas/";
+
+  const imagenes = {
+
+    1: "caballero_de_acero.png",
+    2: "elfo_arquero.png",
+    3: "arquero_arcano.png",
+    4: "elfo_arquero_neon.png",
+
+    5: "caballero_del_agua.png",
+    6: "invocador_sombrio.png",
+
+    7: "mago_de_fuego.png",
+    8: "cazador_nocturno.png",
+    9: "caballero_de_las_sombras.png",
+    10: "mago_sombrio.png",
+
+    11: "esqueleto_guerrero.png",
+    12: "nigromante_neon.png",
+    13: "invocador_de_sombras.png",
+    14: "senor_del_fuego_eterno.png",
+
+    15: "guardian_del_bosque.png",
+    16: "rey_de_la_muerte.png",
+    17: "sacerdote_luminoso.png",
+    18: "principe_de_la_noche.png",
+    19: "principe_de_la_oscuridad.png",
+
+    20: "rey_dragon.png",
+    21: "guardian_de_la_luna.png",
+    22: "dragon_dorado.png",
+
+    23: "el_elegido_oscuro.png",
+    24: "el_rey_caido.png"
+  };
+
+  return imagenes[id]
+    ? base + imagenes[id]
+    : null;
 }
 
 // =========================================
-// 🎴 LISTA DE 50 CARTAS
+// 🎴 LISTA DE 24 CARTAS
 // =========================================
 
 const cartas = [
 
   // ⚪ COMUNES
-  { id: 1, nombre: "Guerrero Novato", rareza: "⚪ Común" },
-  { id: 2, nombre: "Arquero del Bosque", rareza: "⚪ Común" },
-  { id: 3, nombre: "Aprendiz de Magia", rareza: "⚪ Común" },
-  { id: 4, nombre: "Explorador", rareza: "⚪ Común" },
-  { id: 5, nombre: "Guardián del Pueblo", rareza: "⚪ Común" },
-  { id: 6, nombre: "Cazador", rareza: "⚪ Común" },
-  { id: 7, nombre: "Pescador", rareza: "⚪ Común" },
-  { id: 8, nombre: "Campesino", rareza: "⚪ Común" },
-  { id: 9, nombre: "Viajero", rareza: "⚪ Común" },
-  { id: 10, nombre: "Aventurero", rareza: "⚪ Común" },
+
+  {
+    id: 1,
+    nombre: "Caballero de Acero",
+    rareza: "⚪ Común"
+  },
+
+  {
+    id: 2,
+    nombre: "Elfo Arquero",
+    rareza: "⚪ Común"
+  },
+
+  {
+    id: 3,
+    nombre: "Arquero Arcano",
+    rareza: "⚪ Común"
+  },
 
   // 🟢 POCO COMUNES
-  { id: 11, nombre: "Guerrero Verde", rareza: "🟢 Poco común" },
-  { id: 12, nombre: "Mago del Bosque", rareza: "🟢 Poco común" },
-  { id: 13, nombre: "Lobo Guardián", rareza: "🟢 Poco común" },
-  { id: 14, nombre: "Halcón Dorado", rareza: "🟢 Poco común" },
-  { id: 15, nombre: "Caballero Verde", rareza: "🟢 Poco común" },
-  { id: 16, nombre: "Monje", rareza: "🟢 Poco común" },
-  { id: 17, nombre: "Alquimista", rareza: "🟢 Poco común" },
-  { id: 18, nombre: "Pirata", rareza: "🟢 Poco común" },
+
+  {
+    id: 4,
+    nombre: "Elfo Arquero Neón",
+    rareza: "🟢 Poco común"
+  },
+
+  {
+    id: 5,
+    nombre: "Caballero del Agua",
+    rareza: "🟢 Poco común"
+  },
+
+  {
+    id: 6,
+    nombre: "Invocador Sombrío",
+    rareza: "🟢 Poco común"
+  },
 
   // 🔵 RARAS
-  { id: 19, nombre: "Caballero Azul", rareza: "🔵 Rara" },
-  { id: 20, nombre: "Mago de Hielo", rareza: "🔵 Rara" },
-  { id: 21, nombre: "Dragón Marino", rareza: "🔵 Rara" },
-  { id: 22, nombre: "Guardián de Cristal", rareza: "🔵 Rara" },
-  { id: 23, nombre: "Ninja de la Niebla", rareza: "🔵 Rara" },
-  { id: 24, nombre: "Fénix Azul", rareza: "🔵 Rara" },
-  { id: 25, nombre: "Cazador Nocturno", rareza: "🔵 Rara" },
-  { id: 26, nombre: "Rey de los Lobos", rareza: "🔵 Rara" },
+
+  {
+    id: 7,
+    nombre: "Mago de Fuego",
+    rareza: "🔵 Rara"
+  },
+
+  {
+    id: 8,
+    nombre: "Cazador Nocturno",
+    rareza: "🔵 Rara"
+  },
+
+  {
+    id: 9,
+    nombre: "Caballero de las Sombras",
+    rareza: "🔵 Rara"
+  },
+
+  {
+    id: 10,
+    nombre: "Mago Sombrío",
+    rareza: "🔵 Rara"
+  },
 
   // 🟣 ÉPICAS
-  { id: 27, nombre: "Guerrero Oscuro", rareza: "🟣 Épica" },
-  { id: 28, nombre: "Hechicera Carmesí", rareza: "🟣 Épica" },
-  { id: 29, nombre: "Dragón de Fuego", rareza: "🟣 Épica" },
-  { id: 30, nombre: "Caballero de la Luz", rareza: "🟣 Épica" },
-  { id: 31, nombre: "Rey Demonio", rareza: "🟣 Épica" },
-  { id: 32, nombre: "Titán de Piedra", rareza: "🟣 Épica" },
-  { id: 33, nombre: "Guardián Celestial", rareza: "🟣 Épica" },
-  { id: 34, nombre: "Fénix Dorado", rareza: "🟣 Épica" },
+
+  {
+    id: 11,
+    nombre: "Esqueleto Guerrero",
+    rareza: "🟣 Épica"
+  },
+
+  {
+    id: 12,
+    nombre: "Nigromante Neón",
+    rareza: "🟣 Épica"
+  },
+
+  {
+    id: 13,
+    nombre: "Invocador de Sombras",
+    rareza: "🟣 Épica"
+  },
+
+  {
+    id: 14,
+    nombre: "Señor del Fuego Eterno",
+    rareza: "🟣 Épica"
+  },
 
   // 🟠 LEGENDARIAS
-  { id: 35, nombre: "Rey Dragón", rareza: "🟠 Legendaria" },
-  { id: 36, nombre: "Dios del Trueno", rareza: "🟠 Legendaria" },
-  { id: 37, nombre: "Señor de las Sombras", rareza: "🟠 Legendaria" },
-  { id: 38, nombre: "Ángel Supremo", rareza: "🟠 Legendaria" },
-  { id: 39, nombre: "Bestia Ancestral", rareza: "🟠 Legendaria" },
-  { id: 40, nombre: "Guardián del Tiempo", rareza: "🟠 Legendaria" },
+
+  {
+    id: 15,
+    nombre: "Guardián del Bosque",
+    rareza: "🟠 Legendaria"
+  },
+
+  {
+    id: 16,
+    nombre: "Rey de la Muerte",
+    rareza: "🟠 Legendaria"
+  },
+
+  {
+    id: 17,
+    nombre: "Sacerdote Luminoso",
+    rareza: "🟠 Legendaria"
+  },
+
+  {
+    id: 18,
+    nombre: "Príncipe de la Noche",
+    rareza: "🟠 Legendaria"
+  },
+
+  {
+    id: 19,
+    nombre: "Príncipe de la Oscuridad",
+    rareza: "🟠 Legendaria"
+  },
+
+  {
+    id: 20,
+    nombre: "Rey Dragón",
+    rareza: "🟠 Legendaria"
+  },
+
+  {
+    id: 21,
+    nombre: "Guardián de la Luna",
+    rareza: "🟠 Legendaria"
+  },
+
+  {
+    id: 22,
+    nombre: "Dragón Dorado",
+    rareza: "🟠 Legendaria"
+  },
 
   // 🔴 MÍTICAS
-  { id: 41, nombre: "Dragón Ancestral", rareza: "🔴 Mítica" },
-  { id: 42, nombre: "Dios de los Cielos", rareza: "🔴 Mítica" },
-  { id: 43, nombre: "Titán Cósmico", rareza: "🔴 Mítica" },
-  { id: 44, nombre: "Rey del Universo", rareza: "🔴 Mítica" },
-  { id: 45, nombre: "Guardián Absoluto", rareza: "🔴 Mítica" },
-  { id: 46, nombre: "Fénix Inmortal", rareza: "🔴 Mítica" },
-  { id: 47, nombre: "Señor del Multiverso", rareza: "🔴 Mítica" },
-  { id: 48, nombre: "Entidad Eterna", rareza: "🔴 Mítica" },
-  { id: 49, nombre: "TITÁN SUPREMO", rareza: "🔴 Mítica" },
-  { id: 50, nombre: "TITÁN LEGENDARIO", rareza: "🔴 Mítica" }
+
+  {
+    id: 23,
+    nombre: "El Elegido Oscuro",
+    rareza: "🔴 Mítica"
+  },
+
+  {
+    id: 24,
+    nombre: "El Rey Caído",
+    rareza: "🔴 Mítica"
+  }
 
 ];
 
@@ -141,8 +269,14 @@ function obtenerCartaAleatoria() {
     carta => carta.rareza === rareza
   );
 
+  // Si por alguna razón no existe una carta
+  // de esa rareza, elegir cualquiera.
+
   if (disponibles.length === 0) {
-    return null;
+
+    return cartas[
+      Math.floor(Math.random() * cartas.length)
+    ];
   }
 
   return disponibles[
@@ -162,7 +296,10 @@ function obtenerTotalCartas(usuario) {
 
   return usuario.cartas.reduce(
     (total, carta) => {
-      return total + (Number(carta.cantidad) || 0);
+
+      return total +
+        (Number(carta.cantidad) || 0);
+
     },
     0
   );
@@ -207,7 +344,8 @@ async function ejecutarCartas(
       await sock.sendMessage(
         chat,
         {
-          text: "❌ No se pudo generar una carta."
+          text:
+            "❌ No se pudo generar una carta."
         },
         {
           quoted: msg
@@ -253,9 +391,11 @@ async function ejecutarCartas(
     }
 
     // Buscar si ya tiene la carta
-    const existente = usuario.cartas.find(
-      c => Number(c.id) === carta.id
-    );
+
+    const existente =
+      usuario.cartas.find(
+        c => Number(c.id) === carta.id
+      );
 
     const nuevaCarta = !existente;
 
@@ -272,7 +412,10 @@ async function ejecutarCartas(
       });
     }
 
-    // Guardar colección
+    // =====================================
+    // 💾 GUARDAR COLECCIÓN
+    // =====================================
+
     try {
 
       guardarUsuario(id, usuario);
@@ -298,7 +441,12 @@ async function ejecutarCartas(
       return true;
     }
 
-    const imagen = obtenerImagen(carta.id);
+    // =====================================
+    // 🖼️ IMAGEN
+    // =====================================
+
+    const imagen =
+      obtenerImagen(carta.id);
 
     const diferentes =
       obtenerCartasDiferentes(usuario);
@@ -319,12 +467,12 @@ ${
     : "♻️ ¡HAS CONSEGUIDO OTRA COPIA!"
 }
 
-📚 Colección: *${diferentes}/50*
+📚 Colección: *${diferentes}/24*
 📦 Cartas totales: *${total}*`;
 
-    // =================================
+    // =====================================
     // 🖼️ ENVIAR IMAGEN
-    // =================================
+    // =====================================
 
     if (imagen) {
 
@@ -346,7 +494,7 @@ ${
       } catch (error) {
 
         console.error(
-          "❌ Error enviando imagen de carta:",
+          "❌ Error enviando imagen:",
           error
         );
 
@@ -370,7 +518,7 @@ ${
         {
           text:
             caption +
-            "\n\n🖼️ Imagen de esta carta pendiente."
+            "\n\n🖼️ Imagen no disponible."
         },
         {
           quoted: msg
@@ -445,9 +593,10 @@ Todavía no tienes cartas.
 
     for (const coleccion of usuario.cartas) {
 
-      const carta = cartas.find(
-        c => c.id === Number(coleccion.id)
-      );
+      const carta =
+        cartas.find(
+          c => c.id === Number(coleccion.id)
+        );
 
       if (!carta) {
         continue;
@@ -466,7 +615,7 @@ Todavía no tienes cartas.
     texto +=
 `
 ━━━━━━━━━━━━━━━━━━
-📚 Diferentes: *${diferentes}/50*
+📚 Diferentes: *${diferentes}/24*
 📦 Cartas totales: *${total}*
 
 🎴 Usa *.carta* para conseguir otra.`;
@@ -490,12 +639,13 @@ Todavía no tienes cartas.
 
   if (comando === "cartainfo") {
 
-    const numero = parseInt(args[0], 10);
+    const numero =
+      parseInt(args[0], 10);
 
     if (
       isNaN(numero) ||
       numero < 1 ||
-      numero > 50
+      numero > 24
     ) {
 
       await sock.sendMessage(
@@ -504,7 +654,7 @@ Todavía no tienes cartas.
           text:
 `❌ *CARTA INVÁLIDA*
 
-Debes indicar un número del *1 al 50*.
+Debes indicar un número del *1 al 24*.
 
 Ejemplo:
 
@@ -518,9 +668,10 @@ Ejemplo:
       return true;
     }
 
-    const carta = cartas.find(
-      c => c.id === numero
-    );
+    const carta =
+      cartas.find(
+        c => c.id === numero
+      );
 
     if (!carta) {
 
@@ -538,7 +689,8 @@ Ejemplo:
       return true;
     }
 
-    const imagen = obtenerImagen(carta.id);
+    const imagen =
+      obtenerImagen(carta.id);
 
     const texto =
 `🃏 *INFORMACIÓN DE CARTA*
@@ -567,7 +719,7 @@ Ejemplo:
       } catch (error) {
 
         console.error(
-          "❌ Error enviando imagen de carta:",
+          "❌ Error enviando imagen:",
           error
         );
 
@@ -591,7 +743,7 @@ Ejemplo:
         {
           text:
             texto +
-            "\n\n🖼️ Imagen todavía no disponible."
+            "\n\n🖼️ Imagen no disponible."
         },
         {
           quoted: msg
@@ -608,10 +760,11 @@ Ejemplo:
 
   if (comando === "cartasranking") {
 
-    const archivo = path.join(
-      __dirname,
-      "../usuarios.json"
-    );
+    const archivo =
+      path.join(
+        __dirname,
+        "../usuarios.json"
+      );
 
     let usuarios = {};
 
@@ -629,7 +782,6 @@ Ejemplo:
 
           usuarios =
             JSON.parse(contenido);
-
         }
       }
 
@@ -645,56 +797,63 @@ Ejemplo:
 
     const ranking =
       Object.entries(usuarios)
-        .map(([jid, usuario]) => {
 
-          const coleccion =
-            Array.isArray(usuario.cartas)
-              ? usuario.cartas
-              : [];
+        .map(
+          ([jid, usuario]) => {
 
-          const diferentes =
-            coleccion.length;
+            const coleccion =
+              Array.isArray(usuario.cartas)
+                ? usuario.cartas
+                : [];
 
-          const copias =
-            coleccion.reduce(
-              (suma, carta) => {
-                return (
-                  suma +
-                  (Number(carta.cantidad) || 0)
-                );
-              },
-              0
-            );
+            const diferentes =
+              coleccion.length;
 
-          return {
-            jid,
-            diferentes,
-            copias
-          };
-        })
+            const copias =
+              coleccion.reduce(
+                (suma, carta) => {
+
+                  return suma +
+                    (Number(carta.cantidad) || 0);
+
+                },
+                0
+              );
+
+            return {
+              jid,
+              diferentes,
+              copias
+            };
+          }
+        )
+
         .filter(
           jugador =>
             jugador.diferentes > 0
         )
-        .sort((a, b) => {
 
-          if (
-            b.diferentes !==
-            a.diferentes
-          ) {
+        .sort(
+          (a, b) => {
+
+            if (
+              b.diferentes !==
+              a.diferentes
+            ) {
+
+              return (
+                b.diferentes -
+                a.diferentes
+              );
+            }
 
             return (
-              b.diferentes -
-              a.diferentes
+              b.copias -
+              a.copias
             );
           }
+        )
 
-          return (
-            b.copias -
-            a.copias
-          );
-
-        })
         .slice(0, 10);
 
     let texto =
@@ -719,7 +878,7 @@ Ejemplo:
 
           texto +=
 `${index + 1}. @${numero}
-🃏 ${jugador.diferentes}/50 diferentes
+🃏 ${jugador.diferentes}/24 diferentes
 📦 ${jugador.copias} copias
 
 `;
@@ -731,9 +890,10 @@ Ejemplo:
       chat,
       {
         text: texto,
-        mentions: ranking.map(
-          jugador => jugador.jid
-        )
+        mentions:
+          ranking.map(
+            jugador => jugador.jid
+          )
       },
       {
         quoted: msg
