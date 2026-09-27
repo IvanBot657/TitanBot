@@ -1,74 +1,171 @@
 // =========================================
-// 🏝️ TITANBOT - SISTEMA DE ISLA
+// 🏝️ TITANBOT - SISTEMA DE ISLAS
 // =========================================
 
 const fs = require("fs");
 const path = require("path");
 
+const islasPath = path.join(__dirname, "..", "database", "islas.json");
+const usuariosPath = path.join(__dirname, "..", "database", "usuarios_isla.json");
+
 // =========================================
-// 📁 BASE DE DATOS
+// 📁 CREAR DATABASE SI NO EXISTE
 // =========================================
 
 const databaseDir = path.join(__dirname, "..", "database");
-const databasePath = path.join(databaseDir, "islas.json");
 
-// Crear carpeta database si no existe
 if (!fs.existsSync(databaseDir)) {
   fs.mkdirSync(databaseDir, { recursive: true });
 }
 
-// Crear archivo de islas si no existe
-if (!fs.existsSync(databasePath)) {
-  fs.writeFileSync(databasePath, JSON.stringify({}, null, 2));
-}
-
 // =========================================
-// 📖 CARGAR DATOS
+// 📖 CARGAR JSON
 // =========================================
 
-function cargarIslas() {
+function cargarJSON(ruta, defecto) {
   try {
-    const contenido = fs.readFileSync(databasePath, "utf8");
+    if (!fs.existsSync(ruta)) {
+      fs.writeFileSync(ruta, JSON.stringify(defecto, null, 2));
+      return defecto;
+    }
+
+    const contenido = fs.readFileSync(ruta, "utf8");
 
     if (!contenido.trim()) {
-      return {};
+      return defecto;
     }
 
     return JSON.parse(contenido);
+
   } catch (error) {
-    console.error("❌ Error al cargar islas.json:", error);
-    return {};
+    console.error("❌ Error leyendo:", ruta, error);
+    return defecto;
   }
 }
 
 // =========================================
-// 💾 GUARDAR DATOS
+// 💾 GUARDAR JSON
 // =========================================
 
-function guardarIslas(islas) {
+function guardarJSON(ruta, datos) {
   try {
     fs.writeFileSync(
-      databasePath,
-      JSON.stringify(islas, null, 2)
+      ruta,
+      JSON.stringify(datos, null, 2)
     );
 
     return true;
+
   } catch (error) {
-    console.error("❌ Error al guardar islas.json:", error);
+    console.error("❌ Error guardando:", ruta, error);
     return false;
   }
 }
 
 // =========================================
-// 🏝️ CREAR ISLA
+// 🏝️ ISLAS DISPONIBLES
 // =========================================
 
-function crearIsla(id) {
-  const islas = cargarIslas();
+const ISLAS_POR_DEFECTO = [
+  {
+    id: "aurora",
+    nombre: "Isla Aurora",
+    descripcion:
+      "Una isla tranquila con playas luminosas, palmeras y noches llenas de estrellas.",
+    clima: "Cálido y despejado",
+    ambiente: "Relajado y mágico",
+    color: "#6c63ff",
+    icono: "🌅",
+    actividades: [
+      "Explorar la playa",
+      "Ver el atardecer",
+      "Observar estrellas"
+    ]
+  },
+  {
+    id: "cristal",
+    nombre: "Isla Cristal",
+    descripcion:
+      "Famosa por sus aguas transparentes y pequeñas cuevas junto a la costa.",
+    clima: "Tropical",
+    ambiente: "Aventura y exploración",
+    color: "#00bcd4",
+    icono: "💎",
+    actividades: [
+      "Explorar cuevas",
+      "Nadar",
+      "Buscar tesoros"
+    ]
+  },
+  {
+    id: "bosque",
+    nombre: "Isla Bosque",
+    descripcion:
+      "Una isla cubierta de vegetación, senderos y zonas naturales para descubrir.",
+    clima: "Húmedo y fresco",
+    ambiente: "Natural y misterioso",
+    color: "#43a047",
+    icono: "🌿",
+    actividades: [
+      "Caminar por senderos",
+      "Explorar la selva",
+      "Descubrir animales"
+    ]
+  }
+];
 
-  if (!islas[id]) {
-    islas[id] = {
-      nombre: "Isla de " + id.split("@")[0],
+// =========================================
+// 🏝️ CARGAR ISLAS
+// =========================================
+
+function cargarIslas() {
+
+  const islas = cargarJSON(
+    islasPath,
+    ISLAS_POR_DEFECTO
+  );
+
+  // Si el archivo estaba vacío o tenía otro formato
+  if (!Array.isArray(islas) || !islas.length) {
+    guardarJSON(
+      islasPath,
+      ISLAS_POR_DEFECTO
+    );
+
+    return ISLAS_POR_DEFECTO;
+  }
+
+  return islas;
+}
+
+// =========================================
+// 👤 DATOS DEL USUARIO
+// =========================================
+
+function cargarUsuarios() {
+  return cargarJSON(usuariosPath, {});
+}
+
+// =========================================
+// 💾 GUARDAR USUARIO
+// =========================================
+
+function guardarUsuarios(usuarios) {
+  guardarJSON(usuariosPath, usuarios);
+}
+
+// =========================================
+// 🏝️ CREAR PERFIL DE ISLA
+// =========================================
+
+function crearPerfil(id) {
+
+  const usuarios = cargarUsuarios();
+
+  if (!usuarios[id]) {
+
+    usuarios[id] = {
+      isla: null,
 
       nivel: 1,
 
@@ -86,90 +183,235 @@ function crearIsla(id) {
         puerto: 0
       },
 
-      exploraciones: 0,
-
-      mascota: null
+      exploraciones: 0
     };
 
-    guardarIslas(islas);
+    guardarUsuarios(usuarios);
   }
 
-  return islas[id];
+  return usuarios[id];
 }
 
 // =========================================
-// 🏝️ COMANDO PRINCIPAL
+// 🏝️ COMANDO ISLA
 // =========================================
 
 async function isla(sock, chat, comando, args, id, msg) {
 
-  // -----------------------------------------
-  // 🏝️ .isla
-  // -----------------------------------------
+  if (![
+    "isla",
+    "adoptar",
+    "explorar",
+    "construir",
+    "inventario",
+    "islastats",
+    "islaranking"
+  ].includes(comando)) {
+    return false;
+  }
+
+  const islas = cargarIslas();
+  const usuarios = cargarUsuarios();
+
+  // =======================================
+  // 🏝️ .ISLA
+  // =======================================
 
   if (comando === "isla") {
 
-    const datos = crearIsla(id);
+    const perfil = crearPerfil(id);
 
-    const texto = `
-🏝️ *ISLA DE TITANBOT* 🏝️
+    // ---------------------------------------
+    // Si escribe .isla aurora/cristal/bosque
+    // ---------------------------------------
 
-🌴 *${datos.nombre}*
+    if (args[0]) {
 
-⭐ Nivel: ${datos.nivel}
-✨ XP: ${datos.experiencia}
+      const opcion = args[0].toLowerCase();
 
-🌳 Madera: ${datos.recursos.madera}
-🪨 Piedra: ${datos.recursos.piedra}
-🍎 Comida: ${datos.recursos.comida}
+      const islaElegida = islas.find(
+        isla =>
+          isla.id.toLowerCase() === opcion ||
+          isla.nombre.toLowerCase().includes(opcion)
+      );
 
-🏠 Casa: nivel ${datos.construcciones.casa}
-🌾 Granja: nivel ${datos.construcciones.granja}
-⚓ Puerto: nivel ${datos.construcciones.puerto}
+      // También permite .isla 1, .isla 2, .isla 3
+      if (!islaElegida && ["1", "2", "3"].includes(opcion)) {
 
-🧭 Exploraciones: ${datos.exploraciones}
+        const posicion = Number(opcion) - 1;
+
+        if (islas[posicion]) {
+          usuarios[id].isla = islas[posicion].id;
+          guardarUsuarios(usuarios);
+
+          await sock.sendMessage(chat, {
+            text:
+`🏝️ *¡ISLA SELECCIONADA!*
+
+${islas[posicion].icono} *${islas[posicion].nombre}*
+
+${islas[posicion].descripcion}
+
+🌤️ Clima: ${islas[posicion].clima}
+✨ Ambiente: ${islas[posicion].ambiente}
+
+¡Esta es ahora tu isla! 🌴`
+          });
+
+          return true;
+        }
+      }
+
+      if (!islaElegida) {
+
+        await sock.sendMessage(chat, {
+          text:
+`❌ No encontré esa isla.
+
+Puedes elegir:
+
+🌅 *.isla aurora*
+💎 *.isla cristal*
+🌿 *.isla bosque*`
+        });
+
+        return true;
+      }
+
+      usuarios[id].isla = islaElegida.id;
+
+      guardarUsuarios(usuarios);
+
+      await sock.sendMessage(chat, {
+        text:
+`🏝️ *¡ISLA SELECCIONADA!*
+
+${islaElegida.icono} *${islaElegida.nombre}*
+
+${islaElegida.descripcion}
+
+🌤️ Clima: ${islaElegida.clima}
+✨ Ambiente: ${islaElegida.ambiente}
+
+🎯 *Actividades:*
+• ${islaElegida.actividades.join("\n• ")}
 
 ━━━━━━━━━━━━━━━━━━━━
-🏝️ Usa *.explorar* para explorar.
-🏗️ Usa *.construir* para construir.
-🎒 Usa *.inventario* para ver tus recursos.
-📊 Usa *.islastats* para ver tus estadísticas.
-`;
-
-    await sock.sendMessage(chat, {
-      text: texto
-    });
-
-    return true;
-  }
-
-  // -----------------------------------------
-  // 🐾 .adoptar
-  // -----------------------------------------
-
-  if (comando === "adoptar") {
-
-    const datos = crearIsla(id);
-
-    if (datos.mascota) {
-      await sock.sendMessage(chat, {
-        text: `🐾 Ya tienes una mascota llamada *${datos.mascota}*.`
+🏝️ Esta es ahora tu isla.`
       });
 
       return true;
     }
 
-    datos.mascota = "Tigre";
+    // ---------------------------------------
+    // Si ya tiene isla
+    // ---------------------------------------
 
-    const islas = cargarIslas();
-    islas[id] = datos;
-    guardarIslas(islas);
+    if (perfil.isla) {
+
+      const actual = islas.find(
+        isla => isla.id === perfil.isla
+      );
+
+      if (actual) {
+
+        await sock.sendMessage(chat, {
+          text:
+`${actual.icono} *${actual.nombre}*
+
+${actual.descripcion}
+
+🌤️ Clima: ${actual.clima}
+✨ Ambiente: ${actual.ambiente}
+
+🏝️ Ya tienes esta isla seleccionada.
+
+Para cambiarla:
+🌅 *.isla aurora*
+💎 *.isla cristal*
+🌿 *.isla bosque*`
+        });
+
+        return true;
+      }
+    }
+
+    // ---------------------------------------
+    // Mostrar islas
+    // ---------------------------------------
+
+    await sock.sendMessage(chat, {
+      text:
+`🏝️ *ISLAS DISPONIBLES* 🏝️
+
+🌅 *1. Isla Aurora*
+Una isla tranquila con playas luminosas.
+
+💎 *2. Isla Cristal*
+Aguas transparentes y cuevas misteriosas.
+
+🌿 *3. Isla Bosque*
+Una isla llena de naturaleza y secretos.
+
+━━━━━━━━━━━━━━━━━━━━
+
+Para elegir una:
+
+🌅 *.isla aurora*
+💎 *.isla cristal*
+🌿 *.isla bosque*
+
+También puedes usar:
+
+*.isla 1*
+*.isla 2*
+*.isla 3*`
+    });
+
+    return true;
+  }
+
+  // =======================================
+  // 🐾 .ADOPTAR
+  // =======================================
+
+  if (comando === "adoptar") {
+
+    const perfil = crearPerfil(id);
+
+    if (!perfil.isla) {
+
+      await sock.sendMessage(chat, {
+        text:
+`🏝️ Primero debes elegir una isla.
+
+Usa:
+*.isla*`
+      });
+
+      return true;
+    }
+
+    if (perfil.mascota) {
+
+      await sock.sendMessage(chat, {
+        text:
+`🐾 Ya tienes una mascota: *${perfil.mascota}*`
+      });
+
+      return true;
+    }
+
+    perfil.mascota = "Tigre";
+
+    usuarios[id] = perfil;
+    guardarUsuarios(usuarios);
 
     await sock.sendMessage(chat, {
       text:
 `🐾 *¡MASCOTA ADOPTADA!*
 
-🐯 Has adoptado un *Tigre*.
+🐯 Has adoptado un Tigre.
 
 Ahora forma parte de tu isla 🏝️`
     });
@@ -177,28 +419,40 @@ Ahora forma parte de tu isla 🏝️`
     return true;
   }
 
-  // -----------------------------------------
-  // 🧭 .explorar
-  // -----------------------------------------
+  // =======================================
+  // 🧭 .EXPLORAR
+  // =======================================
 
   if (comando === "explorar") {
 
-    const datos = crearIsla(id);
+    const perfil = crearPerfil(id);
+
+    if (!perfil.isla) {
+
+      await sock.sendMessage(chat, {
+        text:
+`🏝️ Primero elige una isla.
+
+Usa:
+*.isla*`
+      });
+
+      return true;
+    }
 
     const madera = Math.floor(Math.random() * 6) + 1;
     const piedra = Math.floor(Math.random() * 5) + 1;
     const comida = Math.floor(Math.random() * 4) + 1;
 
-    datos.recursos.madera += madera;
-    datos.recursos.piedra += piedra;
-    datos.recursos.comida += comida;
+    perfil.recursos.madera += madera;
+    perfil.recursos.piedra += piedra;
+    perfil.recursos.comida += comida;
 
-    datos.exploraciones++;
-    datos.experiencia += 10;
+    perfil.exploraciones++;
+    perfil.experiencia += 10;
 
-    const islas = cargarIslas();
-    islas[id] = datos;
-    guardarIslas(islas);
+    usuarios[id] = perfil;
+    guardarUsuarios(usuarios);
 
     await sock.sendMessage(chat, {
       text:
@@ -216,13 +470,26 @@ Ahora forma parte de tu isla 🏝️`
     return true;
   }
 
-  // -----------------------------------------
-  // 🏗️ .construir
-  // -----------------------------------------
+  // =======================================
+  // 🏗️ .CONSTRUIR
+  // =======================================
 
   if (comando === "construir") {
 
-    const datos = crearIsla(id);
+    const perfil = crearPerfil(id);
+
+    if (!perfil.isla) {
+
+      await sock.sendMessage(chat, {
+        text:
+`🏝️ Primero elige una isla.
+
+Usa:
+*.isla*`
+      });
+
+      return true;
+    }
 
     const tipo = args[0]
       ? args[0].toLowerCase()
@@ -233,8 +500,6 @@ Ahora forma parte de tu isla 🏝️`
       await sock.sendMessage(chat, {
         text:
 `🏗️ *CONSTRUCCIONES*
-
-Usa:
 
 🏠 *.construir casa*
 🌾 *.construir granja*
@@ -267,7 +532,7 @@ Usa:
         text:
 `❌ Construcción desconocida.
 
-Opciones:
+Puedes construir:
 
 🏠 casa
 🌾 granja
@@ -280,8 +545,8 @@ Opciones:
     const costo = costos[tipo];
 
     if (
-      datos.recursos.madera < costo.madera ||
-      datos.recursos.piedra < costo.piedra
+      perfil.recursos.madera < costo.madera ||
+      perfil.recursos.piedra < costo.piedra
     ) {
 
       await sock.sendMessage(chat, {
@@ -293,40 +558,35 @@ Necesitas:
 🌳 Madera: ${costo.madera}
 🪨 Piedra: ${costo.piedra}
 
-Actualmente tienes:
+Tienes:
 
-🌳 Madera: ${datos.recursos.madera}
-🪨 Piedra: ${datos.recursos.piedra}
+🌳 Madera: ${perfil.recursos.madera}
+🪨 Piedra: ${perfil.recursos.piedra}
 
-Usa *.explorar* para conseguir más.`
+🧭 Usa *.explorar* para conseguir recursos.`
       });
 
       return true;
     }
 
-    datos.recursos.madera -= costo.madera;
-    datos.recursos.piedra -= costo.piedra;
+    perfil.recursos.madera -= costo.madera;
+    perfil.recursos.piedra -= costo.piedra;
 
-    datos.construcciones[tipo]++;
+    perfil.construcciones[tipo]++;
+    perfil.experiencia += 20;
 
-    datos.experiencia += 20;
-
-    const islas = cargarIslas();
-    islas[id] = datos;
-    guardarIslas(islas);
+    usuarios[id] = perfil;
+    guardarUsuarios(usuarios);
 
     await sock.sendMessage(chat, {
       text:
 `🏗️ *¡CONSTRUCCIÓN COMPLETADA!*
 
-🏝️ Has mejorado:
-
 ${tipo === "casa" ? "🏠 Casa" : ""}
 ${tipo === "granja" ? "🌾 Granja" : ""}
 ${tipo === "puerto" ? "⚓ Puerto" : ""}
 
-⭐ Nivel actual:
-${datos.construcciones[tipo]}
+⭐ Nivel: ${perfil.construcciones[tipo]}
 
 ✨ XP: +20`
     });
@@ -334,83 +594,103 @@ ${datos.construcciones[tipo]}
     return true;
   }
 
-  // -----------------------------------------
-  // 🎒 .inventario
-  // -----------------------------------------
+  // =======================================
+  // 🎒 .INVENTARIO
+  // =======================================
 
   if (comando === "inventario") {
 
-    const datos = crearIsla(id);
+    const perfil = crearPerfil(id);
+
+    if (!perfil.isla) {
+
+      await sock.sendMessage(chat, {
+        text:
+`🏝️ Primero elige una isla.
+
+Usa:
+*.isla*`
+      });
+
+      return true;
+    }
 
     await sock.sendMessage(chat, {
       text:
-`🎒 *INVENTARIO DE LA ISLA*
+`🎒 *INVENTARIO*
 
-🌳 Madera: ${datos.recursos.madera}
-🪨 Piedra: ${datos.recursos.piedra}
-🍎 Comida: ${datos.recursos.comida}
-
-🐾 Mascota:
-${datos.mascota || "Ninguna"}`
+🌳 Madera: ${perfil.recursos.madera}
+🪨 Piedra: ${perfil.recursos.piedra}
+🍎 Comida: ${perfil.recursos.comida}`
     });
 
     return true;
   }
 
-  // -----------------------------------------
-  // 📊 .islastats
-  // -----------------------------------------
+  // =======================================
+  // 📊 .ISLASTATS
+  // =======================================
 
   if (comando === "islastats") {
 
-    const datos = crearIsla(id);
+    const perfil = crearPerfil(id);
+
+    if (!perfil.isla) {
+
+      await sock.sendMessage(chat, {
+        text:
+`🏝️ Primero elige una isla.
+
+Usa:
+*.isla*`
+      });
+
+      return true;
+    }
+
+    const actual = islas.find(
+      isla => isla.id === perfil.isla
+    );
 
     await sock.sendMessage(chat, {
       text:
 `📊 *ESTADÍSTICAS DE TU ISLA*
 
-🏝️ ${datos.nombre}
+${actual ? actual.icono : "🏝️"} ${actual ? actual.nombre : "Isla"}
 
-⭐ Nivel: ${datos.nivel}
-✨ Experiencia: ${datos.experiencia}
+⭐ Nivel: ${perfil.nivel}
+✨ XP: ${perfil.experiencia}
 
-🧭 Exploraciones:
-${datos.exploraciones}
+🧭 Exploraciones: ${perfil.exploraciones}
 
-🏠 Casa:
-Nivel ${datos.construcciones.casa}
-
-🌾 Granja:
-Nivel ${datos.construcciones.granja}
-
-⚓ Puerto:
-Nivel ${datos.construcciones.puerto}
-
-🐾 Mascota:
-${datos.mascota || "Ninguna"}`
+🏠 Casa: nivel ${perfil.construcciones.casa}
+🌾 Granja: nivel ${perfil.construcciones.granja}
+⚓ Puerto: nivel ${perfil.construcciones.puerto}`
     });
 
     return true;
   }
 
-  // -----------------------------------------
-  // 🏆 .islaranking
-  // -----------------------------------------
+  // =======================================
+  // 🏆 .ISLARANKING
+  // =======================================
 
   if (comando === "islaranking") {
 
-    const islas = cargarIslas();
-
-    const ranking = Object.entries(islas)
+    const lista = Object.entries(usuarios)
       .sort((a, b) => {
-        return b[1].experiencia - a[1].experiencia;
+        return (
+          (b[1].experiencia || 0) -
+          (a[1].experiencia || 0)
+        );
       })
       .slice(0, 10);
 
-    if (!ranking.length) {
+    if (!lista.length) {
 
       await sock.sendMessage(chat, {
-        text: "🏆 Todavía no hay islas en el ranking."
+        text:
+`🏆 Todavía no hay jugadores en el ranking.`
       });
 
       return true;
@@ -418,14 +698,16 @@ ${datos.mascota || "Ninguna"}`
 
     let texto = "🏆 *RANKING DE ISLAS* 🏝️\n\n";
 
-    ranking.forEach(([usuario, datos], index) => {
+    lista.forEach(([usuario, datos], index) => {
 
-      const puesto = index + 1;
+      const actual = islas.find(
+        isla => isla.id === datos.isla
+      );
 
       texto +=
-`${puesto}. 🏝️ ${datos.nombre}
-   ⭐ Nivel: ${datos.nivel}
-   ✨ XP: ${datos.experiencia}
+`${index + 1}. ${actual ? actual.icono : "🏝️"} ${actual ? actual.nombre : "Sin isla"}
+⭐ Nivel: ${datos.nivel || 1}
+✨ XP: ${datos.experiencia || 0}
 
 `;
     });
@@ -436,10 +718,6 @@ ${datos.mascota || "Ninguna"}`
 
     return true;
   }
-
-  // -----------------------------------------
-  // ❌ NO ES COMANDO DE ISLA
-  // -----------------------------------------
 
   return false;
 }
