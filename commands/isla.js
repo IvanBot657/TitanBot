@@ -1,62 +1,68 @@
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle
+} = require('discord.js');
+
 const fs = require('fs');
 const path = require('path');
 
-const DATA_FILE = path.join(__dirname, '..', 'data', 'islas.json');
-const WEB_URL = process.env.ISLAS_WEB_URL || 'http://localhost:3000';
+// Base de datos de islas
+const databasePath = path.join(__dirname, '..', 'database', 'islas.json');
 
 function cargarIslas() {
   try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch (e) {
+    if (!fs.existsSync(databasePath)) {
+      return [];
+    }
+
+    const contenido = fs.readFileSync(databasePath, 'utf8');
+    return JSON.parse(contenido);
+  } catch (error) {
+    console.error('Error al cargar islas.json:', error);
     return [];
   }
 }
 
-function buscarIsla(islas, termino) {
-  const q = String(termino || '').toLowerCase().trim();
-  return islas.find(i => i.id.toLowerCase() === q || i.nombre.toLowerCase() === q);
-}
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('isla')
+    .setDescription('Muestra información sobre las islas disponibles.'),
 
-async function ejecutarIsla(sock, chat, comando, args = []) {
-  const islas = cargarIslas();
-  const sub = String(args[0] || '').toLowerCase();
+  async execute(interaction) {
+    const islas = cargarIslas();
 
-  if (!sub || sub === 'lista' || sub === 'listar') {
-    const texto = ['🏝️ *ISLAS DISPONIBLES*', ''];
-    for (const isla of islas) {
-      texto.push(`🏝️ *${isla.nombre}*`);
-      texto.push(`📝 ${isla.descripcion}`);
-      texto.push(`🌐 ${WEB_URL}/islas/${isla.id}`);
-      texto.push('');
+    if (!islas.length) {
+      return interaction.reply({
+        content: '🏝️ No hay islas disponibles todavía.',
+        ephemeral: true
+      });
     }
-    texto.push('Usa: *.isla <nombre>*.');
-    return sock.sendMessage(chat, { text: texto.join('\n') });
-  }
 
-  if (sub === 'ayuda' || sub === 'help') {
-    return sock.sendMessage(chat, {
-      text: '🏝️ *COMANDO ISLA*\n\n• .isla — lista las islas\n• .isla <nombre> — muestra una isla\n• .isla lista — lista las islas\n\nCada isla tiene su propia página web.'
+    const isla = islas[0];
+
+    const embed = new EmbedBuilder()
+      .setTitle(`🏝️ ${isla.nombre}`)
+      .setDescription(isla.descripcion || 'Una isla misteriosa.')
+      .setColor(isla.color || '#2ecc71');
+
+    if (isla.imagen) {
+      embed.setImage(isla.imagen);
+    }
+
+    const boton = new ButtonBuilder()
+      .setLabel('🌐 Ver isla')
+      .setStyle(ButtonStyle.Link)
+      .setURL(isla.url || 'http://localhost:3000');
+
+    const row = new ActionRowBuilder()
+      .addComponents(boton);
+
+    await interaction.reply({
+      embeds: [embed],
+      components: [row]
     });
   }
-
-  const isla = buscarIsla(islas, args.join(' '));
-  if (!isla) {
-    return sock.sendMessage(chat, { text: `❌ No encontré esa isla. Usa *.isla* para ver la lista.` });
-  }
-
-  const texto = [
-    `🏝️ *${isla.nombre}*`,
-    '',
-    `📝 ${isla.descripcion}`,
-    `🌤️ Clima: ${isla.clima}`,
-    `🌊 Ambiente: ${isla.ambiente}`,
-    `✨ Actividades: ${isla.actividades.join(', ')}`,
-    '',
-    `🌐 Página: ${WEB_URL}/islas/${isla.id}`
-  ].join('\n');
-
-  return sock.sendMessage(chat, { text: texto });
-}
-
-module.exports = ejecutarIsla;
-module.exports.ejecutarIsla = ejecutarIsla;
+};
