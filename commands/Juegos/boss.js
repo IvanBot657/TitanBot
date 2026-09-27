@@ -1,51 +1,141 @@
 // =========================================
-// 👹 TITANBOT - BOSS NARRATIVO INTERACTIVO
-// =========================================
-// .boss -> inicia una batalla
-// Durante la batalla, el usuario puede responder
-// normalmente. El bot interpreta palabras clave,
-// avanza la historia y guarda el estado.
+// 👹 TITANBOT - BOSS IA CON GROQ
 // =========================================
 
 const fs = require("fs");
 const path = require("path");
+const Groq = require("groq-sdk");
 
-const databaseDir = path.join(__dirname, "..", "database");
+const databaseDir = path.join(__dirname, "..", "..", "database");
 const databasePath = path.join(databaseDir, "boss.json");
 
 if (!fs.existsSync(databaseDir)) {
   fs.mkdirSync(databaseDir, { recursive: true });
 }
 
-function cargar() {
+// =========================================
+// 🤖 GROQ
+// =========================================
+
+const groq = process.env.GROQ_API_KEY
+  ? new Groq({
+      apiKey: process.env.GROQ_API_KEY
+    })
+  : null;
+
+// =========================================
+// 💾 BASE DE DATOS
+// =========================================
+
+function cargarDB() {
   try {
     if (!fs.existsSync(databasePath)) {
-      fs.writeFileSync(databasePath, JSON.stringify({}, null, 2));
+      fs.writeFileSync(
+        databasePath,
+        JSON.stringify({}, null, 2)
+      );
+
       return {};
     }
 
-    const contenido = fs.readFileSync(databasePath, "utf8");
-    return contenido.trim() ? JSON.parse(contenido) : {};
+    const contenido = fs.readFileSync(
+      databasePath,
+      "utf8"
+    );
+
+    if (!contenido.trim()) {
+      return {};
+    }
+
+    return JSON.parse(contenido);
+
   } catch (error) {
-    console.error("❌ Error leyendo boss.json:", error);
+    console.error(
+      "❌ Error cargando boss.json:",
+      error
+    );
+
     return {};
   }
 }
 
-function guardar(datos) {
+function guardarDB(datos) {
   try {
-    fs.writeFileSync(databasePath, JSON.stringify(datos, null, 2));
+    fs.writeFileSync(
+      databasePath,
+      JSON.stringify(datos, null, 2)
+    );
   } catch (error) {
-    console.error("❌ Error guardando boss.json:", error);
+    console.error(
+      "❌ Error guardando boss.json:",
+      error
+    );
   }
 }
 
-function normalizar(texto) {
-  return String(texto || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+// =========================================
+// 🔑 ID
+// =========================================
+
+function limpiarID(id) {
+  return String(id || "")
+    .replace(/[^a-zA-Z0-9_.:@-]/g, "_");
 }
+
+// =========================================
+// 👹 BOSSES
+// =========================================
+
+const BOSSES = [
+  {
+    nombre: "Señor de las Sombras",
+    emoji: "👹",
+    vida: 10000,
+    ataque: 350
+  },
+
+  {
+    nombre: "Dragón Infernal",
+    emoji: "🐉",
+    vida: 15000,
+    ataque: 500
+  },
+
+  {
+    nombre: "TITAN-X",
+    emoji: "🤖",
+    vida: 20000,
+    ataque: 650
+  },
+
+  {
+    nombre: "Rey Demonio",
+    emoji: "😈",
+    vida: 18000,
+    ataque: 600
+  },
+
+  {
+    nombre: "Guardián Celestial",
+    emoji: "⚡",
+    vida: 25000,
+    ataque: 750
+  }
+];
+
+// =========================================
+// 🎲 BOSS ALEATORIO
+// =========================================
+
+function elegirBoss() {
+  return BOSSES[
+    Math.floor(Math.random() * BOSSES.length)
+  ];
+}
+
+// =========================================
+// 📩 OBTENER TEXTO
+// =========================================
 
 function obtenerTexto(msg) {
   return (
@@ -56,546 +146,786 @@ function obtenerTexto(msg) {
   ).trim();
 }
 
-function usuarioId(id) {
-  return String(id || "").replace(/[^a-zA-Z0-9_.:@-]/g, "_");
+// =========================================
+// 🤖 PERSONALIDAD DEL BOSS
+// =========================================
+
+function crearPrompt(boss) {
+
+  return `
+Eres el sistema narrativo de TITANBOT.
+
+Estás controlando una batalla ficticia contra un Boss.
+
+BOSS:
+Nombre: ${boss.nombre}
+Emoji: ${boss.emoji}
+Vida máxima: ${boss.vidaMaxima}
+Vida actual: ${boss.vidaActual}
+Fase actual: ${boss.fase}
+
+TU FUNCIÓN:
+
+Debes actuar como el Boss y como narrador de la batalla.
+
+El jugador puede escribir ABSOLUTAMENTE CUALQUIER COSA.
+
+Puede:
+
+- atacar
+- esquivar
+- defenderse
+- correr
+- hablar
+- insultar al Boss
+- provocarlo
+- usar magia
+- usar una espada
+- inventar ataques
+- intentar engañarlo
+- hablar normalmente
+- intentar negociar
+- hacer acciones creativas
+
+Debes interpretar lo que escribió y responder de manera coherente.
+
+NO debes limitar al jugador a botones.
+
+La historia debe sentirse como un videojuego RPG.
+
+IMPORTANTE:
+
+El jugador controla sus propias acciones.
+
+Tú controlas al Boss y al mundo.
+
+NO decidas acciones del jugador por él.
+
+Puedes hacer que sus acciones tengan éxito,
+fracasen o tengan consecuencias.
+
+La batalla debe ser emocionante.
+
+El Boss debe tener personalidad.
+
+El Boss debe hablar directamente con el jugador.
+
+Usa bastantes detalles narrativos.
+
+Puedes utilizar diálogos como:
+
+— ¿Eso es todo lo que tienes?
+
+— Entonces ven y demuéstramelo.
+
+— No esperaba que llegaras tan lejos.
+
+La respuesta debe tener aproximadamente
+150-300 palabras.
+
+NO uses gore ni descripciones gráficas.
+
+NO conviertas la escena en contenido sexual.
+
+=========================================
+
+ESTADO DEL BOSS
+
+Vida actual:
+${boss.vidaActual}
+
+Vida máxima:
+${boss.vidaMaxima}
+
+Fase:
+${boss.fase}
+
+Turno:
+${boss.turno}
+
+=========================================
+
+AL FINAL DE TU RESPUESTA escribe EXACTAMENTE:
+
+[ESTADO]
+dano=NUMERO
+fase=NUMERO
+fin=si/no
+[/ESTADO]
+
+REGLAS:
+
+dano = daño que el jugador consiguió hacer al Boss.
+
+Si el jugador no hizo daño:
+dano=0
+
+fase puede ser:
+
+1
+2
+3
+
+fin=si SOLO cuando el Boss haya sido derrotado.
+
+No pongas información adicional dentro de [ESTADO].
+`;
 }
 
-function danoAleatorio(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+// =========================================
+// 🧠 CONSULTAR GROQ
+// =========================================
+
+async function consultarGroq(
+  boss,
+  historial,
+  mensaje
+) {
+
+  if (!groq) {
+    throw new Error(
+      "GROQ_API_KEY no configurada"
+    );
+  }
+
+  const mensajes = [
+
+    {
+      role: "system",
+      content: crearPrompt(boss)
+    }
+
+  ];
+
+  // Mantener contexto de la batalla
+
+  for (const item of historial.slice(-12)) {
+
+    mensajes.push({
+      role: item.rol,
+      content: item.texto
+    });
+
+  }
+
+  mensajes.push({
+    role: "user",
+    content: mensaje
+  });
+
+  const respuesta =
+    await groq.chat.completions.create({
+
+      model:
+        "llama-3.3-70b-versatile",
+
+      messages: mensajes,
+
+      temperature: 0.9,
+
+      max_tokens: 700
+
+    });
+
+  return (
+    respuesta.choices?.[0]?.message?.content ||
+    ""
+  );
 }
 
-const BOSSES = [
-  {
-    nombre: "Señor de las Sombras",
-    emoji: "👹",
-    vida: 10000,
-    ataque: 350,
-    color: "🌑",
-    intro: `🌑 *LAS NUBES CUBREN EL CIELO...*
+// =========================================
+// 📊 LEER ESTADO
+// =========================================
 
-El viento comienza a soplar con fuerza y todo queda en silencio.
+function leerEstado(texto) {
 
-💥 *BOOOOM...*
+  const bloque =
+    texto.match(
+      /\[ESTADO\]([\s\S]*?)\[\/ESTADO\]/i
+    );
 
-El suelo comienza a temblar.
+  if (!bloque) {
 
-Entre una enorme nube de humo aparece una figura gigantesca.
+    return {
+      dano: 0,
+      fase: 1,
+      fin: false
+    };
 
-👹 *EL SEÑOR DE LAS SOMBRAS HA APARECIDO.*
-
-Sus ojos brillan en medio de la oscuridad mientras observa a todos los que se encuentran frente a él.
-
-⚔️ Lentamente, levanta su enorme espada.
-
-La espada comienza a emitir una energía oscura que hace temblar el suelo.
-
-🔥 El Boss da un paso hacia adelante.
-
-— ¿Quién se atreve a desafiarme?
-
-Una fuerte explosión sacude el lugar.
-
-🌑 La oscuridad comienza a extenderse por toda la zona.
-
-El Señor de las Sombras levanta su espada y se prepara para atacar.
-
-⚔️ *LA BATALLA HA COMENZADO.*`,
-    provocaciones: [
-      "— ¿Eso es todo lo que tienes?",
-      "— He enfrentado guerreros mucho más fuertes que tú.",
-      "— Tu valor es interesante... tu fuerza todavía no.",
-      "— Sigue intentándolo. Apenas has comenzado a conocer mi poder."
-    ],
-    ataqueTexto: [
-      "⚔️ El Señor de las Sombras gira su espada y lanza un poderoso golpe.",
-      "🌑 Una ráfaga oscura atraviesa el campo de batalla.",
-      "💥 El Boss golpea el suelo y una onda de energía avanza hacia ti."
-    ]
-  },
-  {
-    nombre: "Dragón Infernal",
-    emoji: "🐉",
-    vida: 15000,
-    ataque: 500,
-    color: "🔥",
-    intro: `🔥 *EL CIELO COMIENZA A ARDER...*
-
-Una enorme sombra cubre la zona.
-
-El aire se vuelve cada vez más caliente.
-
-💥 *BOOOOM...*
-
-Una criatura gigantesca desciende desde las nubes.
-
-🐉 *EL DRAGÓN INFERNAL HA DESPERTADO.*
-
-Sus alas provocan una ráfaga que levanta polvo y rocas.
-
-🔥 Sus ojos se fijan en ti.
-
-El Dragón abre lentamente sus enormes fauces.
-
-— ¿Has venido a desafiarme?
-
-Una llama ilumina todo el lugar.
-
-🐉 Extiende sus alas y prepara sus garras.
-
-🔥 *EL COMBATE COMIENZA.*`,
-    provocaciones: [
-      "— Tu valentía me hace gracia.",
-      "— ¿Crees que unas palabras pueden derrotar a un dragón?",
-      "— Acércate. Quiero ver de qué estás hecho.",
-      "— Has despertado algo que no podrás controlar."
-    ],
-    ataqueTexto: [
-      "🔥 El Dragón lanza una llamarada que atraviesa el campo.",
-      "🐉 El Dragón se eleva y cae con una fuerza brutal.",
-      "💥 Una explosión de fuego sacude el suelo."
-    ]
-  },
-  {
-    nombre: "TITAN-X",
-    emoji: "🤖",
-    vida: 20000,
-    ataque: 650,
-    color: "⚡",
-    intro: `⚡ *SISTEMA DE EMERGENCIA ACTIVADO...*
-
-Las luces comienzan a parpadear.
-
-Un fuerte ruido metálico retumba en la distancia.
-
-🤖 Una enorme máquina aparece entre el humo.
-
-*BEEP... BEEP...*
-
-🔴 Sus ojos se encienden.
-
-🤖 *TITAN-X HA DESPERTADO.*
-
-Su armadura comienza a cargarse.
-
-⚡ Una espada de energía aparece en su mano.
-
-TITAN-X te observa durante unos segundos.
-
-— Objetivo localizado.
-
-El Boss da un paso hacia adelante.
-
-— Iniciando protocolo de combate.
-
-⚔️ *PREPÁRATE.*`,
-    provocaciones: [
-      "— Tus probabilidades de victoria son mínimas.",
-      "— Analizando tu estrategia... resultado: insuficiente.",
-      "— Interesante. Has conseguido superar mis cálculos.",
-      "— Continúa. Necesito más datos sobre tu estilo de combate."
-    ],
-    ataqueTexto: [
-      "⚡ TITAN-X dispara una descarga de energía.",
-      "🤖 TITAN-X avanza rápidamente y lanza un golpe de espada.",
-      "💥 Un pulso energético explota frente a ti."
-    ]
   }
-];
 
-function elegirBoss() {
-  return BOSSES[Math.floor(Math.random() * BOSSES.length)];
+  const contenido = bloque[1];
+
+  const danoMatch =
+    contenido.match(
+      /dano\s*=\s*(\d+)/i
+    );
+
+  const faseMatch =
+    contenido.match(
+      /fase\s*=\s*(\d+)/i
+    );
+
+  const finMatch =
+    contenido.match(
+      /fin\s*=\s*(si|no)/i
+    );
+
+  return {
+
+    dano: danoMatch
+      ? Number(danoMatch[1])
+      : 0,
+
+    fase: faseMatch
+      ? Number(faseMatch[1])
+      : 1,
+
+    fin:
+      finMatch
+        ? finMatch[1].toLowerCase() === "si"
+        : false
+
+  };
 }
 
-function respuestaAUsuario(texto, estado) {
-  const t = normalizar(texto);
+// =========================================
+// 🧹 QUITAR ESTADO
+// =========================================
 
-  const atacar = /atac|golpe|pego|pegar|disparo|lanzo|espada|puñet|puno|patada|corto|apuñ|fuego|magia/.test(t);
-  const defender = /defiend|bloque|escudo|prote|cubrir|cubrirme|parar/.test(t);
-  const esquivar = /esquiv|salto|agacho|corro|apart|evito|rodar|rodillo/.test(t);
-  const hablar = /habl|digo|respon|pregunt|quien|por que|porque|negocio|trato|amenaz/.test(t);
-  const rendirse = /me rindo|rendicion|rendirme|abandono|huir|escapo/.test(t);
+function limpiarRespuesta(texto) {
 
-  if (rendirse) {
-    return { tipo: "rendirse" };
-  }
+  return texto
+    .replace(
+      /\[ESTADO\][\s\S]*?\[\/ESTADO\]/i,
+      ""
+    )
+    .trim();
 
-  if (atacar) {
-    return { tipo: "atacar" };
-  }
-
-  if (defender) {
-    return { tipo: "defender" };
-  }
-
-  if (esquivar) {
-    return { tipo: "esquivar" };
-  }
-
-  if (hablar) {
-    return { tipo: "hablar" };
-  }
-
-  const opciones = ["atacar", "esquivar", "defender", "hablar"];
-  return { tipo: opciones[Math.floor(Math.random() * opciones.length)] };
 }
 
-async function enviar(sock, chat, texto) {
-  await sock.sendMessage(chat, { text: texto });
+// =========================================
+// 📤 ENVIAR
+// =========================================
+
+async function enviar(
+  sock,
+  chat,
+  texto
+) {
+
+  await sock.sendMessage(
+    chat,
+    {
+      text: texto
+    }
+  );
+
 }
 
-async function iniciarBoss(sock, chat, id) {
-  const datos = cargar();
-  const key = usuarioId(id);
+// =========================================
+// 🚀 INICIAR BOSS
+// =========================================
 
-  if (datos[key]?.activo) {
-    const boss = datos[key];
+async function iniciarBoss(
+  sock,
+  chat,
+  id
+) {
 
-    await enviar(sock, chat,
-`👹 *YA TIENES UN BOSS ACTIVO*
+  const db = cargarDB();
+
+  const usuario = limpiarID(id);
+
+  // =====================================
+  // YA TIENE BOSS
+  // =====================================
+
+  if (db[usuario]?.activo) {
+
+    const boss = db[usuario];
+
+    await enviar(
+      sock,
+      chat,
+`👹 *YA TIENES UNA BATALLA ACTIVA*
 
 ${boss.emoji} *${boss.nombre}*
 
-❤️ Vida: ${boss.vidaActual.toLocaleString()} / ${boss.vidaMaxima.toLocaleString()}
+❤️ Vida:
+${boss.vidaActual.toLocaleString()} / ${boss.vidaMaxima.toLocaleString()}
 
-💬 Respóndele directamente para continuar la batalla.
+🔥 Fase: ${boss.fase}
 
-⚔️ Puedes escribir cosas como:
-• *Lo ataco con mi espada*
-• *Intento esquivar*
-• *Me defiendo*
-• *No tengo miedo de ti*`);
+💬 Respóndele directamente al Boss.`
+    );
+
     return true;
   }
 
-  const plantilla = elegirBoss();
-
-  datos[key] = {
-    activo: true,
-    nombre: plantilla.nombre,
-    emoji: plantilla.emoji,
-    vidaMaxima: plantilla.vida,
-    vidaActual: plantilla.vida,
-    ataque: plantilla.ataque,
-    fase: 1,
-    turno: 0,
-    danoJugador: 0,
-    iniciadoEn: Date.now()
-  };
-
-  guardar(datos);
-
-  await enviar(sock, chat,
-`${plantilla.intro}
-
-━━━━━━━━━━━━━━━━━━━━
-
-${plantilla.emoji} *BOSS:* ${plantilla.nombre}
-❤️ *VIDA:* ${plantilla.vida.toLocaleString()} / ${plantilla.vida.toLocaleString()}
-⚔️ *ATAQUE:* ${plantilla.ataque}
-
-💬 *El Boss te observa.*
-
-— ¿Qué vas a hacer?
-
-━━━━━━━━━━━━━━━━━━━━
-
-🗣️ *Respóndele directamente.*
-Puedes atacar, esquivar, defenderte o hablar con él.`);
-
-  return true;
-}
-
-async function procesarRespuesta(sock, chat, id, texto) {
-  const datos = cargar();
-  const key = usuarioId(id);
-  const estado = datos[key];
-
-  if (!estado?.activo) return false;
+  // =====================================
+  // ELEGIR BOSS
+  // =====================================
 
   const plantilla =
-    BOSSES.find(b => b.nombre === estado.nombre) ||
-    BOSSES[0];
+    elegirBoss();
 
-  const accion = respuestaAUsuario(texto, estado);
-  estado.turno++;
+  const boss = {
 
-  if (accion.tipo === "rendirse") {
-    delete datos[key];
-    guardar(datos);
+    activo: true,
 
-    await enviar(sock, chat,
-`🏳️ *HAS ABANDONADO LA BATALLA.*
+    nombre:
+      plantilla.nombre,
 
-${estado.emoji} ${estado.nombre} baja lentamente su espada.
+    emoji:
+      plantilla.emoji,
 
-— Sabía que terminarías rindiéndote.
+    vidaMaxima:
+      plantilla.vida,
 
-💨 La batalla ha terminado.
+    vidaActual:
+      plantilla.vida,
 
-Puedes iniciar otro Boss usando:
-*.boss*`);
+    ataque:
+      plantilla.ataque,
 
-    return true;
-  }
+    fase: 1,
 
-  if (accion.tipo === "atacar") {
-    let dano = danoAleatorio(250, 750);
+    turno: 0,
 
-    if (estado.fase === 2) dano += 100;
-    if (estado.fase === 3) dano += 200;
+    danoJugador: 0,
 
-    estado.vidaActual -= dano;
-    estado.danoJugador += dano;
+    historial: [],
 
-    if (estado.vidaActual <= 0) {
-      estado.vidaActual = 0;
+    iniciado:
+      Date.now()
 
-      const recompensa = 500 + Math.floor(Math.random() * 501);
-      const xp = 200 + Math.floor(Math.random() * 201);
+  };
 
-      delete datos[key];
-      guardar(datos);
+  db[usuario] = boss;
 
-      await enviar(sock, chat,
-`💥 *GOLPE FINAL.*
+  guardarDB(db);
 
-Tu ataque atraviesa la defensa del Boss.
+  // =====================================
+  // INTRODUCCIÓN
+  // =====================================
 
-${estado.emoji} *${estado.nombre}* retrocede.
+  try {
 
-— No... puede... ser...
+    const intro =
+      await consultarGroq(
+        boss,
+        [],
+        `
+El jugador acaba de iniciar la batalla.
 
-El Boss deja caer su arma.
+Haz una entrada épica y bastante narrativa
+para presentar al Boss.
 
-💥 *BOOOOOOM.*
+El Boss debe aparecer,
+hablar con el jugador,
+mostrar su poder
+y terminar preguntándole:
 
-La energía desaparece y el campo de batalla queda en silencio.
+¿Qué vas a hacer?
 
-🏆 *¡HAS DERROTADO AL BOSS!*
-
-━━━━━━━━━━━━━━━━━━━━
-
-👹 Boss: ${estado.nombre}
-⚔️ Daño causado: ${estado.danoJugador.toLocaleString()}
-
-🎁 *RECOMPENSAS*
-💰 +${recompensa} monedas
-✨ +${xp} XP
-
-🔥 *¡LA BATALLA HA TERMINADO!*`);
-
-      return true;
-    }
-
-    if (estado.fase === 1 && estado.vidaActual <= estado.vidaMaxima * 0.66) {
-      estado.fase = 2;
-    } else if (estado.fase === 2 && estado.vidaActual <= estado.vidaMaxima * 0.33) {
-      estado.fase = 3;
-    }
-
-    const respuestaBoss = plantilla.provocaciones[
-      Math.floor(Math.random() * plantilla.provocaciones.length)
-    ];
-
-    guardar(datos);
-
-    await enviar(sock, chat,
-`⚔️ *TU ATAQUE IMPACTA.*
-
-💥 Daño causado: *${dano}*
-
-${estado.emoji} *${estado.nombre}*
-❤️ Vida: ${estado.vidaActual.toLocaleString()} / ${estado.vidaMaxima.toLocaleString()}
-
-${estado.fase === 2 ? "🔥 *FASE 2 — EL BOSS AUMENTA SU PODER.*\n\n" : ""}
-${estado.fase === 3 ? "☠️ *FASE FINAL — EL BOSS ESTÁ DESATANDO TODO SU PODER.*\n\n" : ""}
-
-${respuestaBoss}
-
-${plantilla.emoji} El Boss prepara su próximo movimiento...
-
-💬 *¿Qué haces?*`);
-
-    return true;
-  }
-
-  if (accion.tipo === "defender") {
-    const dano = Math.floor(estado.ataque * 0.25);
-    const bloqueo = Math.floor(estado.ataque * 0.75);
-
-    estado.turno++;
-    guardar(datos);
-
-    await enviar(sock, chat,
-`🛡️ *TE PREPARAS PARA DEFENDERTE.*
-
-${plantilla.ataqueTexto[
-      Math.floor(Math.random() * plantilla.ataqueTexto.length)
-    ]}
-
-💥 El golpe impacta contra tu defensa.
-
-🛡️ Bloqueas aproximadamente *${bloqueo}* de daño.
-❤️ Daño recibido: *${dano}*
-
-${estado.emoji} El Boss retrocede.
-
-— No podrás defenderte para siempre.
-
-❤️ Boss: ${estado.vidaActual.toLocaleString()} / ${estado.vidaMaxima.toLocaleString()}
-
-💬 *¿Cuál será tu próximo movimiento?*`);
-
-    return true;
-  }
-
-  if (accion.tipo === "esquivar") {
-    const exito = Math.random() < 0.75;
-
-    if (exito) {
-      guardar(datos);
-
-      await enviar(sock, chat,
-`💨 *¡ESQUIVAS EL ATAQUE!*
-
-${plantilla.ataqueTexto[
-        Math.floor(Math.random() * plantilla.ataqueTexto.length)
-      ]}
-
-El ataque pasa justo a tu lado.
-
-${estado.emoji} El Boss te mira sorprendido.
-
-— Interesante...
-
-⚔️ La batalla continúa.
-
-❤️ Boss: ${estado.vidaActual.toLocaleString()} / ${estado.vidaMaxima.toLocaleString()}
-
-💬 *¿Qué haces ahora?*`);
-    } else {
-      const dano = danoAleatorio(
-        Math.floor(estado.ataque * 0.35),
-        estado.ataque
+No empieces todavía el combate definitivo.
+`
       );
 
-      guardar(datos);
+    const estado =
+      leerEstado(intro);
 
-      await enviar(sock, chat,
-`💨 *¡INTENTAS ESQUIVAR!*
+    boss.fase =
+      Math.max(
+        1,
+        Math.min(3, estado.fase)
+      );
 
-Pero el Boss predice tu movimiento.
+    const respuesta =
+      limpiarRespuesta(intro);
 
-💥 *¡EL ATAQUE TE ALCANZA!*
+    boss.historial.push({
 
-❤️ Daño recibido: *${dano}*
+      rol: "assistant",
 
-${estado.emoji} ${plantilla.nombre} prepara otro movimiento.
+      texto: respuesta
 
-— Demasiado lento.
+    });
 
-❤️ Boss: ${estado.vidaActual.toLocaleString()} / ${estado.vidaMaxima.toLocaleString()}
+    guardarDB(db);
 
-💬 *¿Qué haces?*`);
-    }
+    await enviar(
+      sock,
+      chat,
+      respuesta
+    );
 
-    return true;
+  } catch (error) {
+
+    console.error(
+      "❌ Error iniciando Boss:",
+      error
+    );
+
+    delete db[usuario];
+
+    guardarDB(db);
+
+    await enviar(
+      sock,
+      chat,
+`❌ *No pude iniciar el Boss.*
+
+Verifica que hayas configurado:
+
+GROQ_API_KEY
+
+en las variables de entorno de Render.`
+    );
+
   }
-
-  if (accion.tipo === "hablar") {
-    const frase = plantilla.provocaciones[
-      Math.floor(Math.random() * plantilla.provocaciones.length)
-    ];
-
-    guardar(datos);
-
-    await enviar(sock, chat,
-`💬 *TUS PALABRAS RESUENAN EN EL CAMPO DE BATALLA.*
-
-${estado.emoji} ${plantilla.nombre} permanece en silencio durante unos segundos.
-
-Luego sonríe.
-
-${frase}
-
-⚔️ El Boss levanta nuevamente su arma.
-
-— Las palabras se acabarán. La batalla no.
-
-❤️ Boss: ${estado.vidaActual.toLocaleString()} / ${estado.vidaMaxima.toLocaleString()}
-
-💬 *¿Qué responderás?*`);
-
-    return true;
-  }
-
-  guardar(datos);
-
-  await enviar(sock, chat,
-`👹 *${plantilla.nombre} te observa.*
-
-— No esperaba esa respuesta.
-
-⚔️ El Boss prepara su espada.
-
-💬 *¿Qué harás ahora?*`);
 
   return true;
 }
 
-async function boss(sock, chat, comando, args, id, msg) {
-  const texto = obtenerTexto(msg);
+// =========================================
+// ⚔️ CONTINUAR BATALLA
+// =========================================
 
-  // Iniciar solamente con .boss
-  if (comando === "boss") {
-    return iniciarBoss(sock, chat, id);
+async function continuarBoss(
+  sock,
+  chat,
+  id,
+  mensajeJugador
+) {
+
+  const db =
+    cargarDB();
+
+  const usuario =
+    limpiarID(id);
+
+  const boss =
+    db[usuario];
+
+  if (!boss?.activo) {
+
+    return false;
+
   }
 
-  // Estos alias permiten consultar el estado sin romper
-  // la conversación narrativa.
-  if (comando === "bossestado" || comando === "bossstatus") {
-    const datos = cargar();
-    const estado = datos[usuarioId(id)];
+  boss.turno++;
 
-    if (!estado?.activo) {
-      await enviar(sock, chat,
-`👹 *NO HAY NINGÚN BOSS ACTIVO.*
+  try {
 
-Usa:
-*.boss*`);
+    const respuesta =
+      await consultarGroq(
+        boss,
+        boss.historial,
+        mensajeJugador
+      );
+
+    const estado =
+      leerEstado(respuesta);
+
+    // ===================================
+    // DAÑO
+    // ===================================
+
+    let dano =
+      Math.max(
+        0,
+        estado.dano
+      );
+
+    // Evitar daño absurdo
+
+    dano =
+      Math.min(
+        dano,
+        boss.vidaActual
+      );
+
+    boss.vidaActual -= dano;
+
+    boss.danoJugador += dano;
+
+    boss.fase =
+      Math.max(
+        1,
+        Math.min(
+          3,
+          estado.fase
+        )
+      );
+
+    const respuestaLimpia =
+      limpiarRespuesta(
+        respuesta
+      );
+
+    // ===================================
+    // VICTORIA
+    // ===================================
+
+    if (
+      estado.fin ||
+      boss.vidaActual <= 0
+    ) {
+
+      boss.vidaActual = 0;
+
+      const monedas =
+        500 +
+        Math.floor(
+          Math.random() * 501
+        );
+
+      const xp =
+        200 +
+        Math.floor(
+          Math.random() * 201
+        );
+
+      delete db[usuario];
+
+      guardarDB(db);
+
+      await enviar(
+        sock,
+        chat,
+`${respuestaLimpia}
+
+━━━━━━━━━━━━━━━━━━━━
+
+🏆 *¡BOSS DERROTADO!*
+
+👹 *${boss.nombre}*
+
+⚔️ Daño total:
+${boss.danoJugador.toLocaleString()}
+
+🎁 *RECOMPENSAS*
+
+💰 +${monedas} monedas
+✨ +${xp} XP
+
+🔥 *LA BATALLA HA TERMINADO.*`
+      );
+
       return true;
     }
 
-    await enviar(sock, chat,
-`👹 *BOSS ACTIVO*
+    // ===================================
+    // GUARDAR HISTORIAL
+    // ===================================
 
-${estado.emoji} ${estado.nombre}
+    boss.historial.push({
 
-❤️ Vida: ${estado.vidaActual.toLocaleString()} / ${estado.vidaMaxima.toLocaleString()}
-🔥 Fase: ${estado.fase}
-⚔️ Daño causado por ti: ${estado.danoJugador.toLocaleString()}
-🎬 Turno: ${estado.turno}
+      rol: "user",
 
-💬 *Respóndele directamente para continuar.*`);
+      texto:
+        mensajeJugador
 
-    return true;
+    });
+
+    boss.historial.push({
+
+      rol: "assistant",
+
+      texto:
+        respuestaLimpia
+
+    });
+
+    // Mantener historial pequeño
+
+    if (
+      boss.historial.length > 20
+    ) {
+
+      boss.historial =
+        boss.historial.slice(-20);
+
+    }
+
+    guardarDB(db);
+
+    // ===================================
+    // RESPUESTA
+    // ===================================
+
+    await enviar(
+      sock,
+      chat,
+`${respuestaLimpia}
+
+━━━━━━━━━━━━━━━━━━━━
+
+👹 *${boss.nombre}*
+
+❤️ Vida:
+${boss.vidaActual.toLocaleString()} / ${boss.vidaMaxima.toLocaleString()}
+
+🔥 Fase: ${boss.fase}
+
+💬 *¿Qué haces ahora?*`
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Error con Groq:",
+      error
+    );
+
+    guardarDB(db);
+
+    await enviar(
+      sock,
+      chat,
+`⚠️ *Groq no pudo responder.*
+
+Tu batalla sigue activa.
+
+Escribe nuevamente tu acción.`
+    );
+
   }
 
-  // Si el usuario tiene una batalla activa y el mensaje
-  // no es otro comando conocido, se trata como respuesta.
-  const datos = cargar();
-  const estado = datos[usuarioId(id)];
+  return true;
+}
 
-  if (estado?.activo && texto) {
-    return procesarRespuesta(
+// =========================================
+// 📊 ESTADO DEL BOSS
+// =========================================
+
+async function estadoBoss(
+  sock,
+  chat,
+  id
+) {
+
+  const db =
+    cargarDB();
+
+  const boss =
+    db[limpiarID(id)];
+
+  if (!boss?.activo) {
+
+    await enviar(
+      sock,
+      chat,
+`👹 *NO TIENES UN BOSS ACTIVO.*
+
+Usa:
+
+*.boss*`
+    );
+
+    return true;
+
+  }
+
+  await enviar(
+    sock,
+    chat,
+`👹 *BOSS ACTIVO*
+
+${boss.emoji} *${boss.nombre}*
+
+❤️ Vida:
+${boss.vidaActual.toLocaleString()} / ${boss.vidaMaxima.toLocaleString()}
+
+🔥 Fase: ${boss.fase}
+
+⚔️ Daño causado:
+${boss.danoJugador.toLocaleString()}
+
+🎬 Turno:
+${boss.turno}`
+  );
+
+  return true;
+
+}
+
+// =========================================
+// 🎮 COMANDO PRINCIPAL
+// =========================================
+
+async function boss(
+  sock,
+  chat,
+  comando,
+  args,
+  id,
+  msg
+) {
+
+  const texto =
+    obtenerTexto(msg);
+
+  // .boss
+
+  if (
+    comando === "boss"
+  ) {
+
+    return iniciarBoss(
+      sock,
+      chat,
+      id
+    );
+
+  }
+
+  // .bossestado
+
+  if (
+    comando === "bossestado"
+  ) {
+
+    return estadoBoss(
+      sock,
+      chat,
+      id
+    );
+
+  }
+
+  // =====================================
+  // MENSAJE NORMAL DURANTE BATALLA
+  // =====================================
+
+  const db =
+    cargarDB();
+
+  const bossActivo =
+    db[limpiarID(id)];
+
+  if (
+    bossActivo?.activo &&
+    texto
+  ) {
+
+    return continuarBoss(
       sock,
       chat,
       id,
       texto
     );
+
   }
 
   return false;
+
 }
+
+// =========================================
+// 📤 EXPORTAR
+// =========================================
 
 module.exports = boss;
