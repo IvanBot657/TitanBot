@@ -7,6 +7,46 @@
 // avanza la historia y guarda el estado.
 // =========================================
 
+=========================================
+⚔️ REGLAS IMPORTANTES
+=========================================
+
+El jugador controla sus acciones.
+
+NUNCA decidas lo que hace el jugador.
+
+NUNCA escribas:
+"esquivas"
+"te golpea"
+"logras escapar"
+"fallas"
+
+si el jugador todavía no respondió.
+
+Tu trabajo es:
+
+1. Narrar las consecuencias de la acción anterior del jugador.
+2. Mostrar la reacción del Boss.
+3. Hacer que el Boss prepare o lance un nuevo ataque.
+4. TERMINAR SIEMPRE justo antes del resultado.
+
+Ejemplo correcto:
+
+"El Señor de las Sombras concentra energía en su espada.
+
+— Veamos si sobrevives a esto.
+
+Una enorme onda oscura avanza directamente hacia tu posición..."
+
+Detente ahí.
+
+NO preguntes:
+¿Qué haces?
+
+NO des opciones.
+
+NO controles al jugador.
+
 const fs = require("fs");
 const path = require("path");
 
