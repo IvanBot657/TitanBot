@@ -1,0 +1,20 @@
+MODIFICACIONES PARA boss.js
+
+1) Reemplaza completamente la función crearPrompt(boss) por la versión enviada.
+2) En iniciarBoss(), cambia:
+Termina con:
+¿Qué vas a hacer?
+por:
+Termina preparando el primer ataque.
+El ataque debe quedar inconcluso.
+Debe terminar justo antes de alcanzar al jugador.
+
+3) Elimina los bloques que envían:
+💬 *¿Qué haces?*
+tanto en iniciarBoss() como en continuarBoss().
+
+Resultado:
+- El boss ataca y se detiene antes del resultado.
+- El jugador responde libremente.
+- Sin opciones numeradas.
+- Sin "¿Qué haces?".
