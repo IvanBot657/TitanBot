@@ -1,6 +1,12 @@
-// commands/eventos.js
-// TitanBot - Sistema de Eventos del Grupo
-// Almacenamiento: PostgreSQL
+// ========================================
+// 🎉 TITANBOT - SISTEMA DE EVENTOS
+// ========================================
+// .evento  -> Inicia el evento
+// .eventos -> Lista eventos registrados
+// .evento crear Nombre Fecha Descripción
+// .evento info ID
+// .evento borrar ID
+// ========================================
 
 const { Pool } = require("pg");
 
@@ -16,7 +22,16 @@ const pool = new Pool({
 });
 
 // ========================================
-// INICIALIZAR BASE DE DATOS
+// CONFIGURACIÓN
+// ========================================
+
+const TIEMPO_VOTACION = 50 * 60 * 1000;
+const TIEMPO_EVENTO = 10 * 60 * 1000;
+
+const encuestasActivas = new Map();
+
+// ========================================
+// BASE DE DATOS
 // ========================================
 
 let baseInicializada = false;
@@ -103,7 +118,7 @@ async function obtenerEventos(chat) {
 }
 
 // ========================================
-// OBTENER UN EVENTO
+// OBTENER EVENTO
 // ========================================
 
 async function obtenerEvento(chat, id) {
@@ -113,7 +128,8 @@ async function obtenerEvento(chat, id) {
     `
     SELECT *
     FROM eventos
-    WHERE chat = $1 AND id = $2
+    WHERE chat = $1
+    AND id = $2
     LIMIT 1;
     `,
     [chat, id]
@@ -132,7 +148,8 @@ async function eliminarEvento(chat, id) {
   const resultado = await pool.query(
     `
     DELETE FROM eventos
-    WHERE chat = $1 AND id = $2
+    WHERE chat = $1
+    AND id = $2
     RETURNING *;
     `,
     [chat, id]
@@ -142,7 +159,7 @@ async function eliminarEvento(chat, id) {
 }
 
 // ========================================
-// FORMATEAR EVENTOS
+// FORMATEAR LISTA
 // ========================================
 
 function formatearEventos(eventos) {
@@ -174,7 +191,646 @@ function formatearEventos(eventos) {
 }
 
 // ========================================
-// COMANDO PRINCIPAL
+// OBTENER PARTICIPANTES DEL GRUPO
+// ========================================
+
+async function obtenerParticipantes(sock, chat) {
+  try {
+    const metadata =
+      await sock.groupMetadata(chat);
+
+    return metadata.participants || [];
+  } catch (error) {
+    console.error(
+      "❌ No se pudieron obtener participantes:",
+      error
+    );
+
+    return [];
+  }
+}
+
+// ========================================
+// MENCIONAR TODOS
+// ========================================
+
+async function anunciarInicio(sock, chat, m) {
+  const participantes =
+    await obtenerParticipantes(
+      sock,
+      chat
+    );
+
+  const menciones =
+    participantes.map(
+      p => p.id
+    );
+
+  let texto =
+`🎉 *EVENTO DEL GRUPO INICIADO*
+
+🌑 Se aproxima la *Noche Misteriosa*...
+
+🎮 Primero debemos saber quiénes participarán.
+
+🗳️ *VOTA EN LA ENCUESTA DE ABAJO*
+
+⏱️ La inscripción estará abierta durante *50 minutos*.
+
+🎮 *Yo juego* = Participas
+❌ *No juego* = No participas`;
+
+  await sock.sendMessage(
+    chat,
+    {
+      text: texto,
+      mentions: menciones
+    },
+    { quoted: m }
+  );
+}
+
+// ========================================
+// CREAR ENCUESTA
+// ========================================
+
+async function crearEncuesta(sock, chat) {
+  try {
+    const encuesta =
+      await sock.sendMessage(
+        chat,
+        {
+          poll: {
+            name:
+              "🎮 ¿QUIÉNES JUEGAN EN EL EVENTO?",
+            values: [
+              "🎮 Yo juego",
+              "❌ No juego"
+            ],
+            selectableCount: 1
+          }
+        }
+      );
+
+    console.log(
+      "✅ Encuesta creada:",
+      encuesta?.key?.id
+    );
+
+    return encuesta;
+
+  } catch (error) {
+
+    console.error(
+      "❌ ERROR CREANDO ENCUESTA:",
+      error
+    );
+
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+`❌ *NO SE PUDO CREAR LA ENCUESTA*
+
+WhatsApp/Baileys rechazó la encuesta.
+
+Revisa la versión de @whiskeysockets/baileys.`
+      }
+    );
+
+    return null;
+  }
+}
+
+// ========================================
+// INICIAR EVENTO
+// ========================================
+
+async function iniciarEvento(
+  sock,
+  chat,
+  m
+) {
+  if (encuestasActivas.has(chat)) {
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+          "⚠️ Ya hay un evento activo en este grupo."
+      },
+      { quoted: m }
+    );
+
+    return true;
+  }
+
+  // -----------------------------
+  // ANUNCIO
+  // -----------------------------
+
+  await anunciarInicio(
+    sock,
+    chat,
+    m
+  );
+
+  // -----------------------------
+  // ENCUESTA
+  // -----------------------------
+
+  const encuesta =
+    await crearEncuesta(
+      sock,
+      chat
+    );
+
+  if (!encuesta) {
+    return true;
+  }
+
+  const encuestaId =
+    encuesta.key?.id;
+
+  encuestasActivas.set(
+    chat,
+    {
+      id: encuestaId,
+      mensaje: encuesta,
+      participantes: [],
+      iniciado: Date.now()
+    }
+  );
+
+  console.log(
+    `🗳️ Evento iniciado en ${chat}`
+  );
+
+  // -----------------------------
+  // 50 MINUTOS
+  // -----------------------------
+
+  setTimeout(
+    async () => {
+
+      try {
+
+        const evento =
+          encuestasActivas.get(
+            chat
+          );
+
+        if (!evento) return;
+
+        console.log(
+          `⏱️ Terminó votación en ${chat}`
+        );
+
+        await finalizarVotacion(
+          sock,
+          chat,
+          evento
+        );
+
+      } catch (error) {
+
+        console.error(
+          "❌ Error finalizando evento:",
+          error
+        );
+
+      }
+
+    },
+    TIEMPO_VOTACION
+  );
+
+  return true;
+}
+
+// ========================================
+// FINALIZAR VOTACIÓN
+// ========================================
+
+async function finalizarVotacion(
+  sock,
+  chat,
+  evento
+) {
+  try {
+
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+`⏰ *VOTACIÓN TERMINADA*
+
+🎮 Se cerraron las inscripciones.
+
+🌑 Ahora comienza la *Noche Misteriosa*...`
+      }
+    );
+
+    // --------------------------------
+    // PARTICIPANTES
+    // --------------------------------
+
+    const participantes =
+      evento.participantes || [];
+
+    if (
+      participantes.length === 0
+    ) {
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            "😕 Nadie se registró para el evento."
+        }
+      );
+
+      encuestasActivas.delete(
+        chat
+      );
+
+      return;
+    }
+
+    // --------------------------------
+    // INTENTAR PROMOVER
+    // --------------------------------
+
+    let promovidos = [];
+
+    try {
+
+      const metadata =
+        await sock.groupMetadata(
+          chat
+        );
+
+      const botId =
+        sock.user?.id;
+
+      const bot =
+        metadata.participants.find(
+          p =>
+            p.id === botId ||
+            p.id?.split(":")[0] ===
+            botId?.split(":")[0]
+        );
+
+      const botEsAdmin =
+        bot?.admin === "admin" ||
+        bot?.admin === "superadmin";
+
+      if (botEsAdmin) {
+
+        for (
+          const participante
+          of participantes
+        ) {
+
+          try {
+
+            await sock.groupParticipantsUpdate(
+              chat,
+              [participante],
+              "promote"
+            );
+
+            promovidos.push(
+              participante
+            );
+
+          } catch (error) {
+
+            console.log(
+              "⚠️ No se pudo promover:",
+              participante
+            );
+
+          }
+
+        }
+
+      } else {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`⚠️ *TITANBOT NO ES ADMINISTRADOR*
+
+Los participantes fueron registrados,
+pero no puedo promoverlos ni cerrar el grupo.`
+          }
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "❌ Error comprobando administrador:",
+        error
+      );
+
+    }
+
+    // --------------------------------
+    // CERRAR GRUPO
+    // --------------------------------
+
+    try {
+
+      const metadata =
+        await sock.groupMetadata(
+          chat
+        );
+
+      const bot =
+        metadata.participants.find(
+          p =>
+            p.id ===
+            sock.user?.id
+        );
+
+      const botEsAdmin =
+        bot?.admin === "admin" ||
+        bot?.admin === "superadmin";
+
+      if (botEsAdmin) {
+
+        await sock.groupSettingUpdate(
+          chat,
+          "announcement"
+        );
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`🔒 *GRUPO CERRADO*
+
+🌑 *NOCHE MISTERIOSA*
+
+🎯 Los participantes deben completar
+la misión del evento.
+
+⏱️ Tiempo: *10 minutos*`
+          }
+        );
+
+        // -------------------------
+        // MISIÓN
+        // -------------------------
+
+        await enviarMision(
+          sock,
+          chat,
+          participantes
+        );
+
+        // -------------------------
+        // 10 MINUTOS
+        // -------------------------
+
+        setTimeout(
+          async () => {
+
+            try {
+
+              await sock.groupSettingUpdate(
+                chat,
+                "not_announcement"
+              );
+
+              await sock.sendMessage(
+                chat,
+                {
+                  text:
+`🔓 *EVENTO TERMINADO*
+
+🎉 La *Noche Misteriosa* ha terminado.
+
+🏆 Gracias a todos por participar.
+
+🌟 El grupo vuelve a estar abierto.`
+                }
+              );
+
+              encuestasActivas.delete(
+                chat
+              );
+
+            } catch (error) {
+
+              console.error(
+                "❌ Error reabriendo grupo:",
+                error
+              );
+
+            }
+
+          },
+          TIEMPO_EVENTO
+        );
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "❌ Error cerrando grupo:",
+        error
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "❌ Error en finalizarVotacion:",
+      error
+    );
+
+  }
+}
+
+// ========================================
+// MISIÓN
+// ========================================
+
+async function enviarMision(
+  sock,
+  chat,
+  participantes
+) {
+
+  const misiones = [
+    "⚔️ Completa una batalla.",
+    "🎭 Responde una pregunta de verdad.",
+    "🎯 Supera un reto del grupo.",
+    "🧩 Resuelve un acertijo.",
+    "🏆 Consigue una victoria en un juego."
+  ];
+
+  const mision =
+    misiones[
+      Math.floor(
+        Math.random() *
+        misiones.length
+      )
+    ];
+
+  const menciones =
+    participantes;
+
+  await sock.sendMessage(
+    chat,
+    {
+      text:
+`🎯 *MISIÓN DEL EVENTO*
+
+${mision}
+
+⏱️ Tienen *10 minutos* para completarla.`,
+      mentions: menciones
+    }
+  );
+}
+
+// ========================================
+// PROCESAR VOTOS
+// ========================================
+
+async function procesarVotos(
+  sock,
+  updates
+) {
+
+  for (
+    const update
+    of updates
+  ) {
+
+    try {
+
+      const key =
+        update.key;
+
+      if (!key?.remoteJid) {
+        continue;
+      }
+
+      const chat =
+        key.remoteJid;
+
+      const evento =
+        encuestasActivas.get(
+          chat
+        );
+
+      if (!evento) {
+        continue;
+      }
+
+      if (
+        key.id !==
+        evento.id
+      ) {
+        continue;
+      }
+
+      /*
+       * Baileys proporciona los votos
+       * mediante pollUpdates.
+       */
+
+      const pollUpdates =
+        update.update
+          ?.pollUpdates;
+
+      if (!pollUpdates) {
+        continue;
+      }
+
+      for (
+        const poll
+        of pollUpdates
+      ) {
+
+        const voter =
+          poll?.vote?.voterPn ||
+          poll?.vote?.voterJid ||
+          poll?.vote?.voter;
+
+        if (!voter) {
+          continue;
+        }
+
+        const opciones =
+          poll?.vote?.selectedOptions ||
+          [];
+
+        if (
+          opciones.includes(
+            "🎮 Yo juego"
+          )
+        ) {
+
+          if (
+            !evento.participantes.includes(
+              voter
+            )
+          ) {
+
+            evento.participantes.push(
+              voter
+            );
+
+            console.log(
+              `🎮 Participante registrado: ${voter}`
+            );
+
+          }
+
+        } else {
+
+          const index =
+            evento.participantes.indexOf(
+              voter
+            );
+
+          if (index !== -1) {
+
+            evento.participantes.splice(
+              index,
+              1
+            );
+
+          }
+
+        }
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "❌ Error procesando voto:",
+        error
+      );
+
+    }
+
+  }
+
+}
+
+// ========================================
+// COMANDOS
 // ========================================
 
 async function eventos(
@@ -183,19 +839,22 @@ async function eventos(
   comando,
   args = []
 ) {
-  try {
-    if (!m?.key?.remoteJid) {
-      console.error(
-        "❌ Eventos recibió un mensaje inválido."
-      );
 
+  try {
+
+    if (
+      !m?.key?.remoteJid
+    ) {
       return true;
     }
 
-    const chat = m.key.remoteJid;
+    const chat =
+      m.key.remoteJid;
 
-    // Solo grupos
-    if (!chat.endsWith("@g.us")) {
+    if (
+      !chat.endsWith("@g.us")
+    ) {
+
       await sock.sendMessage(
         chat,
         {
@@ -208,60 +867,71 @@ async function eventos(
       return true;
     }
 
-    comando = String(comando || "")
-      .toLowerCase()
-      .replace(/^\./, "");
+    comando =
+      String(
+        comando || ""
+      )
+        .toLowerCase()
+        .replace(
+          /^\./,
+          ""
+        );
 
     // ====================================
-    // EVENTO / EVENTOS
+    // .EVENTO
     // ====================================
 
     if (
-      comando === "evento" ||
-      comando === "eventos"
+      comando === "evento"
     ) {
-      const accion = String(
-        args[0] || ""
-      ).toLowerCase();
 
-      // ==================================
-      // LISTAR
-      // ==================================
+      /*
+       * SIN ARGUMENTOS:
+       * INICIAR EVENTO
+       */
 
       if (
-        !accion ||
-        accion === "lista"
+        args.length === 0
       ) {
-        const lista =
-          await obtenerEventos(chat);
 
-        await sock.sendMessage(
+        return await iniciarEvento(
+          sock,
           chat,
-          {
-            text:
-              formatearEventos(lista)
-          },
-          { quoted: m }
+          m
         );
 
-        return true;
       }
 
-      // ==================================
-      // CREAR
-      // ==================================
+      const accion =
+        String(
+          args[0]
+        ).toLowerCase();
 
-      if (accion === "crear") {
-        if (args.length < 3) {
+      // ----------------------------------
+      // CREAR
+      // ----------------------------------
+
+      if (
+        accion === "crear"
+      ) {
+
+        if (
+          args.length < 3
+        ) {
+
           await sock.sendMessage(
             chat,
             {
               text:
-                "📅 *CREAR EVENTO*\n\n" +
-                "Uso:\n" +
-                ".evento crear Nombre Fecha Descripción\n\n" +
-                "Ejemplo:\n" +
-                ".evento crear Cumpleaños 20/10 Fiesta del grupo 🎉"
+`📅 *CREAR EVENTO*
+
+Uso:
+
+.evento crear Nombre Fecha Descripción
+
+Ejemplo:
+
+.evento crear Cumpleaños 20/10 Fiesta del grupo 🎉`
             },
             { quoted: m }
           );
@@ -269,12 +939,16 @@ async function eventos(
           return true;
         }
 
-        const nombre = args[1];
-        const fecha = args[2];
+        const nombre =
+          args[1];
 
-        const descripcion = args
-          .slice(3)
-          .join(" ");
+        const fecha =
+          args[2];
+
+        const descripcion =
+          args
+            .slice(3)
+            .join(" ");
 
         const creador =
           m.key.participant ||
@@ -293,16 +967,11 @@ async function eventos(
           chat,
           {
             text:
-              "✅ *EVENTO CREADO*\n\n" +
-              `🎉 Nombre: *${evento.nombre}*\n` +
-              `📆 Fecha: *${evento.fecha}*\n` +
-              (
-                evento.descripcion
-                  ? `📝 ${evento.descripcion}\n`
-                  : ""
-              ) +
-              `🆔 ID: *${evento.id}*\n\n` +
-              "💾 Guardado en PostgreSQL."
+`✅ *EVENTO CREADO*
+
+🎉 Nombre: *${evento.nombre}*
+📆 Fecha: *${evento.fecha}*
+${evento.descripcion ? `📝 ${evento.descripcion}\n` : ""}🆔 ID: *${evento.id}*`
           },
           { quoted: m }
         );
@@ -310,21 +979,24 @@ async function eventos(
         return true;
       }
 
-      // ==================================
+      // ----------------------------------
       // INFO
-      // ==================================
+      // ----------------------------------
 
-      if (accion === "info") {
-        const id = args[1];
+      if (
+        accion === "info"
+      ) {
+
+        const id =
+          args[1];
 
         if (!id) {
+
           await sock.sendMessage(
             chat,
             {
               text:
-                "❌ Debes indicar el ID del evento.\n\n" +
-                "Ejemplo:\n" +
-                ".evento info 123456"
+                "❌ Debes indicar el ID."
             },
             { quoted: m }
           );
@@ -339,6 +1011,7 @@ async function eventos(
           );
 
         if (!evento) {
+
           await sock.sendMessage(
             chat,
             {
@@ -355,15 +1028,11 @@ async function eventos(
           chat,
           {
             text:
-              "📅 *INFORMACIÓN DEL EVENTO*\n\n" +
-              `🎉 Nombre: *${evento.nombre}*\n` +
-              `📆 Fecha: *${evento.fecha}*\n` +
-              (
-                evento.descripcion
-                  ? `📝 ${evento.descripcion}\n`
-                  : ""
-              ) +
-              `🆔 ID: *${evento.id}*`
+`📅 *INFORMACIÓN DEL EVENTO*
+
+🎉 Nombre: *${evento.nombre}*
+📆 Fecha: *${evento.fecha}*
+${evento.descripcion ? `📝 ${evento.descripcion}\n` : ""}🆔 ID: *${evento.id}*`
           },
           { quoted: m }
         );
@@ -371,23 +1040,25 @@ async function eventos(
         return true;
       }
 
-      // ==================================
-      // BORRAR / ELIMINAR
-      // ==================================
+      // ----------------------------------
+      // BORRAR
+      // ----------------------------------
 
       if (
         accion === "borrar" ||
         accion === "eliminar"
       ) {
-        const id = args[1];
+
+        const id =
+          args[1];
 
         if (!id) {
+
           await sock.sendMessage(
             chat,
             {
               text:
-                "❌ Debes indicar el ID del evento.\n\n" +
-                "Usa *.eventos* para ver los IDs."
+                "❌ Indica el ID del evento."
             },
             { quoted: m }
           );
@@ -404,9 +1075,10 @@ async function eventos(
         await sock.sendMessage(
           chat,
           {
-            text: eliminado
-              ? "🗑️ Evento eliminado correctamente de PostgreSQL."
-              : "❌ No encontré un evento con ese ID."
+            text:
+              eliminado
+                ? "🗑️ Evento eliminado."
+                : "❌ Evento no encontrado."
           },
           { quoted: m }
         );
@@ -414,31 +1086,34 @@ async function eventos(
         return true;
       }
 
-      // ==================================
+      // ----------------------------------
       // AYUDA
-      // ==================================
+      // ----------------------------------
 
-      if (accion === "ayuda") {
+      if (
+        accion === "ayuda"
+      ) {
+
         await sock.sendMessage(
           chat,
           {
             text:
-              "📅 *SISTEMA DE EVENTOS*\n\n" +
+`📅 *SISTEMA DE EVENTOS*
 
-              "📋 *.eventos*\n" +
-              "Ver los eventos del grupo.\n\n" +
+🎉 *.evento*
+Iniciar evento.
 
-              "➕ *.evento crear Nombre Fecha Descripción*\n" +
-              "Crear un evento.\n\n" +
+📋 *.eventos*
+Ver eventos registrados.
 
-              "🔎 *.evento info ID*\n" +
-              "Ver información del evento.\n\n" +
+➕ *.evento crear Nombre Fecha Descripción*
+Crear evento.
 
-              "🗑️ *.evento borrar ID*\n" +
-              "Eliminar un evento.\n\n" +
+🔎 *.evento info ID*
+Ver información.
 
-              "💡 *Ejemplo:*\n" +
-              ".evento crear Reunión 25/10 Reunión del grupo"
+🗑️ *.evento borrar ID*
+Eliminar evento.`
           },
           { quoted: m }
         );
@@ -449,23 +1124,53 @@ async function eventos(
       return false;
     }
 
+    // ====================================
+    // .EVENTOS
+    // ====================================
+
+    if (
+      comando === "eventos"
+    ) {
+
+      const lista =
+        await obtenerEventos(
+          chat
+        );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            formatearEventos(
+              lista
+            )
+        },
+        { quoted: m }
+      );
+
+      return true;
+    }
+
     return false;
 
   } catch (error) {
+
     console.error(
       "❌ Error en eventos:",
       error
     );
 
     try {
+
       await sock.sendMessage(
         m.key.remoteJid,
         {
           text:
-            "❌ Ocurrió un error al procesar el evento."
+            "❌ Ocurrió un error en el sistema de eventos."
         },
         { quoted: m }
       );
+
     } catch (_) {}
 
     return true;
@@ -489,3 +1194,9 @@ module.exports.obtenerEvento =
 
 module.exports.eliminarEvento =
   eliminarEvento;
+
+module.exports.procesarVotos =
+  procesarVotos;
+
+module.exports.encuestasActivas =
+  encuestasActivas;
