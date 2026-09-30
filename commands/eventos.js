@@ -25,8 +25,8 @@ const pool = new Pool({
 // CONFIGURACIÓN
 // ========================================
 
-const TIEMPO_VOTACION = 50 * 60 * 1000;
-const TIEMPO_EVENTO = 10 * 60 * 1000;
+const TIEMPO_VOTACION = 50 * 1000;       // 50 segundos
+const TIEMPO_EVENTO = 10 * 60 * 1000;    // 10 minutos
 
 const encuestasActivas = new Map();
 
