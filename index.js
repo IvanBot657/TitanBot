@@ -1661,13 +1661,18 @@ async function iniciarBot() {
     // 🗳️ VOTOS DE ENCUESTAS - EVENTOS
     // =================================================
 
-    sock.ev.on("messages.update", async (updates) => {
-      try {
-        eventos.procesarVotos(updates);
-      } catch (error) {
-        console.log("❌ Error procesando votos de eventos:", error);
-      }
-    });
+     sock.ev.on("messages.update", async (updates) => {
+  try {
+    if (typeof eventos.procesarVotos === "function") {
+      await eventos.procesarVotos(sock, updates);
+    }
+  } catch (error) {
+    console.log(
+      "❌ Error procesando encuesta:",
+      error
+    );
+  }
+});
 
     // =================================================
     // MENSAJES
