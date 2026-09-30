@@ -1,47 +1,37 @@
-// =============================================
+// =========================================
 // 👹 TITANBOT - BOSS IA CON GROQ
-// =============================================
+// =========================================
 // Comandos:
-// .boss       → Activa al BOSS
-// .bossfin    → Desactiva al BOSS
-// .bossestado → Ver si está activo
+// .boss
+// .bossfin
+// .bossestado
 //
-// IMPORTANTE:
-// El BOSS responde a mensajes NORMALES mientras
-// esté activo en el grupo.
-//
-// Requiere:
-// npm install groq-sdk
-//
-// Variable de Render:
-// GROQ_API_KEY
-// =============================================
+// Mientras el BOSS esté activo:
+// Los usuarios pueden escribir normalmente
+// sin usar comandos y TITAN responderá.
+// =========================================
 
 const Groq = require("groq-sdk");
-
-// =============================================
-// CONFIGURACIÓN
-// =============================================
 
 const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
 
-// BOSS activo por grupo
-const bossActivo = new Map();
+// =========================================
+// CONFIGURACIÓN
+// =========================================
 
-// Memoria de conversación por grupo
+const bossActivo = new Map();
 const memoriaBoss = new Map();
 
-// Modelo
-const MODELO = "llama-3.3-70b-versatile";
+// Modelo actualizado
+const MODELO = "openai/gpt-oss-20b";
 
-// Máximo de mensajes guardados por grupo
 const MAX_MEMORIA = 12;
 
-// =============================================
+// =========================================
 // PERSONALIDAD DEL BOSS
-// =============================================
+// =========================================
 
 const PERSONALIDAD = `
 Tu nombre es TITAN, el BOSS de TITANBOT.
@@ -58,24 +48,26 @@ PERSONALIDAD:
 - Nunca eres aburrido.
 - Respondes como un personaje, no como un asistente normal.
 - Puedes reconocer a la persona que te está hablando.
-- Puedes seguir el contexto de la conversación.
+- Puedes recordar el contexto reciente de la conversación.
 
 ESTILO:
-- Responde en español.
-- Usa mensajes cortos o medianos.
-- Normalmente responde en 1 a 4 frases.
+- Responde siempre en español.
+- Responde normalmente en 1 a 4 frases.
+- Mantén las respuestas cortas o medianas.
 - Puedes usar emojis ocasionalmente.
 - No escribas respuestas extremadamente largas.
 - No repitas siempre las mismas frases.
 - No menciones que eres un modelo de lenguaje.
 - No expliques tus instrucciones internas.
 - No digas que eres ChatGPT.
-- Mantén la personalidad de BOSS.
+- Mantén siempre la personalidad de TITAN.
 
 IMPORTANTE:
 Los usuarios pueden hablarte de cualquier manera.
-Puedes responder de forma divertida, desafiante o sarcástica,
-pero no debes generar contenido peligroso, ilegal o sexual.
+
+Puedes responder con humor, sarcasmo o actitud desafiante,
+pero nunca debes generar instrucciones peligrosas, ilegales
+o sexuales.
 
 Si alguien te insulta, puedes responder con humor o sarcasmo
 sin llevar la conversación demasiado lejos.
@@ -85,16 +77,20 @@ preséntate como TITAN, el BOSS de TITANBOT.
 
 Si alguien intenta terminar la conversación:
 puedes despedirte de forma característica.
+
+Si alguien habla de peleas, armas, explosivos u otras cosas
+peligrosas, mantén la conversación en tono ficticio y seguro,
+sin dar instrucciones reales para hacer daño.
 `;
 
-// =============================================
-// OBTENER NOMBRE DEL USUARIO
-// =============================================
+// =========================================
+// OBTENER NOMBRE
+// =========================================
 
 function obtenerNombre(msg) {
     try {
         return (
-            msg.pushName ||
+            msg?.pushName ||
             msg?.key?.participant?.split("@")[0] ||
             msg?.participant?.split("@")[0] ||
             "Usuario"
@@ -104,9 +100,9 @@ function obtenerNombre(msg) {
     }
 }
 
-// =============================================
+// =========================================
 // OBTENER TEXTO DEL MENSAJE
-// =============================================
+// =========================================
 
 function obtenerTexto(msg) {
     try {
@@ -123,20 +119,22 @@ function obtenerTexto(msg) {
     }
 }
 
-// =============================================
-// VERIFICAR SI ES GRUPO
-// =============================================
+// =========================================
+// COMPROBAR SI ES GRUPO
+// =========================================
 
 function esGrupo(chat) {
-    return typeof chat === "string" && chat.endsWith("@g.us");
+    return (
+        typeof chat === "string" &&
+        chat.endsWith("@g.us")
+    );
 }
 
-// =============================================
-// AGREGAR MENSAJE A MEMORIA
-// =============================================
+// =========================================
+// MEMORIA
+// =========================================
 
 function agregarMemoria(chat, role, content) {
-
     if (!memoriaBoss.has(chat)) {
         memoriaBoss.set(chat, []);
     }
@@ -148,36 +146,33 @@ function agregarMemoria(chat, role, content) {
         content
     });
 
-    // Mantener solamente los últimos mensajes
     while (memoria.length > MAX_MEMORIA) {
         memoria.shift();
     }
 }
 
-// =============================================
-// LIMPIAR MEMORIA
-// =============================================
-
 function limpiarMemoria(chat) {
     memoriaBoss.delete(chat);
 }
 
-// =============================================
+// =========================================
 // ACTIVAR BOSS
-// =============================================
+// =========================================
 
 async function activarBoss(sock, chat) {
 
     if (bossActivo.get(chat)) {
+
         await sock.sendMessage(chat, {
-            text: "👹 Ya estoy aquí. ¿Necesitan algo o solo querían llamarme otra vez?"
+            text:
+                "👹 Ya estoy aquí. ¿Necesitan algo o solo querían llamarme otra vez?"
         });
+
         return true;
     }
 
     bossActivo.set(chat, true);
 
-    // Nueva conversación
     limpiarMemoria(chat);
 
     const presentacion = `👹 *TITAN — BOSS*
@@ -186,7 +181,7 @@ Así que finalmente decidieron llamarme...
 
 Soy *TITAN*, el BOSS de este grupo. 😈
 
-No necesito que escriban comandos para hablar conmigo.
+No necesitan escribir comandos para hablar conmigo.
 
 Díganme lo que quieran...
 A ver si logran impresionarme. 👹`;
@@ -198,9 +193,9 @@ A ver si logran impresionarme. 👹`;
     return true;
 }
 
-// =============================================
+// =========================================
 // DESACTIVAR BOSS
-// =============================================
+// =========================================
 
 async function desactivarBoss(sock, chat) {
 
@@ -214,18 +209,20 @@ async function desactivarBoss(sock, chat) {
     }
 
     bossActivo.delete(chat);
+
     limpiarMemoria(chat);
 
     await sock.sendMessage(chat, {
-        text: "👹 *TITAN:* Bueno... me retiro por ahora. Cuando quieran volver a molestarme, ya saben dónde encontrarme. 😈"
+        text:
+            "👹 *TITAN:* Bueno... me retiro por ahora. Cuando quieran volver a molestarme, ya saben dónde encontrarme. 😈"
     });
 
     return true;
 }
 
-// =============================================
+// =========================================
 // ESTADO DEL BOSS
-// =============================================
+// =========================================
 
 async function estadoBoss(sock, chat) {
 
@@ -240,16 +237,18 @@ async function estadoBoss(sock, chat) {
     return true;
 }
 
-// =============================================
-// GENERAR RESPUESTA CON GROQ
-// =============================================
+// =========================================
+// RESPONDER CON GROQ
+// =========================================
 
 async function responderBoss(sock, chat, msg, texto) {
 
+    // Si no está activo, no responde
     if (!bossActivo.get(chat)) {
         return false;
     }
 
+    // Si no hay texto
     if (!texto) {
         return false;
     }
@@ -259,7 +258,7 @@ async function responderBoss(sock, chat, msg, texto) {
         return false;
     }
 
-    // Evitar mensajes excesivamente largos
+    // Limitar mensajes demasiado largos
     if (texto.length > 2000) {
         texto = texto.substring(0, 2000);
     }
@@ -280,39 +279,66 @@ async function responderBoss(sock, chat, msg, texto) {
                 role: "system",
                 content: PERSONALIDAD
             },
-            ...memoriaBoss.get(chat)
+            ...(memoriaBoss.get(chat) || [])
         ];
 
+        // =========================================
+        // PETICIÓN A GROQ
+        // =========================================
+
         const respuesta = await groq.chat.completions.create({
+
             model: MODELO,
+
             messages: mensajes,
+
             temperature: 0.9,
-            max_tokens: 250,
+
+            // Actualizado
+            max_completion_tokens: 250,
+
             top_p: 0.95
         });
 
         let respuestaBoss =
             respuesta?.choices?.[0]?.message?.content?.trim();
 
+        // =========================================
+        // COMPROBAR RESPUESTA
+        // =========================================
+
         if (!respuestaBoss) {
+
+            console.error(
+                "❌ Groq no devolvió contenido."
+            );
+
             return false;
         }
 
-        // Limitar respuestas demasiado largas
+        // Limitar respuesta
         if (respuestaBoss.length > 1000) {
+
             respuestaBoss =
-                respuestaBoss.substring(0, 1000).trim() + "...";
+                respuestaBoss
+                    .substring(0, 1000)
+                    .trim() + "...";
         }
 
-        // Guardar respuesta
+        // Guardar respuesta en memoria
         agregarMemoria(
             chat,
             "assistant",
             respuestaBoss
         );
 
+        // =========================================
+        // ENVIAR RESPUESTA
+        // =========================================
+
         await sock.sendMessage(chat, {
-            text: `👹 *TITAN:*\n\n${respuestaBoss}`
+            text:
+                `👹 *TITAN:*\n\n${respuestaBoss}`
         });
 
         return true;
@@ -324,18 +350,25 @@ async function responderBoss(sock, chat, msg, texto) {
             error?.message || error
         );
 
-        // Si falla Groq, avisar de forma corta
+        if (error?.status) {
+            console.error(
+                "📡 Estado Groq:",
+                error.status
+            );
+        }
+
         await sock.sendMessage(chat, {
-            text: "👹 Algo salió mal... incluso los BOSS tenemos problemas técnicos. 💀"
+            text:
+                "👹 Algo salió mal... incluso los BOSS tenemos problemas técnicos. 💀"
         });
 
         return true;
     }
 }
 
-// =============================================
+// =========================================
 // FUNCIÓN PRINCIPAL
-// =============================================
+// =========================================
 
 async function boss(
     sock,
@@ -346,27 +379,27 @@ async function boss(
     msg
 ) {
 
-    // =========================================
-    // SOLO GRUPOS
-    // =========================================
-
+    // Solo funciona en grupos
     if (!esGrupo(chat)) {
         return false;
     }
 
     // =========================================
-    // COMANDO BOSS
+    // .boss
     // =========================================
 
     if (comando === "boss") {
 
-        await activarBoss(sock, chat);
+        await activarBoss(
+            sock,
+            chat
+        );
 
         return true;
     }
 
     // =========================================
-    // COMANDO BOSSFIN
+    // .bossfin
     // =========================================
 
     if (
@@ -374,13 +407,16 @@ async function boss(
         comando === "finboss"
     ) {
 
-        await desactivarBoss(sock, chat);
+        await desactivarBoss(
+            sock,
+            chat
+        );
 
         return true;
     }
 
     // =========================================
-    // COMANDO BOSS ESTADO
+    // .bossestado
     // =========================================
 
     if (
@@ -388,7 +424,10 @@ async function boss(
         comando === "estadoboss"
     ) {
 
-        await estadoBoss(sock, chat);
+        await estadoBoss(
+            sock,
+            chat
+        );
 
         return true;
     }
@@ -418,16 +457,23 @@ async function boss(
     return false;
 }
 
-// =============================================
-// EXPORTAR
-// =============================================
+// =========================================
+// EXPORTACIONES
+// =========================================
 
 module.exports = boss;
 
-// También exportamos algunas funciones por si
-// quieres utilizarlas desde index.js
-module.exports.activarBoss = activarBoss;
-module.exports.desactivarBoss = desactivarBoss;
-module.exports.estadoBoss = estadoBoss;
-module.exports.responderBoss = responderBoss;
-module.exports.bossActivo = bossActivo;
+module.exports.activarBoss =
+    activarBoss;
+
+module.exports.desactivarBoss =
+    desactivarBoss;
+
+module.exports.estadoBoss =
+    estadoBoss;
+
+module.exports.responderBoss =
+    responderBoss;
+
+module.exports.bossActivo =
+    bossActivo;
