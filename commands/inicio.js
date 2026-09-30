@@ -310,6 +310,11 @@ async function inicio(
 ┃ • .bossestado
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 🎉 EVENTOS 〕━━━╮
+┃ • .evento
+┃ • .eventos
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 ⚙️ CONFIGURACIÓN DEL GRUPO 〕━━━╮
 ┃ • .linkgrupo
 ┃ • .setnombre
