@@ -22,19 +22,24 @@ async function inicio(
   // ==============================
   if (cmd === "menu" || cmd === "menú") {
 
-  // Enviar GIF
-  await sock.sendMessage(chat, {
-    video: fs.readFileSync("./menu.gif"),
-    gifPlayback: true
-  });
+   await sock.sendMessage(chat, {
+  video: fs.readFileSync("./menu.gif"), // o tu .mp4
+  gifPlayback: true,
+  caption: `
+🤖 *TITANBOT*
+⚡ *Versión:* 3.1.0
 
-  // Esperar 1 segundo
-  await new Promise(resolve => setTimeout(resolve, 1000));
+👋 *MENÚ PRINCIPAL*
 
-  // Enviar imagen del menú
-  await sock.sendMessage(chat, {
-    image: fs.readFileSync("./titanbot.png"),
-    caption: `
+...TODO TU MENÚ...
+
+⚡ *${config.nombre}*
+🚀 *Sistema v3.1.0*
+`
+});
+
+return true;
+    
 🤖 *TITANBOT*
 ⚡ *Versión:* 3.1.0
 
