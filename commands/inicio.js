@@ -15,7 +15,7 @@ async function inicio(
   esGrupo,
   esAdmin
 ) {
-  const cmd = comando.toLowerCase();
+  const cmd = comando.toLowerCase() ;
 
   // ==============================
   // .menu
