@@ -363,14 +363,17 @@ return true;
 // .ping
 // ==============================
 if (cmd === "ping") {
-await sock.sendMessage(chat, {
-text: 🏓 *PONG!*\n\n🤖 ${config.nombre}\n⚡ Bot activo\n🚀 Versión: ${config.version}
-});
+  await sock.sendMessage(chat, {
+    text: `🏓 *PONG!*
 
-return true;
+🤖 ${config.nombre}
+⚡ Bot activo
+🚀 Versión: ${config.version}`
+  });
 
+  return true;
 }
-
+  
 // ==============================
 // .info
 // ==============================
