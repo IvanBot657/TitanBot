@@ -125,6 +125,14 @@ await sock.sendMessage(chat, {
 ┃ • .creativo
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+╭━━━〔 💍 MATRIMONIO 〕━━━╮
+┃
+┃ 💍 .casar @usuario
+┃ 📜 .matrimonio
+┃ 💔 .divorcio
+┃
+╰━━━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🎭 ROLEPLAY 〕━━━╮
 ┃ • .abrazar
 ┃ • .besar
