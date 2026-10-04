@@ -1,13 +1,9 @@
 // ==========================================
 // 💍 TITANBOT - SISTEMA DE MATRIMONIO
 // ==========================================
-// Comandos:
 // .casar @usuario
 // .matrimonio
 // .divorcio
-//
-// Guarda los matrimonios en:
-// database/matrimonios.json
 //
 // Compatible con:
 // await casar(sock, chat, comando, args, id, msg);
@@ -28,14 +24,10 @@ const databaseFile = path.join(
   "matrimonios.json"
 );
 
-// Crear carpeta database si no existe
 if (!fs.existsSync(databaseDir)) {
-  fs.mkdirSync(databaseDir, {
-    recursive: true
-  });
+  fs.mkdirSync(databaseDir, { recursive: true });
 }
 
-// Crear archivo si no existe
 if (!fs.existsSync(databaseFile)) {
   fs.writeFileSync(
     databaseFile,
@@ -44,23 +36,21 @@ if (!fs.existsSync(databaseFile)) {
 }
 
 // ==========================================
-// 📖 LEER BASE DE DATOS
+// 📖 BASE DE DATOS
 // ==========================================
 
 function leerMatrimonios() {
   try {
-    const contenido = fs.readFileSync(
+    const data = fs.readFileSync(
       databaseFile,
       "utf8"
     );
 
-    if (!contenido.trim()) {
-      return [];
-    }
+    if (!data.trim()) return [];
 
-    const datos = JSON.parse(contenido);
+    const json = JSON.parse(data);
 
-    return Array.isArray(datos) ? datos : [];
+    return Array.isArray(json) ? json : [];
 
   } catch (error) {
 
@@ -73,11 +63,8 @@ function leerMatrimonios() {
   }
 }
 
-// ==========================================
-// 💾 GUARDAR BASE DE DATOS
-// ==========================================
-
 function guardarMatrimonios(datos) {
+
   try {
 
     fs.writeFileSync(
@@ -99,71 +86,69 @@ function guardarMatrimonios(datos) {
 }
 
 // ==========================================
-// 🆔 OBTENER JID
+// 🆔 LIMPIAR JID
 // ==========================================
 
-function obtenerJid(texto) {
+function limpiarJid(jid) {
 
-  if (!texto) {
-    return null;
-  }
+  if (!jid) return "";
 
-  const numero = texto
-    .replace("@", "")
-    .replace(/\D/g, "");
-
-  if (!numero) {
-    return null;
-  }
-
-  return numero + "@s.whatsapp.net";
+  return jid
+    .replace("@s.whatsapp.net", "")
+    .replace("@c.us", "")
+    .replace("@lid", "");
 }
 
 // ==========================================
-// 👤 OBTENER MENCIONADO
+// 👤 OBTENER ID
+// ==========================================
+
+function obtenerId(id, msg) {
+
+  if (id) return id;
+
+  return (
+    msg?.key?.participant ||
+    msg?.key?.remoteJid ||
+    null
+  );
+}
+
+// ==========================================
+// 🎯 OBTENER MENCIONADO
 // ==========================================
 
 function obtenerMencionado(msg, args) {
 
-  // ------------------------------------------
-  // 1. Revisar menciones de WhatsApp
-  // ------------------------------------------
-
   try {
 
     const contexto =
-      msg?.message?.extendedTextMessage?.contextInfo ||
-      msg?.message?.imageMessage?.contextInfo ||
-      msg?.message?.videoMessage?.contextInfo ||
-      msg?.message?.conversation?.contextInfo;
+      msg?.message?.extendedTextMessage?.contextInfo;
 
     if (
-      contexto &&
-      contexto.mentionedJid &&
-      contexto.mentionedJid.length > 0
+      contexto?.mentionedJid &&
+      contexto.mentionedJid.length
     ) {
 
       return contexto.mentionedJid[0];
     }
 
-  } catch (error) {
-    // Continuar con el método alternativo
-  }
-
-  // ------------------------------------------
-  // 2. Revisar texto @numero
-  // ------------------------------------------
+  } catch (error) {}
 
   if (Array.isArray(args)) {
 
-    for (const argumento of args) {
+    for (const arg of args) {
 
-      if (argumento.startsWith("@")) {
+      if (
+        typeof arg === "string" &&
+        arg.startsWith("@")
+      ) {
 
-        const jid = obtenerJid(argumento);
+        const numero =
+          arg.replace(/\D/g, "");
 
-        if (jid) {
-          return jid;
+        if (numero) {
+          return numero + "@s.whatsapp.net";
         }
       }
     }
@@ -173,74 +158,32 @@ function obtenerMencionado(msg, args) {
 }
 
 // ==========================================
-// 👤 OBTENER ID DEL USUARIO
+// 💍 BUSCAR MATRIMONIO
 // ==========================================
 
-function obtenerId(id, msg) {
+function buscarMatrimonio(
+  datos,
+  usuario
+) {
 
-  if (id) {
-    return id;
-  }
+  return datos.find(m =>
 
-  try {
+    m.persona1 === usuario ||
+    m.persona2 === usuario
 
-    const remoteJid =
-      msg?.key?.participant ||
-      msg?.key?.remoteJid;
-
-    return remoteJid || null;
-
-  } catch (error) {
-
-    return null;
-  }
-}
-
-// ==========================================
-// 🔢 LIMPIAR JID
-// ==========================================
-
-function limpiarJid(jid) {
-
-  if (!jid) {
-    return null;
-  }
-
-  return jid
-    .replace("@s.whatsapp.net", "")
-    .replace("@c.us", "")
-    .replace("@lid", "");
-}
-
-// ==========================================
-// 💍 BUSCAR MATRIMONIO DEL USUARIO
-// ==========================================
-
-function buscarMatrimonio(datos, usuario) {
-
-  if (!usuario) {
-    return null;
-  }
-
-  return datos.find(matrimonio => {
-
-    return (
-      matrimonio.persona1 === usuario ||
-      matrimonio.persona2 === usuario
-    );
-
-  }) || null;
+  ) || null;
 }
 
 // ==========================================
 // ❤️ OBTENER PAREJA
 // ==========================================
 
-function obtenerPareja(matrimonio, usuario) {
+function obtenerPareja(
+  matrimonio,
+  usuario
+) {
 
-  if (!matrimonio) {
-    return null;
-  }
+  if (!matrimonio) return null;
 
   if (matrimonio.persona1 === usuario) {
     return matrimonio.persona2;
@@ -254,39 +197,44 @@ function obtenerPareja(matrimonio, usuario) {
 }
 
 // ==========================================
-// 🖼️ OBTENER FOTO DE PERFIL
+// 📸 OBTENER FOTO DE WHATSAPP
 // ==========================================
 
-async function obtenerFotoPerfil(sock, jid) {
+async function obtenerFotoPerfil(
+  sock,
+  jid
+) {
 
   try {
 
-    const url = await sock.profilePictureUrl(
-      jid,
-      "image"
-    );
+    const url =
+      await sock.profilePictureUrl(
+        jid,
+        "image"
+      );
 
     if (!url) {
       return null;
     }
 
-    const respuesta = await axios.get(
-      url,
-      {
-        responseType: "arraybuffer",
-        timeout: 10000
-      }
-    );
+    const response =
+      await axios.get(
+        url,
+        {
+          responseType: "arraybuffer",
+          timeout: 10000
+        }
+      );
 
     return Buffer.from(
-      respuesta.data
+      response.data
     );
 
   } catch (error) {
 
     console.log(
-      "⚠️ No se pudo obtener foto:",
-      limpiarJid(jid)
+      "⚠️ Sin foto de perfil:",
+      jid
     );
 
     return null;
@@ -297,17 +245,17 @@ async function obtenerFotoPerfil(sock, jid) {
 // 🖼️ FOTO POR DEFECTO
 // ==========================================
 
-async function crearFotoDefault() {
+async function fotoDefault() {
 
   return await sharp({
     create: {
-      width: 500,
-      height: 500,
+      width: 400,
+      height: 400,
       channels: 4,
       background: {
-        r: 220,
-        g: 220,
-        b: 220,
+        r: 230,
+        g: 230,
+        b: 230,
         alpha: 1
       }
     }
@@ -317,57 +265,44 @@ async function crearFotoDefault() {
 }
 
 // ==========================================
-// ✂️ REDONDEAR FOTO
+// ⭕ RECORTAR FOTO EN CÍRCULO
 // ==========================================
 
-async function hacerCircular(buffer) {
+async function fotoCircular(buffer) {
 
-  try {
+  const size = 400;
 
-    const imagen = sharp(buffer);
+  const mask = Buffer.from(`
+    <svg
+      width="${size}"
+      height="${size}"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle
+        cx="200"
+        cy="200"
+        r="200"
+        fill="white"
+      />
+    </svg>
+  `);
 
-    const metadata =
-      await imagen.metadata();
-
-    const tamaño = Math.min(
-      metadata.width || 500,
-      metadata.height || 500
-    );
-
-    const radio = tamaño / 2;
-
-    const circulo = Buffer.from(`
-      <svg width="${tamaño}" height="${tamaño}">
-        <circle
-          cx="${radio}"
-          cy="${radio}"
-          r="${radio}"
-          fill="white"
-        />
-      </svg>
-    `);
-
-    return await imagen
-      .resize(tamaño, tamaño, {
-        fit: "cover"
-      })
-      .composite([
-        {
-          input: circulo,
-          blend: "dest-in"
-        }
-      ])
-      .png()
-      .toBuffer();
-
-  } catch (error) {
-
-    return buffer;
-  }
+  return await sharp(buffer)
+    .resize(size, size, {
+      fit: "cover"
+    })
+    .composite([
+      {
+        input: mask,
+        blend: "dest-in"
+      }
+    ])
+    .png()
+    .toBuffer();
 }
 
 // ==========================================
-// 💍 CREAR IMAGEN DE MATRIMONIO
+// 💍 CREAR IMAGEN
 // ==========================================
 
 async function crearImagenMatrimonio(
@@ -377,14 +312,6 @@ async function crearImagenMatrimonio(
 ) {
 
   try {
-
-    console.log(
-      "🖼️ Creando imagen de matrimonio..."
-    );
-
-    // ----------------------------------------
-    // Obtener fotos
-    // ----------------------------------------
 
     let foto1 =
       await obtenerFotoPerfil(
@@ -399,149 +326,125 @@ async function crearImagenMatrimonio(
       );
 
     if (!foto1) {
-      foto1 = await crearFotoDefault();
+      foto1 = await fotoDefault();
     }
 
     if (!foto2) {
-      foto2 = await crearFotoDefault();
+      foto2 = await fotoDefault();
     }
 
-    // ----------------------------------------
-    // Redimensionar
-    // ----------------------------------------
+    foto1 =
+      await fotoCircular(foto1);
 
-    foto1 = await hacerCircular(
-      await sharp(foto1)
-        .resize(350, 350, {
-          fit: "cover"
-        })
-        .png()
-        .toBuffer()
-    );
+    foto2 =
+      await fotoCircular(foto2);
 
-    foto2 = await hacerCircular(
-      await sharp(foto2)
-        .resize(350, 350, {
-          fit: "cover"
-        })
-        .png()
-        .toBuffer()
-    );
+    // ======================================
+    // DISEÑO
+    // ======================================
 
-    // ----------------------------------------
-    // Fondo
-    // ----------------------------------------
+    const width = 1000;
+    const height = 600;
 
-    const ancho = 1000;
-    const alto = 650;
-
-    // ----------------------------------------
-    // SVG para diseño
-    // ----------------------------------------
-
+    // Fondo oscuro elegante,
+    // NO cuadro rosa.
     const fondo = `
     <svg
-      width="${ancho}"
-      height="${alto}"
+      width="${width}"
+      height="${height}"
       xmlns="http://www.w3.org/2000/svg"
     >
-
-      <defs>
-
-        <linearGradient
-          id="fondo"
-          x1="0"
-          y1="0"
-          x2="1"
-          y2="1"
-        >
-
-          <stop
-            offset="0%"
-            stop-color="#ff758c"
-          />
-
-          <stop
-            offset="100%"
-            stop-color="#ff7eb3"
-          />
-
-        </linearGradient>
-
-      </defs>
 
       <rect
         width="100%"
         height="100%"
-        fill="url(#fondo)"
+        fill="#111111"
       />
 
       <text
         x="500"
-        y="90"
+        y="70"
         text-anchor="middle"
         font-family="Arial"
-        font-size="55"
+        font-size="42"
         font-weight="bold"
         fill="white"
       >
-        💍 MATRIMONIO 💍
+        💍 MATRIMONIO
       </text>
 
       <text
         x="500"
-        y="150"
+        y="115"
         text-anchor="middle"
         font-family="Arial"
-        font-size="30"
-        fill="white"
+        font-size="22"
+        fill="#dddddd"
       >
         TITANBOT
       </text>
 
+      <!-- círculos detrás de las fotos -->
+
+      <circle
+        cx="300"
+        cy="315"
+        r="210"
+        fill="#222222"
+        stroke="white"
+        stroke-width="6"
+      />
+
+      <circle
+        cx="700"
+        cy="315"
+        r="210"
+        fill="#222222"
+        stroke="white"
+        stroke-width="6"
+      />
+
+      <!-- corazón central -->
+
       <text
         x="500"
-        y="560"
+        y="335"
         text-anchor="middle"
         font-family="Arial"
-        font-size="45"
-        font-weight="bold"
-        fill="white"
+        font-size="75"
       >
-        ❤️ PARA SIEMPRE ❤️
+        ❤️
       </text>
 
       <text
         x="500"
-        y="615"
+        y="550"
         text-anchor="middle"
         font-family="Arial"
-        font-size="25"
+        font-size="30"
+        font-weight="bold"
         fill="white"
       >
-        Que viva el amor
+        ¡SE HAN CASADO!
       </text>
 
     </svg>
     `;
 
-    // ----------------------------------------
-    // Crear imagen
-    // ----------------------------------------
-
-    const resultado = await sharp({
-      create: {
-        width: ancho,
-        height: alto,
-        channels: 4,
-        background: {
-          r: 255,
-          g: 117,
-          b: 140,
-          alpha: 1
+    const resultado =
+      await sharp({
+        create: {
+          width,
+          height,
+          channels: 4,
+          background: {
+            r: 17,
+            g: 17,
+            b: 17,
+            alpha: 1
+          }
         }
-      }
-    })
+      })
       .composite([
 
         {
@@ -552,19 +455,19 @@ async function crearImagenMatrimonio(
 
         {
           input: foto1,
-          top: 180,
-          left: 120
+          top: 115,
+          left: 100
         },
 
         {
           input: foto2,
-          top: 180,
-          left: 530
+          top: 115,
+          left: 500
         }
 
       ])
       .jpeg({
-        quality: 90
+        quality: 95
       })
       .toBuffer();
 
@@ -582,34 +485,7 @@ async function crearImagenMatrimonio(
 }
 
 // ==========================================
-// 👤 OBTENER NOMBRE
-// ==========================================
-
-function obtenerNombre(
-  msg,
-  jid,
-  esPrimero = false
-) {
-
-  try {
-
-    if (
-      msg?.pushName &&
-      esPrimero
-    ) {
-      return msg.pushName;
-    }
-
-  } catch (error) {}
-
-  return (
-    "@" +
-    limpiarJid(jid)
-  );
-}
-
-// ==========================================
-// 💍 COMANDO PRINCIPAL
+// 💍 COMANDO
 // ==========================================
 
 async function casar(
@@ -623,85 +499,22 @@ async function casar(
 
   try {
 
-    const cmd = String(
-      comando || ""
-    ).toLowerCase();
+    const cmd =
+      String(comando || "")
+        .toLowerCase();
 
-    const usuario = obtenerId(
-      id,
-      msg
-    );
+    const usuario =
+      obtenerId(id, msg);
+
+    if (!usuario) {
+      return true;
+    }
 
     // ======================================
     // 💍 .CASAR
     // ======================================
 
-    if (
-      cmd === "casar" ||
-      cmd === "matrimonio"
-    ) {
-
-      const datos =
-        leerMatrimonios();
-
-      // ------------------------------------
-      // .matrimonio
-      // ------------------------------------
-
-      if (cmd === "matrimonio") {
-
-        const matrimonio =
-          buscarMatrimonio(
-            datos,
-            usuario
-          );
-
-        if (!matrimonio) {
-
-          await sock.sendMessage(
-            chat,
-            {
-              text:
-                "💔 No estás casado actualmente.\n\n" +
-                "💍 Puedes usar:\n" +
-                ".casar @usuario"
-            }
-          );
-
-          return true;
-        }
-
-        const pareja =
-          obtenerPareja(
-            matrimonio,
-            usuario
-          );
-
-        await sock.sendMessage(
-          chat,
-          {
-            text:
-              "💍 *TU MATRIMONIO*\n\n" +
-              "❤️ Estado: Casado/a\n" +
-              "💑 Pareja: @" +
-              limpiarJid(pareja) +
-              "\n\n" +
-              "📅 Fecha: " +
-              matrimonio.fecha +
-              "\n\n" +
-              "❤️ ¡Que viva el amor!",
-            mentions: [
-              pareja
-            ]
-          }
-        );
-
-        return true;
-      }
-
-      // ------------------------------------
-      // .casar
-      // ------------------------------------
+    if (cmd === "casar") {
 
       const objetivo =
         obtenerMencionado(
@@ -715,19 +528,19 @@ async function casar(
           chat,
           {
             text:
-              "💍 *CASAMIENTO*\n\n" +
-              "Debes mencionar a la persona con la que quieres casarte.\n\n" +
-              "Ejemplo:\n" +
-              "`.casar @usuario`"
+              "╭─「 💍 CASAMIENTO 」\n" +
+              "│\n" +
+              "│ Debes mencionar a la persona.\n" +
+              "│\n" +
+              "│ Ejemplo:\n" +
+              "│ .casar @usuario\n" +
+              "│\n" +
+              "╰──────────────────"
           }
         );
 
         return true;
       }
-
-      // ------------------------------------
-      // Evitar casarse consigo mismo
-      // ------------------------------------
 
       if (
         limpiarJid(usuario) ===
@@ -738,17 +551,19 @@ async function casar(
           chat,
           {
             text:
-              "😂 No puedes casarte contigo mismo.\n\n" +
-              "Busca una pareja primero. 💍"
+              "😂 No puedes casarte contigo mismo."
           }
         );
 
         return true;
       }
 
-      // ------------------------------------
-      // Revisar si ya está casado
-      // ------------------------------------
+      const datos =
+        leerMatrimonios();
+
+      // ====================================
+      // REVISAR USUARIO
+      // ====================================
 
       const matrimonioUsuario =
         buscarMatrimonio(
@@ -768,11 +583,9 @@ async function casar(
           chat,
           {
             text:
-              "💍 Ya estás casado/a.\n\n" +
-              "❤️ Tu pareja es @" +
+              "💍 Ya estás casado/a con @" +
               limpiarJid(pareja) +
-              ".\n\n" +
-              "💔 Usa `.divorcio` si quieres terminar ese matrimonio.",
+              ".",
             mentions: [
               pareja
             ]
@@ -782,9 +595,9 @@ async function casar(
         return true;
       }
 
-      // ------------------------------------
-      // Revisar si objetivo ya está casado
-      // ------------------------------------
+      // ====================================
+      // REVISAR OBJETIVO
+      // ====================================
 
       const matrimonioObjetivo =
         buscarMatrimonio(
@@ -816,16 +629,16 @@ async function casar(
         return true;
       }
 
-      // ------------------------------------
-      // Crear matrimonio
-      // ------------------------------------
+      // ====================================
+      // GUARDAR
+      // ====================================
 
       const fecha =
         new Date().toLocaleDateString(
           "es-CO"
         );
 
-      const nuevoMatrimonio = {
+      datos.push({
 
         persona1: usuario,
 
@@ -833,21 +646,13 @@ async function casar(
 
         fecha: fecha,
 
-        timestamp:
-          Date.now()
+        timestamp: Date.now()
 
-      };
+      });
 
-      datos.push(
-        nuevoMatrimonio
-      );
-
-      const guardado =
-        guardarMatrimonios(
-          datos
-        );
-
-      if (!guardado) {
+      if (
+        !guardarMatrimonios(datos)
+      ) {
 
         await sock.sendMessage(
           chat,
@@ -860,9 +665,9 @@ async function casar(
         return true;
       }
 
-      // ------------------------------------
-      // Crear imagen
-      // ------------------------------------
+      // ====================================
+      // CREAR FOTO
+      // ====================================
 
       const imagen =
         await crearImagenMatrimonio(
@@ -871,9 +676,9 @@ async function casar(
           objetivo
         );
 
-      // ------------------------------------
-      // Enviar resultado
-      // ------------------------------------
+      // ====================================
+      // ENVIAR FOTO
+      // ====================================
 
       if (imagen) {
 
@@ -896,12 +701,7 @@ async function casar(
               "\n\n" +
 
               "📅 Fecha: " +
-              fecha +
-
-              "\n\n" +
-
-              "🎉 ¡Felicidades a los recién casados!\n" +
-              "❤️ Que viva el amor.",
+              fecha,
 
             mentions: [
               usuario,
@@ -924,16 +724,8 @@ async function casar(
               "\n❤️💍❤️\n" +
 
               "👤 @" +
-              limpiarJid(objetivo) +
+              limpiarJid(objetivo),
 
-              "\n\n" +
-
-              "📅 Fecha: " +
-              fecha +
-
-              "\n\n" +
-
-              "🎉 ¡Felicidades a los recién casados!",
             mentions: [
               usuario,
               objetivo
@@ -941,6 +733,64 @@ async function casar(
           }
         );
       }
+
+      return true;
+    }
+
+    // ======================================
+    // 📜 .MATRIMONIO
+    // ======================================
+
+    if (cmd === "matrimonio") {
+
+      const datos =
+        leerMatrimonios();
+
+      const matrimonio =
+        buscarMatrimonio(
+          datos,
+          usuario
+        );
+
+      if (!matrimonio) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "💔 No tienes un matrimonio registrado."
+          }
+        );
+
+        return true;
+      }
+
+      const pareja =
+        obtenerPareja(
+          matrimonio,
+          usuario
+        );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            "╭─「 💍 MATRIMONIO 」\n" +
+            "│\n" +
+            "│ ❤️ Pareja: @" +
+            limpiarJid(pareja) +
+            "\n" +
+            "│ 📅 Fecha: " +
+            matrimonio.fecha +
+            "\n" +
+            "│\n" +
+            "╰──────────────────",
+
+          mentions: [
+            pareja
+          ]
+        }
+      );
 
       return true;
     }
@@ -969,8 +819,7 @@ async function casar(
           chat,
           {
             text:
-              "💔 No estás casado/a.\n\n" +
-              "No puedes divorciarte si no tienes un matrimonio registrado."
+              "💔 No tienes un matrimonio registrado."
           }
         );
 
@@ -983,34 +832,25 @@ async function casar(
           usuario
         );
 
-      // ------------------------------------
-      // Eliminar matrimonio
-      // ------------------------------------
-
       const nuevosDatos =
-        datos.filter(
-          matrimonioActual => {
+        datos.filter(m =>
 
-            return (
-              matrimonioActual.persona1 !== usuario &&
-              matrimonioActual.persona2 !== usuario
-            );
+          m.persona1 !== usuario &&
+          m.persona2 !== usuario
 
-          }
         );
 
-      const guardado =
-        guardarMatrimonios(
+      if (
+        !guardarMatrimonios(
           nuevosDatos
-        );
-
-      if (!guardado) {
+        )
+      ) {
 
         await sock.sendMessage(
           chat,
           {
             text:
-              "❌ No se pudo procesar el divorcio."
+              "❌ No se pudo realizar el divorcio."
           }
         );
 
@@ -1021,21 +861,20 @@ async function casar(
         chat,
         {
           text:
-            "💔 *DIVORCIO COMPLETADO*\n\n" +
-
-            "👤 @" +
+            "╭─「 💔 DIVORCIO 」\n" +
+            "│\n" +
+            "│ 👤 @" +
             limpiarJid(usuario) +
-
-            "\n💔\n" +
-
-            "👤 @" +
+            "\n" +
+            "│ 💔\n" +
+            "│ 👤 @" +
             limpiarJid(pareja) +
+            "\n" +
+            "│\n" +
+            "│ 📜 Matrimonio eliminado.\n" +
+            "│\n" +
+            "╰──────────────────",
 
-            "\n\n" +
-
-            "📜 El matrimonio ha sido eliminado de la base de datos.\n\n" +
-
-            "😔 Fin de la relación.",
           mentions: [
             usuario,
             pareja
@@ -1046,36 +885,22 @@ async function casar(
       return true;
     }
 
-    // ======================================
-    // No corresponde a este comando
-    // ======================================
-
     return false;
 
   } catch (error) {
 
     console.error(
-      "❌ Error en commands/casar.js:",
+      "❌ Error en casar.js:",
       error
     );
 
-    try {
-
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            "❌ Ocurrió un error ejecutando el sistema de matrimonio."
-        }
-      );
-
-    } catch (errorEnvio) {
-
-      console.error(
-        "❌ No se pudo enviar error:",
-        errorEnvio
-      );
-    }
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+          "❌ Ocurrió un error en el sistema de matrimonio."
+      }
+    );
 
     return true;
   }
