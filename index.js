@@ -467,7 +467,24 @@ setInterval(
     return;
   }
 
+  // ===================================================
+// DATOS DEL QR
+// ===================================================
 
+if (req.url === "/qr-data") {
+
+  res.writeHead(200, {
+    "Content-Type": "application/json"
+  });
+
+  res.end(JSON.stringify({
+    qr: qrActual || null,
+    codigo: codigoVinculacion || null,
+    estado: estado || "🟡 Esperando..."
+  }));
+
+  return;
+}
 
     // ===================================================
 // 🏝️ ISLA WEB
