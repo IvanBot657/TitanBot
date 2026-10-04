@@ -2150,14 +2150,14 @@ ${resultadoXP.nivel}
           // ==========================================
 
           if (!ejecutado) {
-
-           const resultado = await casar(
-             sock,
-             chat,
-             comando,
-             args,
-             id,
-             msg
+          const resultado = await casar(
+            sock,
+            chat,
+            comando,
+            args,
+            id,
+            msg,
+            texto
           );
 
         if (resultado !== false) {
