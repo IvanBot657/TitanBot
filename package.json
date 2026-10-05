@@ -20,6 +20,7 @@
     "groq-sdk": "^0.33.0",
     "youtubei.js": "^18.1.0",
     "simple-ytdl-core": "^1.1.1",
-    "link-preview-js": "^3.0.0"
+    "link-preview-js": "^3.0.0",
+    "bgutils-js": "^3.2.2"
   }
 }
