@@ -21,6 +21,6 @@
     "youtubei.js": "^18.1.0",
     "simple-ytdl-core": "^1.1.1",
     "link-preview-js": "^3.0.0",
-    "bgutils-js": "^3.2.2"
+    "bgutils-js":  "^4.0.3"
   }
 }
