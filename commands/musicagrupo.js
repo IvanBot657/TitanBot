@@ -8,7 +8,12 @@ async function musicagrupo(sock, chat, args, id) {
 
   try {
 
+    // =========================================
+    // 🔎 COMPROBAR ARGUMENTOS
+    // =========================================
+
     if (!args || args.length === 0) {
+
       await sock.sendMessage(chat, {
         text:
           "🎵 *MÚSICA DEL GRUPO*\n\n" +
@@ -22,20 +27,46 @@ async function musicagrupo(sock, chat, args, id) {
 
     const cancion = args.join(" ");
 
-    // 🔎 AVISO DE BÚSQUEDA
+    // =========================================
+    // 🔎 BUSCANDO
+    // =========================================
+
     await sock.sendMessage(chat, {
       text:
         "🎵 *MÚSICA DEL GRUPO*\n\n" +
         `🔎 Buscando: *${cancion}*`
     });
 
+    console.log(`🎵 MUSICAGRUPО: buscando "${cancion}"`);
+
+    // =========================================
     // ▶️ CONECTAR CON YOUTUBE
+    // =========================================
+
+    console.log("🔵 Creando conexión con YouTube...");
+
     const youtube = await Innertube.create();
 
-    // 🔎 BUSCAR
+    console.log("🟢 Conexión con YouTube creada.");
+
+    // =========================================
+    // 🔎 BUSCAR CANCIÓN
+    // =========================================
+
+    console.log("🔵 Buscando canción...");
+
     const resultado = await youtube.search(cancion);
 
-    if (!resultado || !resultado.results || resultado.results.length === 0) {
+    console.log("🟢 Búsqueda terminada.");
+
+    if (
+      !resultado ||
+      !resultado.results ||
+      resultado.results.length === 0
+    ) {
+
+      console.log("🔴 No hubo resultados.");
+
       await sock.sendMessage(chat, {
         text: "❌ No encontré esa canción en YouTube."
       });
@@ -43,76 +74,215 @@ async function musicagrupo(sock, chat, args, id) {
       return true;
     }
 
-    // 🎬 BUSCAR VIDEO
-    const video = resultado.results.find(item => item.video_id);
+    // =========================================
+    // 🎬 ENCONTRAR VIDEO
+    // =========================================
+
+    const video = resultado.results.find(
+      item => item.video_id
+    );
 
     if (!video) {
+
+      console.log("🔴 No se encontró ningún video válido.");
+
       await sock.sendMessage(chat, {
-        text: "❌ No encontré un video válido para esa canción."
+        text:
+          "❌ Encontré resultados, pero ninguno era un video válido."
       });
 
       return true;
     }
 
-    const titulo = video.title?.toString() || cancion;
-    const autor = video.author?.name || "Artista desconocido";
-    const videoId = video.video_id;
+    const titulo =
+      video.title?.toString() || cancion;
+
+    const autor =
+      video.author?.name || "Artista desconocido";
+
+    const videoId =
+      video.video_id;
 
     const enlace =
       `https://www.youtube.com/watch?v=${videoId}`;
 
-    // 🎶 INFORMACIÓN
+    console.log(`🟢 Video encontrado: ${videoId}`);
+    console.log(`🎶 Título: ${titulo}`);
+    console.log(`👤 Autor: ${autor}`);
+
+    // =========================================
+    // 🎶 MOSTRAR INFORMACIÓN
+    // =========================================
+
     await sock.sendMessage(chat, {
       text:
         "🎵 *MÚSICA DEL GRUPO*\n\n" +
         `🎶 *${titulo}*\n` +
         `👤 ${autor}\n\n` +
         `🔗 ${enlace}\n\n` +
-        "⬇️ Descargando audio..."
+        "⬇️ Obteniendo audio..."
     });
 
-    // 🎧 DESCARGAR SOLO AUDIO
-    const audioStream = await youtube.download(videoId, {
+    // =========================================
+    // 🎧 OBTENER INFORMACIÓN DEL AUDIO
+    // =========================================
+
+    console.log("🔵 Obteniendo información del audio...");
+
+    const info = await youtube.getBasicInfo(videoId);
+
+    console.log("🟢 Información del video obtenida.");
+
+    // =========================================
+    // 🎧 SELECCIONAR AUDIO
+    // =========================================
+
+    console.log("🔵 Seleccionando formato de audio...");
+
+    const formato = info.chooseFormat({
       type: "audio",
       quality: "best"
     });
 
-    if (!audioStream) {
-      throw new Error("No se pudo obtener el audio.");
+    if (!formato) {
+      throw new Error(
+        "YouTube no devolvió ningún formato de audio."
+      );
     }
 
+    console.log("🟢 Formato de audio encontrado.");
+
+    console.log(
+      `🎧 MIME: ${formato.mime_type || formato.mimeType || "desconocido"}`
+    );
+
+    console.log(
+      `🎧 Codec: ${formato.audio_codec || "desconocido"}`
+    );
+
+    // =========================================
+    // 🔗 DESCIFRAR URL
+    // =========================================
+
+    console.log("🔵 Generando URL de audio...");
+
+    const url = await formato.decipher(
+      youtube.session.player
+    );
+
+    if (!url) {
+      throw new Error(
+        "No se pudo generar la URL del audio."
+      );
+    }
+
+    console.log("🟢 URL de audio generada.");
+
+    // =========================================
+    // ⬇️ DESCARGAR AUDIO
+    // =========================================
+
+    console.log("🔵 Descargando audio...");
+
+    const audioStream = await youtube.download(
+      videoId,
+      {
+        type: "audio",
+        quality: "best"
+      }
+    );
+
+    if (!audioStream) {
+      throw new Error(
+        "youtube.download() no devolvió ningún stream."
+      );
+    }
+
+    console.log("🟢 Stream de audio recibido.");
+
+    // =========================================
     // 📦 CONVERTIR STREAM A BUFFER
+    // =========================================
+
     const chunks = [];
 
-    for await (const chunk of Utils.streamToIterable(audioStream)) {
-      chunks.push(Buffer.from(chunk));
+    console.log("🔵 Convirtiendo audio a Buffer...");
+
+    for await (
+      const chunk of Utils.streamToIterable(audioStream)
+    ) {
+
+      chunks.push(
+        Buffer.from(chunk)
+      );
+
     }
 
-    const audioBuffer = Buffer.concat(chunks);
+    const audioBuffer =
+      Buffer.concat(chunks);
 
-    if (!audioBuffer || audioBuffer.length === 0) {
-      throw new Error("El audio descargado está vacío.");
+    console.log(
+      `🟢 Audio descargado: ${audioBuffer.length} bytes`
+    );
+
+    if (
+      !audioBuffer ||
+      audioBuffer.length === 0
+    ) {
+
+      throw new Error(
+        "El Buffer del audio está vacío."
+      );
     }
 
-    // 🎧 ENVIAR AUDIO A WHATSAPP
+    // =========================================
+    // 🎧 ENVIAR A WHATSAPP
+    // =========================================
+
+    console.log("🔵 Enviando audio a WhatsApp...");
+
     await sock.sendMessage(chat, {
+
       audio: audioBuffer,
-      mimetype: "audio/mp4",
+
+      mimetype:
+        formato.mime_type ||
+        formato.mimeType ||
+        "audio/mp4",
+
       ptt: false,
-      fileName: `${titulo}.m4a`
+
+      fileName:
+        `${titulo}.m4a`
+
     });
 
     console.log(
-      `✅ AUDIO ENVIADO: ${titulo} | ${audioBuffer.length} bytes`
+      `✅ AUDIO ENVIADO CORRECTAMENTE: ${titulo}`
     );
 
     return true;
 
   } catch (error) {
 
+    // =========================================
+    // ❌ ERROR
+    // =========================================
+
     console.error(
-      "❌ ERROR EN MUSICAGRUPO:",
+      "========================================="
+    );
+
+    console.error(
+      "❌ ERROR COMPLETO EN MUSICAGRUPO"
+    );
+
+    console.error(
       error
+    );
+
+    console.error(
+      "========================================="
     );
 
     try {
@@ -120,13 +290,13 @@ async function musicagrupo(sock, chat, args, id) {
       await sock.sendMessage(chat, {
         text:
           "❌ No pude descargar el audio.\n\n" +
-          "Intenta nuevamente con otra canción."
+          "⚠️ Revisa los logs de Render para ver el error exacto."
       });
 
     } catch (errorMensaje) {
 
       console.error(
-        "❌ No se pudo enviar el mensaje de error:",
+        "❌ Error enviando mensaje:",
         errorMensaje
       );
 
