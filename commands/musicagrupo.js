@@ -2,122 +2,108 @@
 // 🎵 MÚSICA PARA EL GRUPO - TITANBOT
 // =========================================
 
-const { Innertube } = require("youtubei.js");
+const { Innertube, Utils } = require("youtubei.js");
 
 async function musicagrupo(sock, chat, args, id) {
 
   try {
 
-    // =========================================
-    // 🔎 COMPROBAR CANCIÓN
-    // =========================================
-
     if (!args || args.length === 0) {
-
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            "🎵 *MÚSICA DEL GRUPO*\n\n" +
-            "Escribe el nombre de una canción.\n\n" +
-            "Ejemplo:\n" +
-            "`.musicagrupo Believer`"
-        }
-      );
+      await sock.sendMessage(chat, {
+        text:
+          "🎵 *MÚSICA DEL GRUPO*\n\n" +
+          "Escribe el nombre de una canción.\n\n" +
+          "Ejemplo:\n" +
+          "`.musicagrupo Believer`"
+      });
 
       return true;
     }
 
     const cancion = args.join(" ");
 
-    // =========================================
-    // 🔎 AVISO
-    // =========================================
+    // 🔎 AVISO DE BÚSQUEDA
+    await sock.sendMessage(chat, {
+      text:
+        "🎵 *MÚSICA DEL GRUPO*\n\n" +
+        `🔎 Buscando: *${cancion}*`
+    });
 
-    await sock.sendMessage(
-      chat,
-      {
-        text:
-          "🎵 *MÚSICA DEL GRUPO*\n\n" +
-          `🔎 Buscando: *${cancion}*`
-      }
-    );
-
-    // =========================================
     // ▶️ CONECTAR CON YOUTUBE
-    // =========================================
-
     const youtube = await Innertube.create();
 
+    // 🔎 BUSCAR
     const resultado = await youtube.search(cancion);
 
-    if (
-      !resultado ||
-      !resultado.results ||
-      resultado.results.length === 0
-    ) {
-
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            "❌ No encontré esa canción en YouTube."
-        }
-      );
+    if (!resultado || !resultado.results || resultado.results.length === 0) {
+      await sock.sendMessage(chat, {
+        text: "❌ No encontré esa canción en YouTube."
+      });
 
       return true;
     }
 
-    // =========================================
-    // 🎶 BUSCAR PRIMER VIDEO
-    // =========================================
-
-    const video = resultado.results.find(
-      item => item.video_id
-    );
+    // 🎬 BUSCAR VIDEO
+    const video = resultado.results.find(item => item.video_id);
 
     if (!video) {
-
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            "❌ No encontré un video válido para esa canción."
-        }
-      );
+      await sock.sendMessage(chat, {
+        text: "❌ No encontré un video válido para esa canción."
+      });
 
       return true;
     }
 
-    const titulo =
-      video.title?.toString() ||
-      cancion;
-
-    const autor =
-      video.author?.name ||
-      "Artista desconocido";
-
-    const videoId =
-      video.video_id;
+    const titulo = video.title?.toString() || cancion;
+    const autor = video.author?.name || "Artista desconocido";
+    const videoId = video.video_id;
 
     const enlace =
       `https://www.youtube.com/watch?v=${videoId}`;
 
-    // =========================================
-    // 🎶 RESULTADO
-    // =========================================
+    // 🎶 INFORMACIÓN
+    await sock.sendMessage(chat, {
+      text:
+        "🎵 *MÚSICA DEL GRUPO*\n\n" +
+        `🎶 *${titulo}*\n` +
+        `👤 ${autor}\n\n` +
+        `🔗 ${enlace}\n\n` +
+        "⬇️ Descargando audio..."
+    });
 
-    await sock.sendMessage(
-      chat,
-      {
-        text:
-          "🎵 *MÚSICA DEL GRUPO*\n\n" +
-          `🎶 *${titulo}*\n` +
-          `👤 ${autor}\n\n` +
-          `🔗 ${enlace}\n\n` +
-          "🎧 Encontrada correctamente.\n" +
-          "⚙️ Preparando audio..."
-      }
+    // 🎧 DESCARGAR SOLO AUDIO
+    const audioStream = await youtube.download(videoId, {
+      type: "audio",
+      quality: "best"
+    });
+
+    if (!audioStream) {
+      throw new Error("No se pudo obtener el audio.");
+    }
+
+    // 📦 CONVERTIR STREAM A BUFFER
+    const chunks = [];
+
+    for await (const chunk of Utils.streamToIterable(audioStream)) {
+      chunks.push(Buffer.from(chunk));
+    }
+
+    const audioBuffer = Buffer.concat(chunks);
+
+    if (!audioBuffer || audioBuffer.length === 0) {
+      throw new Error("El audio descargado está vacío.");
+    }
+
+    // 🎧 ENVIAR AUDIO A WHATSAPP
+    await sock.sendMessage(chat, {
+      audio: audioBuffer,
+      mimetype: "audio/mp4",
+      ptt: false,
+      fileName: `${titulo}.m4a`
+    });
+
+    console.log(
+      `✅ AUDIO ENVIADO: ${titulo} | ${audioBuffer.length} bytes`
     );
 
     return true;
@@ -125,17 +111,26 @@ async function musicagrupo(sock, chat, args, id) {
   } catch (error) {
 
     console.error(
-      "❌ ERROR EN MUSICAGRUPО:",
+      "❌ ERROR EN MUSICAGRUPO:",
       error
     );
 
-    await sock.sendMessage(
-      chat,
-      {
+    try {
+
+      await sock.sendMessage(chat, {
         text:
-          "❌ No pude buscar la canción en este momento."
-      }
-    );
+          "❌ No pude descargar el audio.\n\n" +
+          "Intenta nuevamente con otra canción."
+      });
+
+    } catch (errorMensaje) {
+
+      console.error(
+        "❌ No se pudo enviar el mensaje de error:",
+        errorMensaje
+      );
+
+    }
 
     return true;
   }
