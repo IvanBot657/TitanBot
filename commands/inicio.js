@@ -37,6 +37,7 @@ await sock.sendMessage(chat, {
 ┃ • .info
 ┃ • .version
 ┃ • .owner
+┃ • .musicagrupo <canción>
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━〔 👤 USUARIO 〕━━━╮
