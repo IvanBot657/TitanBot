@@ -8,6 +8,10 @@ async function musicagrupo(sock, chat, args, id) {
 
   try {
 
+    // =========================================
+    // 📝 COMPROBAR COMANDO
+    // =========================================
+
     if (!args || args.length === 0) {
 
       await sock.sendMessage(chat, {
@@ -36,7 +40,7 @@ async function musicagrupo(sock, chat, args, id) {
     console.log(`🎵 Buscando: ${cancion}`);
 
     // =========================================
-    // ▶️ YOUTUBE
+    // ▶️ CONECTAR CON YOUTUBE
     // =========================================
 
     console.log("🔵 Conectando con YouTube...");
@@ -82,6 +86,8 @@ async function musicagrupo(sock, chat, args, id) {
       `https://www.youtube.com/watch?v=${videoId}`;
 
     console.log(`🟢 Video encontrado: ${videoId}`);
+    console.log(`🎶 ${titulo}`);
+    console.log(`👤 ${autor}`);
 
     // =========================================
     // 🎶 INFORMACIÓN
@@ -97,34 +103,38 @@ async function musicagrupo(sock, chat, args, id) {
     });
 
     // =========================================
-    // 🎧 DESCARGAR AUDIO
+    // 🎧 DESCARGAR AUDIO WEBM / OPUS
     // =========================================
 
     console.log("🔵 Iniciando descarga de audio...");
+    console.log("🔵 Formato solicitado: webm");
+    console.log("🔵 Codec solicitado: opus");
 
     const audioStream = await youtube.download(
       videoId,
       {
         type: "audio",
-        quality: "best"
+        quality: "best",
+        format: "webm",
+        codec: "opus"
       }
     );
 
     if (!audioStream) {
       throw new Error(
-        "youtube.download() no devolvió audio."
+        "youtube.download() no devolvió ningún stream."
       );
     }
 
     console.log("🟢 Stream de audio recibido.");
 
     // =========================================
-    // 📦 CONVERTIR STREAM
+    // 📦 CONVERTIR STREAM A BUFFER
     // =========================================
 
-    const chunks = [];
+    console.log("🔵 Convirtiendo audio a Buffer...");
 
-    console.log("🔵 Convirtiendo audio...");
+    const chunks = [];
 
     for await (
       const chunk of Utils.streamToIterable(audioStream)
@@ -143,14 +153,17 @@ async function musicagrupo(sock, chat, args, id) {
       `🟢 Audio descargado: ${audioBuffer.length} bytes`
     );
 
-    if (audioBuffer.length === 0) {
+    if (
+      !audioBuffer ||
+      audioBuffer.length === 0
+    ) {
       throw new Error(
-        "El audio descargado está vacío."
+        "El Buffer del audio está vacío."
       );
     }
 
     // =========================================
-    // 🎧 ENVIAR A WHATSAPP
+    // 🎧 ENVIAR AUDIO A WHATSAPP
     // =========================================
 
     console.log("🔵 Enviando audio a WhatsApp...");
@@ -159,21 +172,25 @@ async function musicagrupo(sock, chat, args, id) {
 
       audio: audioBuffer,
 
-      mimetype: "audio/mp4",
+      mimetype: "audio/webm; codecs=opus",
 
       ptt: false,
 
-      fileName: `${titulo}.m4a`
+      fileName: `${titulo}.webm`
 
     });
 
     console.log(
-      `✅ AUDIO ENVIADO: ${titulo}`
+      `✅ AUDIO ENVIADO CORRECTAMENTE: ${titulo}`
     );
 
     return true;
 
   } catch (error) {
+
+    // =========================================
+    // ❌ ERROR
+    // =========================================
 
     console.error(
       "========================================="
@@ -194,7 +211,7 @@ async function musicagrupo(sock, chat, args, id) {
       await sock.sendMessage(chat, {
         text:
           "❌ No pude descargar el audio.\n\n" +
-          "⚠️ Error en la descarga de YouTube."
+          "⚠️ La descarga de YouTube falló."
       });
 
     } catch (errorMensaje) {
