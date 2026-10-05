@@ -5,7 +5,7 @@
 const { Innertube } = require("youtubei.js");
 
 const {
-  downloadMultiStep,
+  createSabrStream,
   ytdlDebugger
 } = require("simple-ytdl-core");
 
@@ -40,7 +40,7 @@ async function musicagrupo(sock, chat, args, id) {
 
 
     // =========================================
-    // 🔎 MENSAJE DE BÚSQUEDA
+    // 🔎 BUSCANDO
     // =========================================
 
     await sock.sendMessage(chat, {
@@ -65,12 +65,13 @@ async function musicagrupo(sock, chat, args, id) {
 
 
     // =========================================
-    // 🔎 BUSCAR CANCIÓN
+    // 🔎 BUSCAR VIDEO
     // =========================================
 
     console.log("🔵 Buscando video...");
 
-    const resultado = await youtube.search(cancion);
+    const resultado =
+      await youtube.search(cancion);
 
 
     if (
@@ -80,7 +81,7 @@ async function musicagrupo(sock, chat, args, id) {
     ) {
 
       throw new Error(
-        "No se encontraron resultados en YouTube."
+        "No se encontraron resultados."
       );
 
     }
@@ -90,9 +91,10 @@ async function musicagrupo(sock, chat, args, id) {
     // 🎬 BUSCAR VIDEO VÁLIDO
     // =========================================
 
-    const video = resultado.results.find(
-      item => item.video_id
-    );
+    const video =
+      resultado.results.find(
+        item => item.video_id
+      );
 
 
     if (!video) {
@@ -105,7 +107,8 @@ async function musicagrupo(sock, chat, args, id) {
 
 
     const titulo =
-      video.title?.toString() || cancion;
+      video.title?.toString() ||
+      cancion;
 
 
     const autor =
@@ -135,7 +138,7 @@ async function musicagrupo(sock, chat, args, id) {
 
 
     // =========================================
-    // 🎶 INFORMACIÓN DE LA CANCIÓN
+    // 🎶 INFORMACIÓN
     // =========================================
 
     await sock.sendMessage(chat, {
@@ -149,15 +152,9 @@ async function musicagrupo(sock, chat, args, id) {
 
 
     // =========================================
-    // 🎧 DESCARGAR AUDIO
+    // 🐞 ACTIVAR DEBUG
     // =========================================
 
-    console.log(
-      "🔵 Iniciando descarga con simple-ytdl-core..."
-    );
-
-
-    // Mostrar mensajes de depuración de la librería
     try {
 
       ytdlDebugger.onDebug(
@@ -171,19 +168,27 @@ async function musicagrupo(sock, chat, args, id) {
     } catch (debugError) {
 
       console.log(
-        "⚠️ No se pudo activar el modo debug."
+        "⚠️ No se pudo activar debug."
       );
 
     }
 
 
+    // =========================================
+    // 🎧 DESCARGAR AUDIO SABR
+    // =========================================
+
     console.log(
-      "🔵 Usando downloadMultiStep..."
+      "🔵 Iniciando descarga SABR..."
+    );
+
+    console.log(
+      `🔵 Video ID: ${videoId}`
     );
 
 
     const audioStream =
-      await downloadMultiStep(
+      await createSabrStream(
         youtube,
         videoId
       );
@@ -192,14 +197,14 @@ async function musicagrupo(sock, chat, args, id) {
     if (!audioStream) {
 
       throw new Error(
-        "simple-ytdl-core no devolvió ningún stream."
+        "createSabrStream() no devolvió ningún stream."
       );
 
     }
 
 
     console.log(
-      "🟢 Stream de audio recibido."
+      "🟢 Stream SABR recibido."
     );
 
 
@@ -241,14 +246,14 @@ async function musicagrupo(sock, chat, args, id) {
     ) {
 
       throw new Error(
-        "El Buffer del audio está vacío."
+        "El audio descargado está vacío."
       );
 
     }
 
 
     // =========================================
-    // 🎧 ENVIAR A WHATSAPP
+    // 🎧 ENVIAR AUDIO A WHATSAPP
     // =========================================
 
     console.log(
@@ -256,27 +261,24 @@ async function musicagrupo(sock, chat, args, id) {
     );
 
 
-    await sock.sendMessage(
-      chat,
-      {
+    await sock.sendMessage(chat, {
 
-        audio: audioBuffer,
+      audio: audioBuffer,
 
-        mimetype:
-          "audio/mp4",
+      mimetype:
+        "audio/mp4",
 
-        ptt:
-          false,
+      ptt:
+        false,
 
-        fileName:
-          `${titulo}.m4a`
+      fileName:
+        `${titulo}.m4a`
 
-      }
-    );
+    });
 
 
     // =========================================
-    // ✅ ÉXITO
+    // ✅ TERMINADO
     // =========================================
 
     console.log(
@@ -288,7 +290,6 @@ async function musicagrupo(sock, chat, args, id) {
 
 
   } catch (error) {
-
 
     // =========================================
     // ❌ ERROR
@@ -302,9 +303,7 @@ async function musicagrupo(sock, chat, args, id) {
       "❌ ERROR COMPLETO EN MUSICAGRUPO"
     );
 
-    console.error(
-      error
-    );
+    console.error(error);
 
     console.error(
       "========================================="
@@ -312,7 +311,7 @@ async function musicagrupo(sock, chat, args, id) {
 
 
     // =========================================
-    // 📱 AVISAR EN WHATSAPP
+    // 📱 AVISAR AL GRUPO
     // =========================================
 
     try {
