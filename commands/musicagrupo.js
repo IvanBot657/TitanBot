@@ -2,7 +2,17 @@
 // 🎵 MÚSICA PARA EL GRUPO - TITANBOT
 // =========================================
 
-const { Innertube, Utils } = require("youtubei.js");
+const { Innertube } = require("youtubei.js");
+
+const {
+  downloadMultiStep,
+  ytdlDebugger
+} = require("simple-ytdl-core");
+
+
+// =========================================
+// 🎵 COMANDO MUSICAGRUPO
+// =========================================
 
 async function musicagrupo(sock, chat, args, id) {
 
@@ -25,10 +35,12 @@ async function musicagrupo(sock, chat, args, id) {
       return true;
     }
 
+
     const cancion = args.join(" ");
 
+
     // =========================================
-    // 🔎 BUSCANDO
+    // 🔎 MENSAJE DE BÚSQUEDA
     // =========================================
 
     await sock.sendMessage(chat, {
@@ -37,7 +49,9 @@ async function musicagrupo(sock, chat, args, id) {
         `🔎 Buscando: *${cancion}*`
     });
 
+
     console.log(`🎵 Buscando: ${cancion}`);
+
 
     // =========================================
     // ▶️ CONECTAR CON YOUTUBE
@@ -49,48 +63,79 @@ async function musicagrupo(sock, chat, args, id) {
 
     console.log("🟢 YouTube conectado.");
 
+
     // =========================================
-    // 🔎 BUSCAR
+    // 🔎 BUSCAR CANCIÓN
     // =========================================
 
     console.log("🔵 Buscando video...");
 
     const resultado = await youtube.search(cancion);
 
+
     if (
       !resultado ||
       !resultado.results ||
       resultado.results.length === 0
     ) {
-      throw new Error("No se encontraron resultados.");
+
+      throw new Error(
+        "No se encontraron resultados en YouTube."
+      );
+
     }
+
+
+    // =========================================
+    // 🎬 BUSCAR VIDEO VÁLIDO
+    // =========================================
 
     const video = resultado.results.find(
       item => item.video_id
     );
 
+
     if (!video) {
-      throw new Error("No se encontró un video válido.");
+
+      throw new Error(
+        "No se encontró un video válido."
+      );
+
     }
+
 
     const titulo =
       video.title?.toString() || cancion;
 
+
     const autor =
-      video.author?.name || "Artista desconocido";
+      video.author?.name ||
+      "Artista desconocido";
+
 
     const videoId =
       video.video_id;
 
+
     const enlace =
       `https://www.youtube.com/watch?v=${videoId}`;
 
-    console.log(`🟢 Video encontrado: ${videoId}`);
-    console.log(`🎶 ${titulo}`);
-    console.log(`👤 ${autor}`);
+
+    console.log(
+      `🟢 Video encontrado: ${videoId}`
+    );
+
+    console.log(
+      `🎶 ${titulo}`
+    );
+
+    console.log(
+      `👤 ${autor}`
+    );
+
 
     // =========================================
-    // 🎶 INFORMACIÓN
+    // 🎶 INFORMACIÓN DE LA CANCIÓN
     // =========================================
 
     await sock.sendMessage(chat, {
@@ -102,42 +147,76 @@ async function musicagrupo(sock, chat, args, id) {
         "⬇️ Descargando audio..."
     });
 
+
     // =========================================
-    // 🎧 DESCARGAR AUDIO WEBM / OPUS
+    // 🎧 DESCARGAR AUDIO
     // =========================================
 
-    console.log("🔵 Iniciando descarga de audio...");
-    console.log("🔵 Formato solicitado: webm");
-    console.log("🔵 Codec solicitado: opus");
-
-    const audioStream = await youtube.download(
-      videoId,
-      {
-        type: "audio",
-        quality: "best",
-        format: "webm",
-        codec: "opus"
-      }
+    console.log(
+      "🔵 Iniciando descarga con simple-ytdl-core..."
     );
 
-    if (!audioStream) {
-      throw new Error(
-        "youtube.download() no devolvió ningún stream."
+
+    // Mostrar mensajes de depuración de la librería
+    try {
+
+      ytdlDebugger.onDebug(
+        message => {
+          console.log(
+            `[YTDL] ${message}`
+          );
+        }
       );
+
+    } catch (debugError) {
+
+      console.log(
+        "⚠️ No se pudo activar el modo debug."
+      );
+
     }
 
-    console.log("🟢 Stream de audio recibido.");
+
+    console.log(
+      "🔵 Usando downloadMultiStep..."
+    );
+
+
+    const audioStream =
+      await downloadMultiStep(
+        youtube,
+        videoId
+      );
+
+
+    if (!audioStream) {
+
+      throw new Error(
+        "simple-ytdl-core no devolvió ningún stream."
+      );
+
+    }
+
+
+    console.log(
+      "🟢 Stream de audio recibido."
+    );
+
 
     // =========================================
     // 📦 CONVERTIR STREAM A BUFFER
     // =========================================
 
-    console.log("🔵 Convirtiendo audio a Buffer...");
+    console.log(
+      "🔵 Convirtiendo audio a Buffer..."
+    );
+
 
     const chunks = [];
 
+
     for await (
-      const chunk of Utils.streamToIterable(audioStream)
+      const chunk of audioStream
     ) {
 
       chunks.push(
@@ -146,47 +225,70 @@ async function musicagrupo(sock, chat, args, id) {
 
     }
 
+
     const audioBuffer =
       Buffer.concat(chunks);
+
 
     console.log(
       `🟢 Audio descargado: ${audioBuffer.length} bytes`
     );
 
+
     if (
       !audioBuffer ||
       audioBuffer.length === 0
     ) {
+
       throw new Error(
         "El Buffer del audio está vacío."
       );
+
     }
 
+
     // =========================================
-    // 🎧 ENVIAR AUDIO A WHATSAPP
+    // 🎧 ENVIAR A WHATSAPP
     // =========================================
 
-    console.log("🔵 Enviando audio a WhatsApp...");
+    console.log(
+      "🔵 Enviando audio a WhatsApp..."
+    );
 
-    await sock.sendMessage(chat, {
 
-      audio: audioBuffer,
+    await sock.sendMessage(
+      chat,
+      {
 
-      mimetype: "audio/webm; codecs=opus",
+        audio: audioBuffer,
 
-      ptt: false,
+        mimetype:
+          "audio/mp4",
 
-      fileName: `${titulo}.webm`
+        ptt:
+          false,
 
-    });
+        fileName:
+          `${titulo}.m4a`
+
+      }
+    );
+
+
+    // =========================================
+    // ✅ ÉXITO
+    // =========================================
 
     console.log(
       `✅ AUDIO ENVIADO CORRECTAMENTE: ${titulo}`
     );
 
+
     return true;
 
+
   } catch (error) {
+
 
     // =========================================
     // ❌ ERROR
@@ -200,18 +302,25 @@ async function musicagrupo(sock, chat, args, id) {
       "❌ ERROR COMPLETO EN MUSICAGRUPO"
     );
 
-    console.error(error);
+    console.error(
+      error
+    );
 
     console.error(
       "========================================="
     );
+
+
+    // =========================================
+    // 📱 AVISAR EN WHATSAPP
+    // =========================================
 
     try {
 
       await sock.sendMessage(chat, {
         text:
           "❌ No pude descargar el audio.\n\n" +
-          "⚠️ La descarga de YouTube falló."
+          "⚠️ YouTube no permitió obtener el audio."
       });
 
     } catch (errorMensaje) {
@@ -223,8 +332,16 @@ async function musicagrupo(sock, chat, args, id) {
 
     }
 
+
     return true;
+
   }
+
 }
+
+
+// =========================================
+// 📤 EXPORTAR
+// =========================================
 
 module.exports = musicagrupo;
