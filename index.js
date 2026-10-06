@@ -2490,6 +2490,28 @@ ${resultadoXP.nivel}
 
        }
 
+            // =========================================
+           // 🎵 PLAY
+           // =========================================
+
+           if (
+           !ejecutado &&
+           comando === "play"
+        ) {
+
+           const resultado = await play(
+             sock,
+             chat,
+             args,
+             id
+           );
+
+             if (resultado) {
+             ejecutado = true;
+           }
+
+       }
+
 
             // =========================================
             // AJUSTES
