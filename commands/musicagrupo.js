@@ -2,24 +2,14 @@
 // 🎵 MÚSICA PARA EL GRUPO - TITANBOT
 // =========================================
 
-const { Innertube } = require("youtubei.js");
-
-const {
-  createSabrStream,
-  ytdlDebugger
-} = require("simple-ytdl-core");
-
-
-// =========================================
-// 🎵 COMANDO MUSICAGRUPO
-// =========================================
+const axios = require("axios");
 
 async function musicagrupo(sock, chat, args, id) {
 
   try {
 
     // =========================================
-    // 📝 COMPROBAR COMANDO
+    // 🔎 COMPROBAR CANCIÓN
     // =========================================
 
     if (!args || args.length === 0) {
@@ -35,9 +25,11 @@ async function musicagrupo(sock, chat, args, id) {
       return true;
     }
 
+    // =========================================
+    // 🎶 NOMBRE
+    // =========================================
 
     const cancion = args.join(" ");
-
 
     // =========================================
     // 🔎 BUSCANDO
@@ -49,298 +41,131 @@ async function musicagrupo(sock, chat, args, id) {
         `🔎 Buscando: *${cancion}*`
     });
 
-
-    console.log(`🎵 Buscando: ${cancion}`);
-
-
     // =========================================
-    // ▶️ CONECTAR CON YOUTUBE
+    // 🔑 API KEY
     // =========================================
 
-    console.log("🔵 Conectando con YouTube...");
+    const apiKey = process.env.YOUTUBE_API_KEY;
 
-    const youtube = await Innertube.create();
+    if (!apiKey) {
 
-    console.log("🟢 YouTube conectado.");
+      await sock.sendMessage(chat, {
+        text:
+          "❌ No encontré la variable:\n\n" +
+          "`YOUTUBE_API_KEY`\n\n" +
+          "Revisa las variables de entorno de Render."
+      });
 
-
-    // =========================================
-    // 🔎 BUSCAR VIDEO
-    // =========================================
-
-    console.log("🔵 Buscando video...");
-
-    const resultado =
-      await youtube.search(cancion);
-
-
-    if (
-      !resultado ||
-      !resultado.results ||
-      resultado.results.length === 0
-    ) {
-
-      throw new Error(
-        "No se encontraron resultados."
-      );
-
+      return true;
     }
 
+    // =========================================
+    // 🔎 BUSCAR EN YOUTUBE
+    // =========================================
+
+    const respuesta = await axios.get(
+      "https://www.googleapis.com/youtube/v3/search",
+      {
+        params: {
+          part: "snippet",
+          q: cancion,
+          type: "video",
+          maxResults: 1,
+          regionCode: "CO",
+          key: apiKey
+        },
+        timeout: 15000
+      }
+    );
 
     // =========================================
-    // 🎬 BUSCAR VIDEO VÁLIDO
+    // 📋 RESULTADOS
     // =========================================
 
-    const video =
-      resultado.results.find(
-        item => item.video_id
-      );
+    const resultados = respuesta.data?.items || [];
 
+    if (resultados.length === 0) {
 
-    if (!video) {
+      await sock.sendMessage(chat, {
+        text:
+          "❌ No encontré ningún resultado para:\n\n" +
+          `*${cancion}*`
+      });
 
-      throw new Error(
-        "No se encontró un video válido."
-      );
-
+      return true;
     }
 
+    // =========================================
+    // 🎵 PRIMER RESULTADO
+    // =========================================
+
+    const video = resultados[0];
+
+    const videoId = video.id?.videoId;
 
     const titulo =
-      video.title?.toString() ||
+      video.snippet?.title ||
       cancion;
 
+    const canal =
+      video.snippet?.channelTitle ||
+      "Desconocido";
 
-    const autor =
-      video.author?.name ||
-      "Artista desconocido";
-
-
-    const videoId =
-      video.video_id;
-
+    const miniatura =
+      video.snippet?.thumbnails?.high?.url ||
+      video.snippet?.thumbnails?.default?.url;
 
     const enlace =
       `https://www.youtube.com/watch?v=${videoId}`;
 
-
-    console.log(
-      `🟢 Video encontrado: ${videoId}`
-    );
-
-    console.log(
-      `🎶 ${titulo}`
-    );
-
-    console.log(
-      `👤 ${autor}`
-    );
-
-
     // =========================================
-    // 🎶 INFORMACIÓN
+    // 📤 MOSTRAR RESULTADO
     // =========================================
 
-    await sock.sendMessage(chat, {
-      text:
-        "🎵 *MÚSICA DEL GRUPO*\n\n" +
-        `🎶 *${titulo}*\n` +
-        `👤 ${autor}\n\n` +
-        `🔗 ${enlace}\n\n` +
-        "⬇️ Descargando audio..."
-    });
+    const mensaje =
+      "🎵 *RESULTADO ENCONTRADO*\n\n" +
+      `🎶 *${titulo}*\n` +
+      `👤 Canal: *${canal}*\n\n` +
+      `🔗 ${enlace}`;
 
+    if (miniatura) {
 
-    // =========================================
-    // 🐞 ACTIVAR DEBUG
-    // =========================================
+      await sock.sendMessage(chat, {
+        image: {
+          url: miniatura
+        },
+        caption: mensaje
+      });
 
-    try {
+    } else {
 
-      ytdlDebugger.onDebug(
-        message => {
-          console.log(
-            `[YTDL] ${message}`
-          );
-        }
-      );
-
-    } catch (debugError) {
-
-      console.log(
-        "⚠️ No se pudo activar debug."
-      );
+      await sock.sendMessage(chat, {
+        text: mensaje
+      });
 
     }
-
-
-    // =========================================
-    // 🎧 DESCARGAR AUDIO SABR
-    // =========================================
-
-    console.log(
-      "🔵 Iniciando descarga SABR..."
-    );
-
-    console.log(
-      `🔵 Video ID: ${videoId}`
-    );
-
-
-    const audioStream =
-      await createSabrStream(
-        youtube,
-        videoId
-      );
-
-
-    if (!audioStream) {
-
-      throw new Error(
-        "createSabrStream() no devolvió ningún stream."
-      );
-
-    }
-
-
-    console.log(
-      "🟢 Stream SABR recibido."
-    );
-
-
-    // =========================================
-    // 📦 CONVERTIR STREAM A BUFFER
-    // =========================================
-
-    console.log(
-      "🔵 Convirtiendo audio a Buffer..."
-    );
-
-
-    const chunks = [];
-
-
-    for await (
-      const chunk of audioStream
-    ) {
-
-      chunks.push(
-        Buffer.from(chunk)
-      );
-
-    }
-
-
-    const audioBuffer =
-      Buffer.concat(chunks);
-
-
-    console.log(
-      `🟢 Audio descargado: ${audioBuffer.length} bytes`
-    );
-
-
-    if (
-      !audioBuffer ||
-      audioBuffer.length === 0
-    ) {
-
-      throw new Error(
-        "El audio descargado está vacío."
-      );
-
-    }
-
-
-    // =========================================
-    // 🎧 ENVIAR AUDIO A WHATSAPP
-    // =========================================
-
-    console.log(
-      "🔵 Enviando audio a WhatsApp..."
-    );
-
-
-    await sock.sendMessage(chat, {
-
-      audio: audioBuffer,
-
-      mimetype:
-        "audio/mp4",
-
-      ptt:
-        false,
-
-      fileName:
-        `${titulo}.m4a`
-
-    });
-
 
     // =========================================
     // ✅ TERMINADO
     // =========================================
 
-    console.log(
-      `✅ AUDIO ENVIADO CORRECTAMENTE: ${titulo}`
-    );
-
-
     return true;
-
 
   } catch (error) {
 
-    // =========================================
-    // ❌ ERROR
-    // =========================================
-
     console.error(
-      "========================================="
+      "❌ ERROR EN MUSICAGRUPO:",
+      error.response?.data || error.message
     );
 
-    console.error(
-      "❌ ERROR COMPLETO EN MUSICAGRUPO"
-    );
-
-    console.error(error);
-
-    console.error(
-      "========================================="
-    );
-
-
-    // =========================================
-    // 📱 AVISAR AL GRUPO
-    // =========================================
-
-    try {
-
-      await sock.sendMessage(chat, {
-        text:
-          "❌ No pude descargar el audio.\n\n" +
-          "⚠️ YouTube no permitió obtener el audio."
-      });
-
-    } catch (errorMensaje) {
-
-      console.error(
-        "❌ Error enviando mensaje:",
-        errorMensaje
-      );
-
-    }
-
+    await sock.sendMessage(chat, {
+      text:
+        "❌ Ocurrió un error al buscar la canción.\n\n" +
+        "Revisa la consola de Render."
+    });
 
     return true;
-
   }
-
 }
-
-
-// =========================================
-// 📤 EXPORTAR
-// =========================================
 
 module.exports = musicagrupo;
