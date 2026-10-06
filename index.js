@@ -2547,28 +2547,33 @@ ${resultadoXP.nivel}
             }
 
 
-            // =========================================
-            // 🐾 MASCOTA
-            // =========================================
+               // =========================================
+               // 🐾 MASCOTA
+              // =========================================
 
-            if (!ejecutado) {
+              if (
+              !ejecutado &&
+             (
+              comando === "mascota" ||
+              comando === "crearmascota"
+             )
+           ) {
 
-              const resultado =
-                await mascotaCommand.ejecutarMascota(
-                  sock,
-                  chat,
-                  comando,
-                  args,
-                  id,
-                  msg
-                );
+             const resultado =
+             await mascotaCommand.ejecutarMascota(
+               sock,
+               chat,
+               comando,
+               args,
+               id,
+               msg
+             );
 
               if (resultado) {
-                ejecutado = true;
-              }
+               ejecutado = true;
+             }
 
-            }
-
+          }
 
 
             // =========================================
