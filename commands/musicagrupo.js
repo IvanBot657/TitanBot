@@ -1,10 +1,33 @@
 // =========================================
-// 🎵 MÚSICA PARA EL GRUPO - TITANBOT
+// 🎵 MÚSICA DEL GRUPO - TITANBOT
+// 🎧 DESCARGA Y ENVÍO DE AUDIO
 // =========================================
 
 const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
+const { execFile } = require("child_process");
+const util = require("util");
+
+const execFileAsync = util.promisify(execFile);
+
+// =========================================
+// 📁 CARPETA TEMPORAL
+// =========================================
+
+const tempDir = path.join(__dirname, "..", "temp_audio");
+
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
+
+// =========================================
+// 🎵 FUNCIÓN PRINCIPAL
+// =========================================
 
 async function musicagrupo(sock, chat, args, id) {
+
+  let archivoMP3 = null;
 
   try {
 
@@ -16,17 +39,17 @@ async function musicagrupo(sock, chat, args, id) {
 
       await sock.sendMessage(chat, {
         text:
-          "🎵 *MÚSICA DEL GRUPO*\n\n" +
+          "🎵 *TITANBOT - PLAY*\n\n" +
           "Escribe el nombre de una canción.\n\n" +
           "Ejemplo:\n" +
-          "`.musicagrupo Believer`"
+          "`.play Believer Imagine Dragons`"
       });
 
       return true;
     }
 
     // =========================================
-    // 🎶 NOMBRE
+    // 🎶 NOMBRE DE LA CANCIÓN
     // =========================================
 
     const cancion = args.join(" ");
@@ -37,7 +60,7 @@ async function musicagrupo(sock, chat, args, id) {
 
     await sock.sendMessage(chat, {
       text:
-        "🎵 *MÚSICA DEL GRUPO*\n\n" +
+        "🎵 *TITANBOT - PLAY*\n\n" +
         `🔎 Buscando: *${cancion}*`
     });
 
@@ -51,9 +74,9 @@ async function musicagrupo(sock, chat, args, id) {
 
       await sock.sendMessage(chat, {
         text:
-          "❌ No encontré la variable:\n\n" +
+          "❌ Falta la variable de entorno:\n\n" +
           "`YOUTUBE_API_KEY`\n\n" +
-          "Revisa las variables de entorno de Render."
+          "Agrégala en Render."
       });
 
       return true;
@@ -96,12 +119,22 @@ async function musicagrupo(sock, chat, args, id) {
     }
 
     // =========================================
-    // 🎵 PRIMER RESULTADO
+    // 🎵 VIDEO
     // =========================================
 
     const video = resultados[0];
 
     const videoId = video.id?.videoId;
+
+    if (!videoId) {
+
+      await sock.sendMessage(chat, {
+        text:
+          "❌ No pude obtener el video de YouTube."
+      });
+
+      return true;
+    }
 
     const titulo =
       video.snippet?.title ||
@@ -111,43 +144,159 @@ async function musicagrupo(sock, chat, args, id) {
       video.snippet?.channelTitle ||
       "Desconocido";
 
-    const miniatura =
-      video.snippet?.thumbnails?.high?.url ||
-      video.snippet?.thumbnails?.default?.url;
-
     const enlace =
       `https://www.youtube.com/watch?v=${videoId}`;
 
     // =========================================
-    // 📤 MOSTRAR RESULTADO
+    // ⏳ DESCARGANDO
     // =========================================
 
-    const mensaje =
-      "🎵 *RESULTADO ENCONTRADO*\n\n" +
-      `🎶 *${titulo}*\n` +
-      `👤 Canal: *${canal}*\n\n` +
-      `🔗 ${enlace}`;
+    await sock.sendMessage(chat, {
+      text:
+        "⬇️ *DESCARGANDO AUDIO...*\n\n" +
+        `🎵 ${titulo}\n` +
+        `👤 ${canal}\n\n` +
+        "⏳ Espera un momento..."
+    });
 
-    if (miniatura) {
+    // =========================================
+    // 📁 NOMBRE TEMPORAL
+    // =========================================
 
-      await sock.sendMessage(chat, {
-        image: {
-          url: miniatura
-        },
-        caption: mensaje
-      });
+    const nombreBase =
+      `titanbot_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 8)}`;
 
-    } else {
+    archivoMP3 = path.join(
+      tempDir,
+      `${nombreBase}.mp3`
+    );
 
-      await sock.sendMessage(chat, {
-        text: mensaje
-      });
+    // =========================================
+    // 🎧 BUSCAR YT-DLP
+    // =========================================
+
+    let ytDlp = "yt-dlp";
+
+    try {
+
+      await execFileAsync(
+        ytDlp,
+        ["--version"],
+        {
+          timeout: 15000
+        }
+      );
+
+    } catch {
+
+      ytDlp = "python3";
 
     }
 
     // =========================================
-    // ✅ TERMINADO
+    // 🎧 DESCARGAR AUDIO
     // =========================================
+
+    if (ytDlp === "yt-dlp") {
+
+      await execFileAsync(
+        ytDlp,
+        [
+          "--no-playlist",
+          "--extract-audio",
+          "--audio-format",
+          "mp3",
+          "--audio-quality",
+          "128K",
+          "--ffmpeg-location",
+          "/usr/bin",
+          "-o",
+          archivoMP3,
+          enlace
+        ],
+        {
+          timeout: 180000,
+          maxBuffer: 1024 * 1024 * 10
+        }
+      );
+
+    } else {
+
+      await execFileAsync(
+        ytDlp,
+        [
+          "-m",
+          "yt_dlp",
+          "--no-playlist",
+          "--extract-audio",
+          "--audio-format",
+          "mp3",
+          "--audio-quality",
+          "128K",
+          "--ffmpeg-location",
+          "/usr/bin",
+          "-o",
+          archivoMP3,
+          enlace
+        ],
+        {
+          timeout: 180000,
+          maxBuffer: 1024 * 1024 * 10
+        }
+      );
+
+    }
+
+    // =========================================
+    // 🔎 COMPROBAR ARCHIVO
+    // =========================================
+
+    if (!fs.existsSync(archivoMP3)) {
+
+      throw new Error(
+        "yt-dlp terminó pero no creó el archivo MP3"
+      );
+    }
+
+    const stats = fs.statSync(archivoMP3);
+
+    if (stats.size < 1000) {
+
+      throw new Error(
+        "El archivo MP3 está vacío o es demasiado pequeño"
+      );
+    }
+
+    // =========================================
+    // 📤 ENVIAR AUDIO
+    // =========================================
+
+    await sock.sendMessage(chat, {
+
+      audio: {
+        url: archivoMP3
+      },
+
+      mimetype: "audio/mpeg",
+
+      fileName:
+        `${titulo.replace(/[\\/:*?"<>|]/g, "_")}.mp3`,
+
+      ptt: false
+
+    });
+
+    // =========================================
+    // ✅ CONFIRMACIÓN
+    // =========================================
+
+    await sock.sendMessage(chat, {
+      text:
+        "✅ *AUDIO ENVIADO*\n\n" +
+        `🎵 ${titulo}`
+    });
 
     return true;
 
@@ -155,17 +304,51 @@ async function musicagrupo(sock, chat, args, id) {
 
     console.error(
       "❌ ERROR EN MUSICAGRUPO:",
-      error.response?.data || error.message
+      error?.stderr ||
+      error?.stdout ||
+      error?.response?.data ||
+      error?.message ||
+      error
     );
 
     await sock.sendMessage(chat, {
       text:
-        "❌ Ocurrió un error al buscar la canción.\n\n" +
-        "Revisa la consola de Render."
+        "❌ *NO PUDE DESCARGAR EL AUDIO*\n\n" +
+        "Puede que YouTube haya bloqueado la descarga " +
+        "o que FFmpeg/yt-dlp no esté disponible en Render.\n\n" +
+        "Revisa los logs de Render para ver el error exacto."
     });
 
     return true;
+
+  } finally {
+
+    // =========================================
+    // 🧹 BORRAR ARCHIVO TEMPORAL
+    // =========================================
+
+    if (archivoMP3) {
+
+      try {
+
+        if (fs.existsSync(archivoMP3)) {
+          fs.unlinkSync(archivoMP3);
+        }
+
+      } catch (error) {
+
+        console.error(
+          "⚠️ No pude borrar el archivo temporal:",
+          error.message
+        );
+
+      }
+    }
   }
 }
+
+// =========================================
+// 📦 EXPORTAR
+// =========================================
 
 module.exports = musicagrupo;
