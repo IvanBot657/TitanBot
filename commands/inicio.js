@@ -36,7 +36,6 @@ await sock.sendMessage(chat, {
 ┃ • .ping
 ┃ • .info
 ┃ • .version
-┃ • .owner
 ┃ • .musicagrupo <canción>
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
