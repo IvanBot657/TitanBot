@@ -2499,7 +2499,7 @@ ${resultadoXP.nivel}
            comando === "play"
         ) {
 
-           const resultado = await play(
+           const resultado = await musicagrupo(
              sock,
              chat,
              args,
