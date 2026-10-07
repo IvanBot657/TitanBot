@@ -2576,6 +2576,29 @@ ${resultadoXP.nivel}
 
             }
 
+
+               // =========================================
+              // 🏆 TEMPORADA TITAN
+               // =========================================
+
+               if (!ejecutado) {
+
+               const resultado = await temporada(
+                 sock,
+                 chat,
+                 comando,
+                 args,
+                 id,
+                 msg
+              );
+
+              if (resultado) {
+              ejecutado = true;
+            }
+
+         }
+
+            
                // =========================================
                // ⚔️ DUELO TITAN
                // =========================================
@@ -2598,28 +2621,6 @@ ${resultadoXP.nivel}
            }
 
             
-            // =========================================
-            // 🏆 TEMPORADA TITAN
-            // =========================================
-
-            if (!ejecutado) {
-
-            const resultado = await temporada(
-              sock,
-              chat,
-              comando,
-              args,
-              id,
-              msg
-           );
-
-            if (resultado) {
-             ejecutado = true;
-           }
-
-         }
-            
-
             // =========================================
             // DESCONOCIDO
             // =========================================
