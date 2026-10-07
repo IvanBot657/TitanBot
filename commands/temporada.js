@@ -20,7 +20,6 @@ const DURACION_TEMPORADA =
   30 * 24 * 60 * 60 * 1000;
 
 const TOTAL_TEMPORADAS = 12;
-
 const TOTAL_NIVELES = 50;
 
 // =========================================
@@ -28,103 +27,81 @@ const TOTAL_NIVELES = 50;
 // =========================================
 
 const temporadas = [
-
   {
     numero: 1,
     nombre: "El Despertar TITAN",
     icono: "🌌"
   },
-
   {
     numero: 2,
     nombre: "La Era del Fuego",
     icono: "🔥"
   },
-
   {
     numero: 3,
     nombre: "Reino Helado",
     icono: "❄️"
   },
-
   {
     numero: 4,
     nombre: "Bosque Oscuro",
     icono: "🌲"
   },
-
   {
     numero: 5,
     nombre: "Imperio del Mar",
     icono: "🌊"
   },
-
   {
     numero: 6,
     nombre: "Tormenta TITAN",
     icono: "⚡"
   },
-
   {
     numero: 7,
     nombre: "Reino Perdido",
     icono: "🏜️"
   },
-
   {
     numero: 8,
     nombre: "Eclipse",
     icono: "🌑"
   },
-
   {
     numero: 9,
     nombre: "Dimensión TITAN",
     icono: "🌠"
   },
-
   {
     numero: 10,
     nombre: "Reino de los Dragones",
     icono: "🐉"
   },
-
   {
     numero: 11,
     nombre: "Imperio Cristal",
     icono: "💎"
   },
-
   {
     numero: 12,
     nombre: "La Gran Era TITAN",
     icono: "👑"
   }
-
 ];
 
 // =========================================
-// 🎯 CREAR BASE DE DATOS
+// 🎯 CREAR DATABASE
 // =========================================
 
 function crearDatabase() {
-
   return {
-
     ciclo: 1,
-
     temporadaActual: 1,
-
     inicioTemporada: Date.now(),
-
     jugadores: {},
-
     historialTemporadas: [],
-
     historialCiclos: []
-
   };
-
 }
 
 // =========================================
@@ -132,39 +109,26 @@ function crearDatabase() {
 // =========================================
 
 function cargarDatabase() {
-
   try {
 
     if (!fs.existsSync(databasePath)) {
-
       const db = crearDatabase();
-
       guardarDatabase(db);
-
       return db;
-
     }
 
-    const contenido =
-      fs.readFileSync(
-        databasePath,
-        "utf8"
-      );
+    const contenido = fs.readFileSync(
+      databasePath,
+      "utf8"
+    );
 
     if (!contenido.trim()) {
-
       const db = crearDatabase();
-
       guardarDatabase(db);
-
       return db;
-
     }
 
-    const db =
-      JSON.parse(contenido);
-
-    return db;
+    return JSON.parse(contenido);
 
   } catch (error) {
 
@@ -174,13 +138,10 @@ function cargarDatabase() {
     );
 
     const db = crearDatabase();
-
     guardarDatabase(db);
 
     return db;
-
   }
-
 }
 
 // =========================================
@@ -188,19 +149,11 @@ function cargarDatabase() {
 // =========================================
 
 function guardarDatabase(db) {
-
   try {
 
     fs.writeFileSync(
-
       databasePath,
-
-      JSON.stringify(
-        db,
-        null,
-        2
-      )
-
+      JSON.stringify(db, null, 2)
     );
 
   } catch (error) {
@@ -209,46 +162,30 @@ function guardarDatabase(db) {
       "❌ Error guardando temporada.json:",
       error
     );
-
   }
-
 }
 
 // =========================================
 // 👤 CREAR / OBTENER JUGADOR
 // =========================================
 
-function obtenerJugador(
-  db,
-  id,
-  nombre
-) {
+function obtenerJugador(db, id, nombre) {
 
   if (!db.jugadores[id]) {
 
     db.jugadores[id] = {
-
       id,
-
       nombre,
-
       pt: 0,
-
       nivel: 1,
-
       victoriasTemporada: 0,
-
       misionesCompletadas: 0
-
     };
-
   }
 
-  db.jugadores[id].nombre =
-    nombre;
+  db.jugadores[id].nombre = nombre;
 
   return db.jugadores[id];
-
 }
 
 // =========================================
@@ -264,7 +201,6 @@ function calcularNivel(pt) {
     nivel,
     TOTAL_NIVELES
   );
-
 }
 
 // =========================================
@@ -278,19 +214,13 @@ function comprobarTemporada(db) {
   const tiempoPasado =
     ahora - db.inicioTemporada;
 
-  if (
-    tiempoPasado <
-    DURACION_TEMPORADA
-  ) {
-
+  if (tiempoPasado < DURACION_TEMPORADA) {
     return false;
-
   }
 
   finalizarTemporada(db);
 
   return true;
-
 }
 
 // =========================================
@@ -306,13 +236,10 @@ function finalizarTemporada(db) {
     temporadas[numero - 1];
 
   const jugadores =
-    Object.values(
-      db.jugadores
-    );
+    Object.values(db.jugadores);
 
   jugadores.sort(
-    (a, b) =>
-      b.pt - a.pt
+    (a, b) => b.pt - a.pt
   );
 
   const campeon =
@@ -324,8 +251,7 @@ function finalizarTemporada(db) {
 
     temporada: numero,
 
-    nombre:
-      temporada.nombre,
+    nombre: temporada.nombre,
 
     campeon: campeon
       ? {
@@ -340,7 +266,6 @@ function finalizarTemporada(db) {
 
     fechaFinal:
       Date.now()
-
   });
 
   // =====================================
@@ -377,24 +302,21 @@ function finalizarTemporada(db) {
         Date.now(),
 
       campeones:
-        historial.map(
-          t => t.campeon
-        ).filter(Boolean)
-
+        historial
+          .map(t => t.campeon)
+          .filter(Boolean)
     });
 
     db.ciclo++;
 
     db.temporadaActual = 1;
-
   }
 
   // ===================================
   // 🔄 REINICIAR TEMPORADA
   // ===================================
 
-  db.inicioTemporada =
-    Date.now();
+  db.inicioTemporada = Date.now();
 
   for (
     const jugador of
@@ -402,19 +324,14 @@ function finalizarTemporada(db) {
   ) {
 
     jugador.pt = 0;
-
     jugador.nivel = 1;
-
     jugador.victoriasTemporada = 0;
-
     jugador.misionesCompletadas = 0;
-
   }
-
 }
 
 // =========================================
-// ⭐ AGREGAR PUNTOS
+// ⭐ AGREGAR PT
 // =========================================
 
 function agregarPT(
@@ -423,8 +340,7 @@ function agregarPT(
   cantidad
 ) {
 
-  const db =
-    cargarDatabase();
+  const db = cargarDatabase();
 
   comprobarTemporada(db);
 
@@ -438,23 +354,18 @@ function agregarPT(
   jugador.pt += cantidad;
 
   jugador.nivel =
-    calcularNivel(
-      jugador.pt
-    );
+    calcularNivel(jugador.pt);
 
   guardarDatabase(db);
 
   return jugador;
-
 }
 
 // =========================================
 // ⏱️ TIEMPO RESTANTE
 // =========================================
 
-function tiempoRestante(
-  db
-) {
+function tiempoRestante(db) {
 
   const final =
     db.inicioTemporada +
@@ -480,7 +391,6 @@ function tiempoRestante(
     );
 
   return `${dias}d ${horas}h`;
-
 }
 
 // =========================================
@@ -496,8 +406,7 @@ async function temporada(
   msg
 ) {
 
-  const db =
-    cargarDatabase();
+  const db = cargarDatabase();
 
   comprobarTemporada(db);
 
@@ -505,7 +414,10 @@ async function temporada(
   // ⚡ .temporada
   // =====================================
 
-  if (comando === "temporada") {
+  if (
+    comando === "temporada" ||
+    comando === ".temporada"
+  ) {
 
     const nombre =
       msg?.pushName ||
@@ -520,9 +432,7 @@ async function temporada(
       );
 
     jugador.nivel =
-      calcularNivel(
-        jugador.pt
-      );
+      calcularNivel(jugador.pt);
 
     const actual =
       temporadas[
@@ -530,56 +440,50 @@ async function temporada(
       ];
 
     const posicion =
-      Object.values(
-        db.jugadores
-      )
-      .sort(
-        (a, b) =>
-          b.pt - a.pt
-      )
-      .findIndex(
-        j => j.id === id
-      ) + 1;
+      Object.values(db.jugadores)
+        .sort(
+          (a, b) => b.pt - a.pt
+        )
+        .findIndex(
+          j => j.id === id
+        ) + 1;
 
     guardarDatabase(db);
 
     await sock.sendMessage(
       chat,
       {
-
         text:
-`⚡ ━━━ TEMPORADA TITAN ━━━ ⚡
+`⚡╔════════════════════╗⚡
+     TEMPORADA TITAN
+⚡╚════════════════════╝⚡
 
 ${actual.icono} TEMPORADA ${actual.numero}
-🌌 ${actual.nombre}
+🔥 ${actual.nombre}
 
-📅 Ciclo TITAN: ${db.ciclo}
-⏳ Tiempo restante: ${tiempoRestante(db)}
+📅 CICLO TITAN: ${db.ciclo}
+⏳ RESTANTE: ${tiempoRestante(db)}
 
 👤 ${nombre}
-
+━━━━━━━━━━━━━━━━━━━━
 ⭐ PT: ${jugador.pt}
-⚡ Nivel: ${jugador.nivel}/50
-🏆 Posición: #${posicion}
+⚡ NIVEL: ${jugador.nivel}/50
+🏆 POSICIÓN: #${posicion}
 
-🎯 Misiones completadas:
+🎯 MISIONES COMPLETADAS
 ${jugador.misionesCompletadas}
 
-🏆 Victorias:
+🏆 VICTORIAS
 ${jugador.victoriasTemporada}
 
-━━━━━━━━━━━━━━━━━━
-
-📌 Usa:
-.temporadatop
-.temporadarecompensas
-.temporadamision`
-
+━━━━━━━━━━━━━━━━━━━━
+🏆 .temporadatop
+🎁 .temporadarecompensas
+🎯 .temporadamision`
       }
     );
 
     return true;
-
   }
 
   // =====================================
@@ -587,21 +491,21 @@ ${jugador.victoriasTemporada}
   // =====================================
 
   if (
-    comando === "temporadatop"
+    comando === "temporadatop" ||
+    comando === ".temporadatop"
   ) {
 
     const ranking =
-      Object.values(
-        db.jugadores
-      )
-      .sort(
-        (a, b) =>
-          b.pt - a.pt
-      )
-      .slice(0, 10);
+      Object.values(db.jugadores)
+        .sort(
+          (a, b) => b.pt - a.pt
+        )
+        .slice(0, 10);
 
     let texto =
-`🏆 ━━━ TOP TEMPORADA ━━━ 🏆
+`🏆╔════════════════════╗🏆
+       TOP TEMPORADA
+🏆╚════════════════════╝🏆
 
 ⚡ CICLO ${db.ciclo}
 📅 TEMPORADA ${db.temporadaActual}
@@ -611,7 +515,7 @@ ${jugador.victoriasTemporada}
     if (!ranking.length) {
 
       texto +=
-        "Todavía no hay jugadores registrados.";
+        "❌ Todavía no hay jugadores registrados.";
 
     } else {
 
@@ -634,10 +538,8 @@ ${jugador.victoriasTemporada}
 ⚡ Nivel ${jugador.nivel}
 
 `;
-
         }
       );
-
     }
 
     await sock.sendMessage(
@@ -648,7 +550,6 @@ ${jugador.victoriasTemporada}
     );
 
     return true;
-
   }
 
   // =====================================
@@ -656,12 +557,14 @@ ${jugador.victoriasTemporada}
   // =====================================
 
   if (
-    comando ===
-    "temporadarecompensas"
+    comando === "temporadarecompensas" ||
+    comando === ".temporadarecompensas"
   ) {
 
     let texto =
-`🎁 ━━━ RECOMPENSAS ━━━ 🎁
+`🎁╔════════════════════╗🎁
+       RECOMPENSAS TITAN
+🎁╚════════════════════╝🎁
 
 ⚡ TEMPORADA ${db.temporadaActual}
 
@@ -677,12 +580,11 @@ ${jugador.victoriasTemporada}
         (nivel - 1) * 400;
 
       texto +=
-`⚡ Nivel ${nivel}
+`⚡ NIVEL ${nivel}
 ⭐ ${pt} PT
 🎁 Recompensa TITAN
 
 `;
-
     }
 
     await sock.sendMessage(
@@ -693,7 +595,6 @@ ${jugador.victoriasTemporada}
     );
 
     return true;
-
   }
 
   // =====================================
@@ -701,39 +602,37 @@ ${jugador.victoriasTemporada}
   // =====================================
 
   if (
-    comando ===
-    "temporadamision"
+    comando === "temporadamision" ||
+    comando === ".temporadamision"
   ) {
 
     await sock.sendMessage(
       chat,
       {
-
         text:
-`🎯 ━━━ MISIÓN DIARIA ━━━ 🎯
+`🎯╔════════════════════╗🎯
+       MISIÓN DIARIA
+🎯╚════════════════════╝🎯
 
 ⚔️ Gana 2 duelos
 
-📊 Progreso:
+📊 PROGRESO
 0/2
 
-🎁 Recompensa:
+🎁 RECOMPENSA
 ⭐ +100 PT
 💰 +300 monedas
 
 ⏳ Se reinicia cada 24 horas.`
-
       }
     );
 
     return true;
-
   }
 
   guardarDatabase(db);
 
   return false;
-
 }
 
 // =========================================
