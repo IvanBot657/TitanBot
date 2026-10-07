@@ -31,6 +31,13 @@ await sock.sendMessage(chat, {
 
 👋 MENÚ PRINCIPAL
 
+━━〔 🏆 TEMPORADA TITAN 〕━━━╮
+┃ • .temporada
+┃ • .temporadatop
+┃ • .temporadarecompensas
+┃ • .temporadamision
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 🏠 INICIO 〕━━━╮
 ┃ • .menu
 ┃ • .ping
