@@ -48,6 +48,19 @@ await sock.sendMessage(chat, {
 ┃ • .top
 ╰━━━━━━━━━━━━━━━━━━━━╯
 
+━〔 ⚔️ DUELO TITAN 〕━━━╮
+┃ • .duelo @usuario
+┃ • .aceptarduelo
+┃ • .rechazar
+┃ • .atacar
+┃ • .defender
+┃ • .habilidad
+┃ • .especial
+┃ • .curar
+┃ • .cargar
+┃ • .riesgo
+╰━━━━━━━━━━━━━━━━━━━━╯
+
 ╭━━━〔 💰 ECONOMÍA 〕━━━╮
 ┃ • .saldo
 ┃ • .daily
