@@ -180,8 +180,12 @@ await sock.sendMessage(chat, {
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭━━━〔 🎌 ANIME 〕━━━╮
-┃ • .anime
+┃ • .reclamar
+┃ • .mispersonajes
+┃ • .personajes
+┃ • .liberar
 ┃ • .animebuscar
+┃ • .anime
 ┃ • .animeinfo
 ┃ • .personaje
 ┃ • .manga
