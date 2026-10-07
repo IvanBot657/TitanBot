@@ -38,73 +38,74 @@ const titulos = require("./commands/titulos");
 const cartas = require("./commands/cartas");
 const herramientas = require("./commands/herramientas");
 const ajustes = require("./commands/ajustes");
-const owner = require("./commands/owner");
-const mascotaCommand = require("./commands/mascota");
-const isla = require("./commands/isla");
-const duelo = require("./commands/duelo");
-const boss = require("./commands/Juegos/boss");
+const  propietario = require ( "./commands/owner" ) ;
+const  mascotaCommand = require ( "./commands/mascota" ) ;
+const  isla = require ( "./commands/isla" ) ;
+const  duelo = require ( "./commands/duelo" ) ;
+const  boss = require ( "./commands/Juegos/boss" ) ;
+const temporada = require("./commands/temporada");
 
-const PORT = process.env.PORT || 10000;
+const  PUERTO = proceso . env . PUERTO || 10000 ;
 
-let qrActual = null;
-let codigoVinculacion = null;
-let sockActual = null;
-let generandoCodigo = false;
-let authStateActual = null;
-let conexionActual = "close";
-let socketListoParaVincular = false;
+let  qrActual = null ;
+let  códigoVinculacion = null ;
+let  sockActual = null ;
+let  generandoCodigo = false ;
+let  authStateActual = null ;
+let  conexionActual = "close" ;
+let  socketListoParaVincular = false ;
 
-// Mensajes recientes necesarios para que Baileys pueda descifrar/agrup ar
+// Mensajes recientes necesarios para que Baileys pueda descifrar/agrupar
 // las respuestas de las encuestas del sistema de EVENTOS.
-const messageStore = new Map();
-const MAX_STORED_MESSAGES = 5000;
+const  messageStore = new  Map ( ) ;
+const  MAX_STORED_MESSAGES = 5000 ;
 
-function guardarMensajeEnMemoria(msg) {
-  const id = msg?.key?.id;
-  const chat = msg?.key?.remoteJid;
+función  guardarMensajeEnMemoria ( msj )  {
+  const  id = msg ? .key ? .id ;
+  const  chat = msg ?. key ?. remoteJid ;
 
-  if (!id || !chat) return;
+  si  ( ! id || ! chat )  regresar ;
 
-  const key = `${chat}:${id}`;
-  messageStore.set(key, msg);
+  const  key = ` ${ chat } : ${ id } ` ;
+  messageStore.set ( key , msg ) ;​​
 
-  if (messageStore.size > MAX_STORED_MESSAGES) {
-    const primero = messageStore.keys().next().value;
-    if (primero) messageStore.delete(primero);
+  Si  ( messageStore.size > MAX_STORED_MESSAGES ) {​​ 
+    const  primero = messageStore . keys ( ) . next ( ) . value ;
+    si  ( primero )  messageStore . eliminar ( primero ) ;
   }
 }
 
-let estado = "🟡 Iniciando...";
-let iniciando = false;
+let  estado = "🟡 Iniciando..." ;
+let  iniciando = false ;
 
-// Control de reconexión para evitar múltiples sockets simultáneos.
-let reconectando = false;
-let reconnectTimer = null;
-let reconnectAttempts = 0;
-let socketGeneration = 0;
+// Control de reconexión para evitar múltiples enchufes simultáneos.
+let  reconectando = false ;
+let  reconnectTimer = null ;
+let  reconnectAttempts = 0 ;
+let  socketGeneration = 0 ;
 
-const RECONNECT_BASE_MS = 3000;
-const RECONNECT_MAX_MS = 30000;
+const  RECONNECT_BASE_MS = 3000 ;
+const  RECONNECT_MAX_MS = 30000 ;
 
-function obtenerCodigoDesconexion(lastDisconnect) {
-  return (
-    lastDisconnect?.error?.output?.statusCode ??
-    lastDisconnect?.error?.statusCode ??
-    lastDisconnect?.error?.data?.statusCode ??
-    null
-  );
+function  obtenerCodigoDesconexion ( últimaDesconexión )  {
+  devolver  (
+    últimaDesconexión ?. error ?. salida ?. códigoEstado ??
+    ¿Última desconexión ? ¿ Error ? ¿ Código de estado ?
+    últimaDesconexión ?. error ?. datos ?. códigoEstado ??
+    nulo
+  ) ;
 }
 
-function esSesionInvalida(codigo, error = null) {
-  const texto = String(
-    error?.message ||
+función  esSesionInvalida ( código , error = null )  {
+  const  texto = String (
+    ¿Error ? Mensaje ||
     error ||
     ""
-  ).toLowerCase();
+  ) .toLowerCase ( ) ;​
 
-  return (
-    codigo === DisconnectReason.loggedOut ||
-    codigo === 401 ||
+  devolver  (
+    código === DisconnectReason . loggedOut ||
+    código === 401 ||
     String(codigo).toLowerCase() === "device_removed" ||
     texto.includes("device_removed") ||
     texto.includes("device removed")
@@ -2595,6 +2596,27 @@ ${resultadoXP.nivel}
               }
 
            }
+
+            // =========================================
+            // 🏆 TEMPORADA TITAN
+            // =========================================
+
+            if (!ejecutado) {
+
+            const resultado = await temporada(
+              sock,
+              chat,
+              comando,
+              args,
+              id,
+              msg
+           );
+
+            if (resultado) {
+             ejecutado = true;
+           }
+
+        }
 
             // =========================================
             // DESCONOCIDO
