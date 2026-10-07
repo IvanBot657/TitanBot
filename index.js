@@ -2506,13 +2506,13 @@ ${resultadoXP.nivel}
 
               const resultado =
                 await owner(
-                  sock,
+                  sock, 
                   chat,
                   comando,
                   args,
-                  id
+                  id,
+                  msg
                 );
-
 
               if (
                 resultado !== false
