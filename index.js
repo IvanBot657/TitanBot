@@ -2468,50 +2468,6 @@ ${resultadoXP.nivel}
 
             }
             
-            // =========================================
-            // 🎵 MÚSICA DEL GRUPO
-            // =========================================
-
-            if (
-             !ejecutado &&
-            comando === "musicagrupo"
-         ) {
-
-            const resultado = await musicagrupo(
-              sock,
-              chat,
-              args,
-              id
-           );
-  
-           if (resultado) {
-            ejecutado = true;
-          }
-
-       }
-
-            // =========================================
-           // 🎵 PLAY
-           // =========================================
-
-           if (
-           !ejecutado &&
-           comando === "play"
-        ) {
-
-           const resultado = await musicagrupo(
-             sock,
-             chat,
-             args,
-             id
-           );
-
-             if (resultado) {
-             ejecutado = true;
-           }
-
-       }
-
 
             // =========================================
             // AJUSTES
