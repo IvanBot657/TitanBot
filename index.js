@@ -37,7 +37,6 @@ const racha = require("./commands/racha");
 const titulos = require("./commands/titulos");
 const cartas = require("./commands/cartas");
 const herramientas = require("./commands/herramientas");
-const musicagrupo = require("./commands/musicagrupo");
 const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
 const mascotaCommand = require("./commands/mascota");
