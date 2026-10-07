@@ -6,6 +6,52 @@
 const config = require("../config");
 
 // ==========================================
+// NORMALIZAR NÚMERO
+// ==========================================
+
+function limpiarNumero(valor) {
+  if (!valor) return "";
+
+  return String(valor)
+    .split("@")[0]
+    .split(":")[0]
+    .replace(/\D/g, "");
+}
+
+// ==========================================
+// COMPROBAR SI ES OWNER
+// ==========================================
+
+function comprobarOwner(id, msg) {
+
+  const numeroOwner = limpiarNumero(config.creador);
+
+  // Posibles identificadores del usuario
+  const candidatos = [
+    id,
+    msg?.key?.participant,
+    msg?.key?.participantAlt,
+    msg?.key?.remoteJid,
+    msg?.key?.remoteJidAlt
+  ];
+
+  for (const candidato of candidatos) {
+
+    const numero = limpiarNumero(candidato);
+
+    if (
+      numero &&
+      numeroOwner &&
+      numero === numeroOwner
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// ==========================================
 // FUNCIÓN PRINCIPAL
 // ==========================================
 
@@ -14,20 +60,11 @@ async function owner(
   chat,
   comando,
   args,
-  id
+  id,
+  msg
 ) {
-  const cmd = comando.toLowerCase();
 
-  // ========================================
-  // COMPROBAR OWNER
-  // ========================================
-
-  const numeroUsuario = id.split("@")[0];
-  const numeroOwner = String(config.creador).replace(/\D/g, "");
-
-  const esOwner =
-    numeroUsuario === numeroOwner ||
-    numeroUsuario.endsWith(numeroOwner);
+  const cmd = String(comando || "").toLowerCase();
 
   // ========================================
   // COMANDOS DEL OWNER
@@ -41,7 +78,7 @@ async function owner(
     "shutdown"
   ];
 
-  // Si no es un comando de este módulo
+  // Si no pertenece a este módulo
   if (!comandosOwner.includes(cmd)) {
     return false;
   }
@@ -50,7 +87,10 @@ async function owner(
   // SEGURIDAD
   // ========================================
 
+  const esOwner = comprobarOwner(id, msg);
+
   if (!esOwner) {
+
     await sock.sendMessage(chat, {
       text:
 `❌ *ACCESO DENEGADO*
@@ -66,6 +106,7 @@ Este comando solamente puede utilizarlo el propietario del bot.`
   // ========================================
 
   if (cmd === "owner" || cmd === "ownermenu") {
+
     await sock.sendMessage(chat, {
       text:
 `╔══════════════════════════╗
@@ -92,6 +133,7 @@ Este comando solamente puede utilizarlo el propietario del bot.`
   // ========================================
 
   if (cmd === "botstatus") {
+
     await sock.sendMessage(chat, {
       text:
 `📊 *ESTADO DEL BOT*
@@ -113,7 +155,8 @@ Este comando solamente puede utilizarlo el propietario del bot.`
 
   if (cmd === "broadcast") {
 
-    if (!args.length) {
+    if (!args || !args.length) {
+
       await sock.sendMessage(chat, {
         text:
 `📢 *BROADCAST*
@@ -122,7 +165,7 @@ Uso:
 
 .broadcast Tu mensaje
 
-⚠️ Envía el mensaje a los chats que el bot tenga disponibles.`
+⚠️ Envía el mensaje a los grupos donde está el bot.`
       });
 
       return true;
@@ -131,14 +174,16 @@ Uso:
     const mensaje = args.join(" ");
 
     try {
-      const chats = await sock.groupFetchAllParticipating();
 
+      const chats = await sock.groupFetchAllParticipating();
       const grupos = Object.keys(chats);
 
       let enviados = 0;
 
       for (const grupo of grupos) {
+
         try {
+
           await sock.sendMessage(grupo, {
             text:
 `📢 *MENSAJE DEL BOT*
@@ -149,7 +194,9 @@ ${mensaje}
           });
 
           enviados++;
+
         } catch (error) {
+
           console.log(
             `❌ No se pudo enviar a ${grupo}`
           );
@@ -166,10 +213,14 @@ ${mensaje}
 
     } catch (error) {
 
-      console.log("❌ Error en broadcast:", error);
+      console.log(
+        "❌ Error en broadcast:",
+        error
+      );
 
       await sock.sendMessage(chat, {
-        text: "❌ No se pudo realizar el broadcast."
+        text:
+          "❌ No se pudo realizar el broadcast."
       });
     }
 
@@ -181,6 +232,7 @@ ${mensaje}
   // ========================================
 
   if (cmd === "shutdown") {
+
     await sock.sendMessage(chat, {
       text:
 `⚠️ *APAGANDO ${config.nombre}*
@@ -189,7 +241,13 @@ ${mensaje}
     });
 
     setTimeout(() => {
+
+      console.log(
+        "🔴 TITANBOT apagado por el propietario."
+      );
+
       process.exit(0);
+
     }, 1500);
 
     return true;
