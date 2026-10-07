@@ -41,6 +41,7 @@ const ajustes = require("./commands/ajustes");
 const owner = require("./commands/owner");
 const mascotaCommand = require("./commands/mascota");
 const isla = require("./commands/isla");
+const duelo = require("./commands/duelo");
 const boss = require("./commands/Juegos/boss");
 
 const PORT = process.env.PORT || 10000;
@@ -2573,6 +2574,27 @@ ${resultadoXP.nivel}
               }
 
             }
+
+               // =========================================
+               // ⚔️ DUELO TITAN
+               // =========================================
+
+               if (!ejecutado) {
+
+               const resultado = await duelo(
+                 sock,
+                 chat,
+                 comando,
+                 args,
+                 id,
+                 msg
+               );
+
+                 if (resultado) {
+                 ejecutado = true;
+              }
+
+           }
 
             // =========================================
             // DESCONOCIDO
