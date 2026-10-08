@@ -1,0 +1,1912 @@
+// commands/anime.js
+// TitanBot - Sistema de personajes Anime
+
+const fs = require("fs");
+const path = require("path");
+const sharp = require("sharp");
+
+// ========================================
+// CONFIGURACIÓN JIKAN API
+// ========================================
+
+const JIKAN_API = "https://api.jikan.moe/v4";
+
+// ========================================
+// ARCHIVO DE PERSONAJES RECLAMADOS
+// ========================================
+
+const DATA_DIR = path.join(__dirname, "..", "database");
+const DATA_FILE = path.join(DATA_DIR, "anime_reclamados.json");
+
+// ========================================
+// CARGAR PERSONAJES RECLAMADOS
+// ========================================
+
+function cargarReclamados() {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+
+    if (!fs.existsSync(DATA_FILE)) {
+      fs.writeFileSync(DATA_FILE, "{}", "utf8");
+      return {};
+    }
+
+    const contenido = fs.readFileSync(DATA_FILE, "utf8").trim();
+
+    if (!contenido) {
+      return {};
+    }
+
+    return JSON.parse(contenido);
+
+  } catch (error) {
+    console.error("❌ Error cargando personajes:", error);
+    return {};
+  }
+}
+
+// ========================================
+// GUARDAR PERSONAJES RECLAMADOS
+// ========================================
+
+function guardarReclamados(data) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+
+    fs.writeFileSync(
+      DATA_FILE,
+      JSON.stringify(data, null, 2),
+      "utf8"
+    );
+
+    return true;
+
+  } catch (error) {
+    console.error("❌ Error guardando personajes:", error);
+    return false;
+  }
+}
+
+// ========================================
+// OBTENER ID DEL USUARIO
+// ========================================
+
+function obtenerId(msg, id) {
+  return (
+    id ||
+    msg?.key?.participant ||
+    msg?.participant ||
+    msg?.sender ||
+    msg?.key?.remoteJid ||
+    "desconocido"
+  );
+}
+
+// ========================================
+// LIMPIAR ID
+// ========================================
+
+function limpiarId(id) {
+  return String(id || "")
+    .replace("@s.whatsapp.net", "")
+    .replace("@lid", "")
+    .replace("@g.us", "");
+}
+
+// ========================================
+// PERSONAJES
+// ========================================
+
+const personajesAnime = [
+  {
+    id: 1,
+    nombre: "Goku",
+    anime: "Dragon Ball",
+    frase: "¡Superaré mis límites!"
+  },
+  {
+    id: 2,
+    nombre: "Naruto Uzumaki",
+    anime: "Naruto",
+    frase: "¡Nunca me rindo!"
+  },
+  {
+    id: 3,
+    nombre: "Monkey D. Luffy",
+    anime: "One Piece",
+    frase: "¡Seré el Rey de los Piratas!"
+  },
+  {
+    id: 4,
+    nombre: "Ichigo Kurosaki",
+    anime: "Bleach",
+    frase: "¡Protegeré a todos!"
+  },
+  {
+    id: 5,
+    nombre: "Satoru Gojo",
+    anime: "Jujutsu Kaisen",
+    frase: "A lo largo del cielo y la tierra, solo yo soy el honrado."
+  },
+  {
+    id: 6,
+    nombre: "Levi Ackerman",
+    anime: "Shingeki no Kyojin",
+    frase: "Decide. Confía en ti mismo."
+  },
+  {
+    id: 7,
+    nombre: "Tanjiro Kamado",
+    anime: "Demon Slayer",
+    frase: "Nunca te rindas."
+  },
+  {
+    id: 8,
+    nombre: "Eren Yeager",
+    anime: "Shingeki no Kyojin",
+    frase: "¡Lucharé hasta el final!"
+  },
+  {
+    id: 9,
+    nombre: "Light Yagami",
+    anime: "Death Note",
+    frase: "Yo seré el dios de este nuevo mundo."
+  },
+  {
+    id: 10,
+    nombre: "Edward Elric",
+    anime: "Fullmetal Alchemist",
+    frase: "¡Un intercambio equivalente!"
+  },
+  {
+    id: 11,
+    nombre: "Killua Zoldyck",
+    anime: "Hunter x Hunter",
+    frase: "No quiero perder a mis amigos."
+  },
+  {
+    id: 12,
+    nombre: "Izuku Midoriya",
+    anime: "My Hero Academia",
+    frase: "¡Yo también puedo ser un héroe!"
+  }
+];
+
+// ========================================
+// OBTENER PERSONAJE DISPONIBLE
+// ========================================
+
+function obtenerPersonajeDisponible(reclamados) {
+  const disponibles = personajesAnime.filter(
+    personaje => !reclamados[personaje.id]
+  );
+
+  if (disponibles.length === 0) {
+    return null;
+  }
+
+  const indice = Math.floor(
+    Math.random() * disponibles.length
+  );
+
+  return disponibles[indice];
+}
+
+// ========================================
+// NORMALIZAR NOMBRE
+// ========================================
+
+function normalizarNombre(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+// ========================================
+// BUSCAR IMAGEN DEL PERSONAJE EN JIKAN
+// ========================================
+
+async function buscarImagenPersonaje(nombre) {
+  try {
+    console.log(`🔎 Buscando ${nombre} en AniList...`);
+
+    const query = `
+      query ($search: String) {
+        Character(search: $search) {
+          id
+          name {
+            full
+            native
+          }
+          image {
+            large
+            medium
+          }
+        }
+      }
+    `;
+
+    const respuesta = await fetch("https://graphql.anilist.co", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        query,
+        variables: { search: nombre }
+      })
+    });
+
+    if (!respuesta.ok) {
+      throw new Error(
+        `AniList respondió HTTP ${respuesta.status}`
+      );
+    }
+
+    const datos = await respuesta.json();
+
+    if (datos?.errors?.length) {
+      throw new Error(
+        datos.errors[0]?.message || "Error de AniList"
+      );
+    }
+
+    const personaje = datos?.data?.Character;
+
+    if (!personaje) {
+      console.log(`❌ AniList no encontró a ${nombre}`);
+      return null;
+    }
+
+    const nombreEncontrado =
+      personaje?.name?.full || nombre;
+
+    console.log(`👤 Personaje encontrado: ${nombreEncontrado}`);
+    console.log(`🆔 AniList ID: ${personaje.id}`);
+
+    const imagen =
+      personaje?.image?.large ||
+      personaje?.image?.medium ||
+      null;
+
+    if (!imagen) {
+      console.log(`❌ AniList no tiene imagen para ${nombre}`);
+      return null;
+    }
+
+    console.log(`🖼️ Imagen encontrada: ${imagen}`);
+
+    const imagenBuffer = await descargarImagen(imagen);
+
+    if (!imagenBuffer) {
+      console.log(
+        `❌ La imagen de ${nombre} no se pudo descargar`
+      );
+      return null;
+    }
+
+    console.log(`✅ Imagen válida para ${nombre}`);
+
+    return imagen;
+
+  } catch (error) {
+    console.error(
+      `❌ Error buscando imagen de ${nombre} en AniList:`,
+      error
+    );
+
+    return null;
+  }
+}
+// ========================================
+// TRADUCIR TEXTO AL ESPAÑOL
+// ========================================
+async function traducirAlEspanol(texto) {
+  if (!texto) return "";
+
+  try {
+    const limpio = String(texto).trim();
+    if (!limpio) return "";
+
+    // Google Translate limita la cantidad de texto por petición.
+    const partes = limpio.match(/[\\s\\S]{1,1200}/g) || [limpio];
+    const traducidas = [];
+
+    for (const parte of partes) {
+      const url =
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=es&dt=t&q=${encodeURIComponent(parte)}`;
+
+      const respuesta = await fetch(url);
+      if (!respuesta.ok) {
+        throw new Error(`Traductor HTTP ${respuesta.status}`);
+      }
+
+      const datos = await respuesta.json();
+      const traduccion = Array.isArray(datos?.[0])
+        ? datos[0].map(x => x?.[0] || "").join("")
+        : "";
+
+      traducidas.push(traduccion || parte);
+    }
+
+    return traducidas.join("").trim();
+  } catch (error) {
+    console.error("⚠️ No se pudo traducir la sinopsis:", error.message);
+    // Si el traductor falla, no rompemos el comando.
+    return String(texto).trim();
+  }
+}
+
+// ========================================
+// ESTADOS EN ESPAÑOL
+// ========================================
+function estadoAnimeEspanol(estado) {
+  const estados = {
+    "FINISHED": "FINALIZADO",
+    "RELEASING": "EN EMISIÓN",
+    "NOT_YET_RELEASED": "NO ESTRENADO",
+    "CANCELLED": "CANCELADO",
+    "Finished Airing": "FINALIZADO",
+    "Currently Airing": "EN EMISIÓN",
+    "Not yet aired": "NO ESTRENADO"
+  };
+
+  return estados[estado] || estado || "N/A";
+}
+
+// ========================================
+// BUSCAR ANIME EN ANILIST
+// ========================================
+async function buscarAnimeAniList(nombre) {
+  const query = `
+    query ($search: String) {
+      Page(page: 1, perPage: 1) {
+        media(search: $search, type: ANIME) {
+          id
+          title { romaji english native }
+          type
+          format
+          status
+          episodes
+          averageScore
+          startDate { year month day }
+          description
+        }
+      }
+    }
+  `;
+
+  const respuesta = await fetch("https://graphql.anilist.co", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify({
+      query,
+      variables: { search: nombre }
+    })
+  });
+
+  if (!respuesta.ok) {
+    throw new Error(`AniList HTTP ${respuesta.status}`);
+  }
+
+  const datos = await respuesta.json();
+
+  if (datos?.errors?.length) {
+    throw new Error(datos.errors[0]?.message || "Error de AniList");
+  }
+
+  return datos?.data?.Page?.media?.[0] || null;
+}
+
+// ========================================
+// DESCARGAR IMAGEN
+// ========================================
+
+async function descargarImagen(url) {
+  try {
+    if (!url) {
+      return null;
+    }
+
+    const respuesta = await fetch(url);
+
+    if (!respuesta.ok) {
+      console.error(
+        `❌ Error HTTP descargando imagen: ${respuesta.status}`
+      );
+
+      return null;
+    }
+
+    const arrayBuffer = await respuesta.arrayBuffer();
+
+    const buffer = Buffer.from(arrayBuffer);
+
+    if (!buffer || buffer.length === 0) {
+      return null;
+    }
+
+    return buffer;
+
+  } catch (error) {
+    console.error(
+      "❌ Error descargando imagen:",
+      error
+    );
+
+    return null;
+  }
+}
+
+// ========================================
+// ESCAPAR TEXTO PARA SVG
+// ========================================
+
+function escapar(texto) {
+  return String(texto || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+// ========================================
+// CREAR TARJETA
+// ========================================
+
+async function crearTarjeta({
+  personaje,
+  nombreUsuario,
+  idUsuario,
+  estado = "RECLAMADO"
+}) {
+  const ancho = 1000;
+  const alto = 1350;
+
+  const imagenBuffer = personaje.image
+    ? await descargarImagen(personaje.image)
+    : null;
+
+  let imagenBase64 = "";
+
+  if (imagenBuffer) {
+    try {
+      const imagenProcesada = await sharp(imagenBuffer)
+        .resize(700, 650, {
+          fit: "cover",
+          position: "center"
+        })
+        .jpeg({
+          quality: 90
+        })
+        .toBuffer();
+
+      imagenBase64 = imagenProcesada.toString("base64");
+
+    } catch (error) {
+      console.error(
+        "❌ Error procesando imagen:",
+        error
+      );
+    }
+  }
+
+  const nombre = escapar(personaje.nombre);
+  const anime = escapar(personaje.anime);
+  const frase = escapar(personaje.frase);
+  const usuario = escapar(nombreUsuario);
+  const id = escapar(idUsuario);
+  const estadoEscapado = escapar(estado);
+
+  let contenidoImagen = `
+    <rect
+      x="150"
+      y="120"
+      width="700"
+      height="650"
+      rx="35"
+      fill="#222"
+    />
+
+    <text
+      x="500"
+      y="450"
+      text-anchor="middle"
+      font-size="38"
+      fill="white"
+      font-family="Arial"
+    >
+      SIN IMAGEN
+    </text>
+  `;
+
+  if (imagenBase64) {
+    contenidoImagen = `
+      <image
+        href="data:image/jpeg;base64,${imagenBase64}"
+        x="150"
+        y="120"
+        width="700"
+        height="650"
+        preserveAspectRatio="xMidYMid slice"
+      />
+    `;
+  }
+
+  const svg = `
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="${ancho}"
+    height="${alto}"
+  >
+
+    <defs>
+      <linearGradient
+        id="fondo"
+        x1="0"
+        y1="0"
+        x2="1"
+        y2="1"
+      >
+        <stop offset="0%" stop-color="#111111"/>
+        <stop offset="50%" stop-color="#202020"/>
+        <stop offset="100%" stop-color="#050505"/>
+      </linearGradient>
+
+      <filter id="sombra">
+        <feDropShadow
+          dx="0"
+          dy="8"
+          stdDeviation="12"
+          flood-opacity="0.7"
+        />
+      </filter>
+    </defs>
+
+    <rect
+      width="${ancho}"
+      height="${alto}"
+      fill="url(#fondo)"
+    />
+
+    <rect
+      x="50"
+      y="50"
+      width="900"
+      height="1250"
+      rx="50"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="4"
+      opacity="0.3"
+    />
+
+    <text
+      x="500"
+      y="95"
+      text-anchor="middle"
+      font-size="42"
+      font-weight="bold"
+      fill="white"
+      font-family="Arial"
+    >
+      TITANBOT
+    </text>
+
+    <text
+      x="500"
+      y="145"
+      text-anchor="middle"
+      font-size="28"
+      fill="#cccccc"
+      font-family="Arial"
+    >
+      PERSONAJE ANIME
+    </text>
+
+    <g filter="url(#sombra)">
+      ${contenidoImagen}
+    </g>
+
+    <text
+      x="500"
+      y="850"
+      text-anchor="middle"
+      font-size="52"
+      font-weight="bold"
+      fill="white"
+      font-family="Arial"
+    >
+      ${nombre}
+    </text>
+
+    <text
+      x="500"
+      y="900"
+      text-anchor="middle"
+      font-size="32"
+      fill="#cccccc"
+      font-family="Arial"
+    >
+      ${anime}
+    </text>
+
+    <line
+      x1="200"
+      y1="945"
+      x2="800"
+      y2="945"
+      stroke="white"
+      opacity="0.3"
+    />
+
+    <text
+      x="500"
+      y="1005"
+      text-anchor="middle"
+      font-size="27"
+      fill="white"
+      font-family="Arial"
+    >
+      "${frase}"
+    </text>
+
+    <text
+      x="500"
+      y="1090"
+      text-anchor="middle"
+      font-size="32"
+      font-weight="bold"
+      fill="white"
+      font-family="Arial"
+    >
+      ${estadoEscapado}
+    </text>
+
+    <text
+      x="500"
+      y="1150"
+      text-anchor="middle"
+      font-size="27"
+      fill="#cccccc"
+      font-family="Arial"
+    >
+      👤 ${usuario}
+    </text>
+
+    <text
+      x="500"
+      y="1200"
+      text-anchor="middle"
+      font-size="22"
+      fill="#999999"
+      font-family="Arial"
+    >
+      ID: ${id}
+    </text>
+
+    <text
+      x="500"
+      y="1250"
+      text-anchor="middle"
+      font-size="20"
+      fill="#777777"
+      font-family="Arial"
+    >
+      Imagen obtenida mediante Jikan API
+    </text>
+
+  </svg>
+  `;
+
+  return sharp(Buffer.from(svg))
+    .jpeg({
+      quality: 90
+    })
+    .toBuffer();
+}
+
+// ========================================
+// COMANDO PRINCIPAL
+// ========================================
+
+async function anime(
+  sock,
+  chat,
+  comando,
+  args = [],
+  id,
+  msg
+) {
+  try {
+    comando = String(comando || "")
+      .toLowerCase()
+      .replace(/^\./, "")
+      .trim();
+
+    const usuarioId = limpiarId(
+      obtenerId(msg, id)
+    );
+
+    // ======================================
+    // MENÚ ANIME
+    // ======================================
+
+    if (
+      comando === "anime" &&
+      args.length === 0
+    ) {
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            "🎴 *MENÚ ANIME - TITANBOT*\n\n" +
+            "🎲 *.reclamar* → Reclamar personaje\n" +
+            "📋 *.mispersonajes* → Tus personajes\n" +
+            "👥 *.personajes* → Disponibles\n" +
+            "♻️ *.liberar* → Liberar personaje\n" +
+            "🔎 *.animebuscar nombre* → Buscar anime\n" +
+            "🎬 *.anime nombre* → Información del anime\n" +
+            "ℹ️ *.animeinfo ID* → Información completa\n" +
+            "👤 *.personaje nombre* → Buscar personaje\n" +
+            "📚 *.manga nombre* → Buscar manga\n" +
+            "🌸 *.waifu* → Waifu aleatoria\n" +
+            "🔥 *.husbando* → Imagen aleatoria\n\n" +
+            "━━━━━━━━━━━━━━━━━━\n" +
+            "🤖 *TITANBOT*"
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // ANIMEMENU
+    // ======================================
+
+    if (comando === "animemenu") {
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            "🎴 *MENÚ DE ANIME*\n\n" +
+            "🎲 *.reclamar*\n" +
+            "📋 *.mispersonajes*\n" +
+            "👥 *.personajes*\n" +
+            "♻️ *.liberar*\n" +
+            "🔎 *.animebuscar nombre*\n" +
+            "🎬 *.anime nombre*\n" +
+            "ℹ️ *.animeinfo ID*\n" +
+            "👤 *.personaje nombre*\n" +
+            "📚 *.manga nombre*\n" +
+            "🌸 *.waifu*\n" +
+            "🔥 *.husbando*"
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // S - RECLAMAR PERSONAJE
+    // ======================================
+
+    if (comando === "reclamar") {
+      const reclamados = cargarReclamados();
+
+      const personaje =
+        obtenerPersonajeDisponible(reclamados);
+
+      if (!personaje) {
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ *NO HAY PERSONAJES DISPONIBLES*\n\n" +
+              "Todos los personajes ya fueron reclamados."
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            `🔎 Consultando Jikan API para encontrar la imagen de *${personaje.nombre}*...`
+        },
+        { quoted: msg }
+      );
+
+      // ======================================
+      // BUSCAR IMAGEN EN JIKAN
+      // ======================================
+
+      const imagenAPI =
+        await buscarImagenPersonaje(
+          personaje.nombre
+        );
+
+      // ======================================
+      // SI NO HAY IMAGEN, NO RECLAMAR
+      // ======================================
+
+      if (!imagenAPI) {
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ *NO SE ENCONTRÓ LA IMAGEN*\n\n" +
+              `No pude obtener una imagen válida de:\n\n` +
+              `⭐ *${personaje.nombre}*\n\n` +
+              "El personaje *NO fue reclamado*.\n\n" +
+              "🔄 Intenta nuevamente con:\n" +
+              "*.reclamar*"
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      // ======================================
+      // CREAR PERSONAJE FINAL
+      // ======================================
+
+      const personajeFinal = {
+        ...personaje,
+        image: imagenAPI
+      };
+
+      // ======================================
+      // CREAR TARJETA
+      // ======================================
+
+      const tarjeta =
+        await crearTarjeta({
+          personaje: personajeFinal,
+          nombreUsuario: usuarioId,
+          idUsuario: usuarioId,
+          estado: "RECLAMADO"
+        });
+
+      // ======================================
+      // GUARDAR RECLAMACIÓN
+      // ======================================
+
+      reclamados[personaje.id] = {
+        ...personajeFinal,
+        usuarioId,
+        fecha: new Date().toISOString()
+      };
+
+      guardarReclamados(reclamados);
+
+      // ======================================
+      // ENVIAR TARJETA
+      // ======================================
+
+      await sock.sendMessage(
+        chat,
+        {
+          image: tarjeta,
+          caption:
+            `🎉 *¡PERSONAJE RECLAMADO!*\n\n` +
+            `⭐ *${personaje.nombre}*\n` +
+            `🎬 ${personaje.anime}\n\n` +
+            `👤 Usuario: ${usuarioId}\n\n` +
+            `💬 "${personaje.frase}"`
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // MIS PERSONAJES
+    // ======================================
+
+    if (
+      comando === "mispersonajes" ||
+      comando === "mispersonaje"
+    ) {
+
+      const reclamados =
+        cargarReclamados();
+
+      const personajesUsuario =
+        Object.values(reclamados).filter(
+          personaje =>
+            personaje.usuarioId ===
+            idUsuario
+        );
+
+      if (
+        personajesUsuario.length === 0
+      ) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`📭 NO TIENES PERSONAJES RECLAMADOS
+
+Usa:
+
+.reclamar
+
+para reclamar uno.`
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      let texto =
+`🎴 TUS PERSONAJES
+
+`;
+
+      personajesUsuario.forEach(
+        (personaje, index) => {
+
+          texto +=
+`${index + 1}. ⭐ *${escapar(personaje.nombre)}*
+   🎬 Anime: ${escapar(personaje.anime)}
+   📅 Reclamado: ${personaje.fecha || "Sin fecha"}
+
+`;
+        }
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text: texto
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // PERSONAJES DISPONIBLES
+    // ======================================
+
+    if (comando === "personajes") {
+
+      const reclamados =
+        cargarReclamados();
+
+      const disponibles =
+        personajesAnime.filter(
+          personaje =>
+            !Object.values(reclamados).some(
+              p =>
+                p.personajeId ===
+                personaje.id
+            )
+        );
+
+      if (
+        disponibles.length === 0
+      ) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+`😢 NO QUEDAN PERSONAJES DISPONIBLES
+
+Todos los personajes fueron reclamados.`
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      let texto =
+`🎴 PERSONAJES DISPONIBLES
+
+`;
+
+      disponibles.forEach(
+        (personaje, index) => {
+
+          texto +=
+`${index + 1}. ⭐ *${escapar(personaje.nombre)}*
+   🎬 ${escapar(personaje.anime)}
+
+`;
+        }
+      );
+
+      texto +=
+`━━━━━━━━━━━━━━━━━━
+
+💡 Usa *.reclamar* para reclamar un personaje.`;
+
+      await sock.sendMessage(
+        chat,
+        {
+          text: texto
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // LIBERAR PERSONAJE
+    // ======================================
+
+    if (comando === "liberar") {
+
+      const reclamados =
+        cargarReclamados();
+
+      const personajesUsuario =
+        Object.entries(reclamados).filter(
+          ([, personaje]) =>
+            personaje.usuarioId ===
+            idUsuario
+        );
+
+      if (
+        personajesUsuario.length === 0
+      ) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "📭 No tienes ningún personaje reclamado."
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const numero =
+        parseInt(args[0]);
+
+      if (
+        !numero ||
+        numero < 1 ||
+        numero > personajesUsuario.length
+      ) {
+
+        let texto =
+`♻️ LIBERAR PERSONAJE
+
+`;
+
+        personajesUsuario.forEach(
+          ([idPersonaje, personaje], index) => {
+
+            texto +=
+`${index + 1}. *${escapar(personaje.nombre)}*
+   ID: ${idPersonaje}
+
+`;
+          }
+        );
+
+        texto +=
+`Para liberar uno escribe:
+
+.liberar número
+
+Ejemplo:
+
+.liberar 1`;
+
+        await sock.sendMessage(
+          chat,
+          {
+            text: texto
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const [
+        idPersonaje,
+        personaje
+      ] =
+        personajesUsuario[
+          numero - 1
+        ];
+
+      delete reclamados[
+        idPersonaje
+      ];
+
+      guardarReclamados(
+        reclamados
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+`♻️ PERSONAJE LIBERADO
+
+⭐ ${personaje.nombre}
+
+🎬 ${personaje.anime}
+
+Ahora puede ser reclamado nuevamente con:
+
+.s`
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // ANIMEBUSCAR
+    // ======================================
+
+    if (comando === "animebuscar") {
+
+      const nombre =
+        args.join(" ").trim();
+
+      if (!nombre) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "🔎 Usa *.animebuscar nombre del anime*"
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const url =
+        `${JIKAN_API}/anime?q=${encodeURIComponent(nombre)}&limit=5`;
+
+      const respuesta =
+        await fetch(url);
+
+      if (!respuesta.ok) {
+        throw new Error(
+          `Jikan HTTP ${respuesta.status}`
+        );
+      }
+
+      const datos =
+        await respuesta.json();
+
+      if (
+        !datos?.data ||
+        datos.data.length === 0
+      ) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              `❌ No encontré el anime *${nombre}*.`
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      let texto =
+`🔎 RESULTADOS DE ANIME
+
+`;
+
+      datos.data.forEach(
+        (animeItem, index) => {
+
+          texto +=
+`${index + 1}. 🎬 *${escapar(animeItem.title)}*
+   🆔 MAL ID: ${animeItem.mal_id}
+   ⭐ Score: ${animeItem.score || "N/A"}
+
+`;
+        }
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text: texto
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // ANIME CON NOMBRE
+    // ======================================
+
+    if (
+      comando === "anime" &&
+      args.length > 0
+    ) {
+
+      const nombre =
+        args.join(" ").trim();
+
+      let item = null;
+      let fuente = "Jikan";
+      let errorJikan = null;
+
+      // ======================================
+      // JIKAN - FUENTE PRINCIPAL
+      // ======================================
+      try {
+        const url =
+          `${JIKAN_API}/anime?q=${encodeURIComponent(nombre)}&limit=1`;
+
+        const respuesta = await fetch(url);
+
+        if (!respuesta.ok) {
+          throw new Error(`Jikan HTTP ${respuesta.status}`);
+        }
+
+        const datos = await respuesta.json();
+
+        if (datos?.data?.length) {
+          item = datos.data[0];
+        }
+      } catch (error) {
+        errorJikan = error;
+        console.error("⚠️ Jikan falló en .anime:", error.message);
+      }
+
+      // ======================================
+      // ANILIST - RESPALDO AUTOMÁTICO
+      // ======================================
+      if (!item) {
+        try {
+          const animeAniList =
+            await buscarAnimeAniList(nombre);
+
+          if (animeAniList) {
+            item = animeAniList;
+            fuente = "AniList";
+          }
+        } catch (errorAniList) {
+          console.error(
+            "⚠️ AniList falló en .anime:",
+            errorAniList.message
+          );
+        }
+      }
+
+      if (!item) {
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              `❌ No encontré información sobre *${nombre}* en Jikan ni AniList.`
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      // ======================================
+      // DATOS NORMALIZADOS
+      // ======================================
+      const titulo =
+        item.title?.english ||
+        item.title?.romaji ||
+        item.title ||
+        nombre;
+
+      const tituloJaponés =
+        item.title?.native ||
+        item.title_japanese ||
+        "N/A";
+
+      const score =
+        fuente === "AniList"
+          ? (item.averageScore
+              ? (item.averageScore / 10).toFixed(1)
+              : "N/A")
+          : (item.score || "N/A");
+
+      const episodios =
+        item.episodes || "N/A";
+
+      const estado =
+        estadoAnimeEspanol(item.status);
+
+      let emitido = "N/A";
+
+      if (fuente === "AniList") {
+        const fecha = item.startDate;
+        if (fecha?.year) {
+          emitido = [fecha.year, fecha.month, fecha.day]
+            .filter(Boolean)
+            .map((valor, indice) =>
+              indice === 0
+                ? String(valor)
+                : String(valor).padStart(2, "0")
+            )
+            .join("-");
+        }
+      } else {
+        emitido = item.aired?.from
+          ? new Date(item.aired.from).toISOString().slice(0, 10)
+          : (item.aired?.string || "N/A");
+      }
+
+      const tipo =
+        item.type ||
+        item.format ||
+        "N/A";
+
+      let sinopsis =
+        item.synopsis ||
+        item.description ||
+        "Sin sinopsis disponible.";
+
+      // AniList puede devolver HTML en la descripción.
+      sinopsis = String(sinopsis)
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .trim();
+
+      // ======================================
+      // TRADUCCIÓN AUTOMÁTICA AL ESPAÑOL
+      // ======================================
+      sinopsis = await traducirAlEspanol(sinopsis);
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+`🎬 *${titulo}*
+
+🇯🇵 Título japonés:
+${tituloJaponés}
+
+⭐ Score:
+${score}
+
+📺 Episodios:
+${episodios}
+
+📡 Estado:
+${estado}
+
+📅 Emitido:
+${emitido}
+
+🎭 Tipo:
+${tipo}
+
+📝 Sinopsis:
+${sinopsis}
+
+🌐 Fuente: ${fuente}`
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // ANIMEINFO
+    // ======================================
+
+    if (comando === "animeinfo") {
+
+      const consulta =
+        args.join(" ").trim();
+
+      if (!consulta) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "ℹ️ Usa *.animeinfo nombre del anime*"
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const url =
+        `${JIKAN_API}/anime?q=${encodeURIComponent(consulta)}&limit=1`;
+
+      const respuesta =
+        await fetch(url);
+
+      if (!respuesta.ok) {
+        throw new Error(
+          `Jikan HTTP ${respuesta.status}`
+        );
+      }
+
+      const datos =
+        await respuesta.json();
+
+      if (
+        !datos?.data ||
+        datos.data.length === 0
+      ) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              `❌ No encontré el anime *${consulta}*.`
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const item =
+        datos.data[0];
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+`📖 INFORMACIÓN DEL ANIME
+
+🎬 ${item.title}
+
+⭐ Score: ${item.score || "N/A"}
+
+📺 Episodios: ${item.episodes || "N/A"}
+
+🎭 Tipo: ${item.type || "N/A"}
+
+📡 Estado: ${item.status || "N/A"}
+
+📅 ${item.aired?.string || "N/A"}
+
+🎌 Géneros:
+${
+  item.genres?.length
+    ? item.genres
+        .map(g => g.name)
+        .join(", ")
+    : "N/A"
+}
+
+📝 Sinopsis:
+${item.synopsis || "No disponible."}`
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // PERSONAJE
+    // ======================================
+
+    if (comando === "personaje") {
+
+      const nombre =
+        args.join(" ").trim();
+
+      if (!nombre) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "👤 Usa *.personaje nombre*"
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const imagen =
+        await buscarImagenPersonaje(
+          nombre
+        );
+
+      if (!imagen) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              `❌ No encontré el personaje *${nombre}* en Jikan.`
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const buffer =
+        await descargarImagen(
+          imagen
+        );
+
+      if (!buffer) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ Encontré el personaje, pero no pude descargar su imagen."
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      await sock.sendMessage(
+        chat,
+        {
+          image: buffer,
+          caption:
+`👤 *${nombre}*
+
+🖼️ Imagen obtenida automáticamente mediante Jikan API.`
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // MANGA
+    // ======================================
+
+    if (comando === "manga") {
+
+      const nombre =
+        args.join(" ").trim();
+
+      if (!nombre) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "📚 Usa *.manga nombre del manga*"
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const url =
+        `${JIKAN_API}/manga?q=${encodeURIComponent(nombre)}&limit=1`;
+
+      const respuesta =
+        await fetch(url);
+
+      if (!respuesta.ok) {
+        throw new Error(
+          `Jikan HTTP ${respuesta.status}`
+        );
+      }
+
+      const datos =
+        await respuesta.json();
+
+      if (
+        !datos?.data ||
+        datos.data.length === 0
+      ) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              `❌ No encontré el manga *${nombre}*.`
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const manga =
+        datos.data[0];
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+`📚 *${manga.title}*
+
+⭐ Score:
+${manga.score || "N/A"}
+
+📖 Capítulos:
+${manga.chapters || "N/A"}
+
+📕 Volúmenes:
+${manga.volumes || "N/A"}
+
+📡 Estado:
+${manga.status || "N/A"}
+
+📝 Sinopsis:
+${manga.synopsis || "No disponible."}`
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // WAIFU
+    // ======================================
+
+    if (comando === "waifu") {
+
+      const url =
+        `${JIKAN_API}/characters?q=waifu&limit=1`;
+
+      const respuesta =
+        await fetch(url);
+
+      if (!respuesta.ok) {
+        throw new Error(
+          `Jikan HTTP ${respuesta.status}`
+        );
+      }
+
+      const datos =
+        await respuesta.json();
+
+      if (
+        !datos?.data ||
+        datos.data.length === 0
+      ) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ No se pudo obtener una imagen."
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const personaje =
+        datos.data[0];
+
+      const imagen =
+        personaje?.images?.jpg?.image_url ||
+        personaje?.images?.webp?.image_url;
+
+      if (!imagen) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ Jikan no devolvió una imagen."
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const buffer =
+        await descargarImagen(
+          imagen
+        );
+
+      if (!buffer) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ No se pudo descargar la imagen."
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      await sock.sendMessage(
+        chat,
+        {
+          image: buffer,
+          caption:
+            "🌸 WAIFU"
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // HUSBANDO
+    // ======================================
+
+    if (comando === "husbando") {
+
+      const url =
+        `${JIKAN_API}/characters?q=husbando&limit=1`;
+
+      const respuesta =
+        await fetch(url);
+
+      if (!respuesta.ok) {
+        throw new Error(
+          `Jikan HTTP ${respuesta.status}`
+        );
+      }
+
+      const datos =
+        await respuesta.json();
+
+      if (
+        !datos?.data ||
+        datos.data.length === 0
+      ) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ No se pudo obtener un personaje."
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const personaje =
+        datos.data[0];
+
+      const imagen =
+        personaje?.images?.jpg?.image_url ||
+        personaje?.images?.webp?.image_url;
+
+      if (!imagen) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ Jikan no devolvió una imagen."
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      const buffer =
+        await descargarImagen(
+          imagen
+        );
+
+      if (!buffer) {
+
+        await sock.sendMessage(
+          chat,
+          {
+            text:
+              "❌ No se pudo descargar la imagen."
+          },
+          { quoted: msg }
+        );
+
+        return true;
+      }
+
+      await sock.sendMessage(
+        chat,
+        {
+          image: buffer,
+          caption:
+            "⚔️ HUSBANDO"
+        },
+        { quoted: msg }
+      );
+
+      return true;
+    }
+
+    // ======================================
+    // COMANDO NO ENCONTRADO
+    // ======================================
+
+    return false;
+
+  } catch (error) {
+
+    console.error(
+      "❌ Error en comando anime:",
+      error
+    );
+
+    try {
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+`❌ Ocurrió un error ejecutando el comando.
+
+${error.message || "Error desconocido"}`
+        },
+        { quoted: msg }
+      );
+
+    } catch (errorEnvio) {
+
+      console.error(
+        "❌ No se pudo enviar el mensaje de error:",
+        errorEnvio
+      );
+    }
+
+    return true;
+  }
+}
+
+// ========================================
+// EXPORTAR
+// ========================================
+
+module.exports = anime;
+
+
+// .reclamar: integra búsqueda automática mediante AniList.
