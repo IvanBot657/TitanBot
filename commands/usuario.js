@@ -1,4 +1,3 @@
-
 const fs = require("fs");
 const path = require("path");
 
@@ -32,6 +31,7 @@ function crearUsuario() {
     registrado: false,
     edad: null,
     cumpleanos: null,
+    descripcion: "",
     xp: 0,
     nivel: 1,
     dinero: 500,
@@ -43,15 +43,13 @@ function crearUsuario() {
 function obtenerUsuario(id) {
   const db = cargarUsuarios();
 
-  if (!db[id]) {
-    db[id] = crearUsuario();
-    guardarUsuarios(db);
-  }
+  if (!db[id]) db[id] = crearUsuario();
 
-  // Compatibilidad con usuarios antiguos
   const user = db[id];
+
   if (user.edad === undefined) user.edad = null;
   if (user.cumpleanos === undefined) user.cumpleanos = null;
+  if (user.descripcion === undefined) user.descripcion = "";
   if (user.xp === undefined) user.xp = 0;
   if (user.nivel === undefined) user.nivel = 1;
   if (user.dinero === undefined) user.dinero = 500;
@@ -72,8 +70,13 @@ function ganarXP(id) {
   if (!db[id]) db[id] = crearUsuario();
 
   const user = db[id];
-  const xpGanada = Math.floor(Math.random() * 11) + 5;
 
+  if (user.descripcion === undefined) user.descripcion = "";
+  if (user.xp === undefined) user.xp = 0;
+  if (user.nivel === undefined) user.nivel = 1;
+  if (user.dinero === undefined) user.dinero = 500;
+
+  const xpGanada = Math.floor(Math.random() * 11) + 5;
   user.xp += xpGanada;
 
   let nivelesSubidos = 0;
@@ -114,6 +117,7 @@ async function usuario(sock, chat, comando, args, id) {
 
   if (user.edad === undefined) user.edad = null;
   if (user.cumpleanos === undefined) user.cumpleanos = null;
+  if (user.descripcion === undefined) user.descripcion = "";
   if (user.xp === undefined) user.xp = 0;
   if (user.nivel === undefined) user.nivel = 1;
   if (user.dinero === undefined) user.dinero = 500;
@@ -122,7 +126,7 @@ async function usuario(sock, chat, comando, args, id) {
 
   // ========================================
   // REGISTRAR
-  // Formato: .registrar Nombre|Edad|DD/MM
+  // Formato: .registrar Nombre|Edad|DD/MM|Descripción
   // ========================================
 
   if (comando === "registrar") {
@@ -133,22 +137,28 @@ async function usuario(sock, chat, comando, args, id) {
 👤 Nombre: ${user.nombre}
 🎂 Edad: ${user.edad ?? "Sin registrar"}
 🎉 Cumpleaños: ${user.cumpleanos ?? "Sin registrar"}
-⭐ Nivel: ${user.nivel}`
+📝 Descripción: ${user.descripcion || "Sin descripción"}
+⭐ Nivel: ${user.nivel}
+
+Para cambiar tu descripción, usa .descripcion Tu texto`
       });
       return true;
     }
 
     const datos = (args || []).join(" ").split("|").map(x => x.trim());
 
-    if (datos.length !== 3 || !datos[0] || !datos[1] || !datos[2]) {
+    if (datos.length !== 4 || !datos[0] || !datos[1] ||
+        !datos[2] || !datos[3]) {
       await sock.sendMessage(chat, {
-        text: `📝 REGISTRO TITANBOT
+        text: `🎃 📝 REGISTRO TITANBOT 📝 🎃
 
 Usa este formato:
-.registrar Nombre|Edad|DD/MM
+.registrar Nombre|Edad|DD/MM|Descripción
 
 Ejemplo:
-.registrar Aoi Mizuno|16|15/08`
+.registrar Aoi Mizuno|16|30/12|🎃 Guardiana de Halloween 🌙
+
+¡Crea tu perfil y deja tu marca en TITANBOT! ⚡`
       });
       return true;
     }
@@ -156,6 +166,7 @@ Ejemplo:
     const nombre = datos[0];
     const edad = Number(datos[1]);
     const cumpleanos = datos[2];
+    const descripcion = datos.slice(3).join("|").trim();
 
     if (!Number.isInteger(edad) || edad < 1 || edad > 120) {
       await sock.sendMessage(chat, {
@@ -165,9 +176,10 @@ Ejemplo:
     }
 
     const fecha = cumpleanos.match(/^(\d{1,2})\/(\d{1,2})$/);
+
     if (!fecha) {
       await sock.sendMessage(chat, {
-        text: "❌ Escribe el cumpleaños en formato DD/MM, por ejemplo 15/08."
+        text: "❌ Escribe el cumpleaños en formato DD/MM, por ejemplo 30/12."
       });
       return true;
     }
@@ -183,27 +195,86 @@ Ejemplo:
       return true;
     }
 
+    if (descripcion.length > 300) {
+      await sock.sendMessage(chat, {
+        text: "❌ La descripción no puede superar los 300 caracteres."
+      });
+      return true;
+    }
+
     user.nombre = nombre;
     user.edad = edad;
-    user.cumpleanos = `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}`;
+    user.cumpleanos =
+      `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}`;
+    user.descripcion = descripcion;
     user.registrado = true;
     user.dinero += 500;
 
     guardarUsuarios(db);
 
     await sock.sendMessage(chat, {
-      text: `🎉 REGISTRO COMPLETADO
+      text: `🎃 REGISTRO COMPLETADO 🎃
 
 👤 Nombre: ${user.nombre}
 🎂 Edad: ${user.edad} años
 🎉 Cumpleaños: ${user.cumpleanos}
+📝 Descripción: ${user.descripcion}
 
 🎁 Recompensa:
 +500 TitanCoins
 
 ⭐ Nivel: ${user.nivel}
 
-¡Bienvenido a TitanBot! ⚡`
+👻 ¡Bienvenido a TITANBOT!
+Que comience tu aventura... ⚡`
+    });
+
+    return true;
+  }
+
+  // ========================================
+  // CAMBIAR DESCRIPCIÓN
+  // Uso: .descripcion Tu descripción
+  // ========================================
+
+  if (comando === "descripcion") {
+    if (!user.registrado) {
+      await sock.sendMessage(chat, {
+        text: "❌ Primero debes registrarte con .registrar."
+      });
+      return true;
+    }
+
+    const nuevaDescripcion = (args || []).join(" ").trim();
+
+    if (!nuevaDescripcion) {
+      await sock.sendMessage(chat, {
+        text: `📝 DESCRIPCIÓN DE PERFIL
+
+Uso:
+.descripcion Tu nueva descripción
+
+Ejemplo:
+.descripcion 🎃 Guardiana de Halloween 🌙`
+      });
+      return true;
+    }
+
+    if (nuevaDescripcion.length > 300) {
+      await sock.sendMessage(chat, {
+        text: "❌ La descripción no puede superar los 300 caracteres."
+      });
+      return true;
+    }
+
+    user.descripcion = nuevaDescripcion;
+    guardarUsuarios(db);
+
+    await sock.sendMessage(chat, {
+      text: `✅ DESCRIPCIÓN ACTUALIZADA
+
+👤 ${user.nombre}
+📝 ${user.descripcion}`
     });
 
     return true;
@@ -219,6 +290,9 @@ Ejemplo:
 📛 Nombre: ${user.nombre}
 🎂 Edad: ${user.edad ?? "Sin registrar"}
 🎉 Cumpleaños: ${user.cumpleanos ?? "Sin registrar"}
+
+📝 Descripción:
+${user.descripcion || "Sin descripción"}
 
 ⭐ Nivel: ${user.nivel}
 ✨ XP: ${user.xp}/${user.nivel * 100}
@@ -236,8 +310,6 @@ Ejemplo:
         caption: texto
       });
     } catch (error) {
-      // Si WhatsApp no permite obtener la foto,
-      // mostrar igualmente todos los datos.
       await sock.sendMessage(chat, { text: texto });
     }
 
