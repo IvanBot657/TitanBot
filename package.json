@@ -5,9 +5,7 @@
 "main": "index.js",
 "license": "MIT",
 "scripts": {
-"start": "node index.js",
-"check": "node --check index.js",
-"check:sharp": "node -e "require('sharp'); console.log('SHARP FUNCIONA')""
+"start": "node index.js"
 },
 "dependencies": {
 "@whiskeysockets/baileys": "latest",
