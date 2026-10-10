@@ -1,61 +1,65 @@
-const fs = require("fs");
 
-const DB = "./database/users.json";
+const fs = require("fs");
+const path = require("path");
+
+const DB = path.join(__dirname, "../../database/users.json");
 
 // ========================================
-// CARGAR BASE DE DATOS
+// BASE DE DATOS
 // ========================================
 
 function cargarUsuarios() {
   if (!fs.existsSync(DB)) {
+    fs.mkdirSync(path.dirname(DB), { recursive: true });
     fs.writeFileSync(DB, "{}");
   }
 
   try {
-    return JSON.parse(
-      fs.readFileSync(DB, "utf8")
-    );
+    return JSON.parse(fs.readFileSync(DB, "utf8"));
   } catch (error) {
-    console.log("❌ Error leyendo users.json:", error);
+    console.log("Error leyendo users.json:", error);
     return {};
   }
 }
 
-// ========================================
-// GUARDAR BASE DE DATOS
-// ========================================
-
 function guardarUsuarios(db) {
-  fs.writeFileSync(
-    DB,
-    JSON.stringify(db, null, 2)
-  );
+  fs.writeFileSync(DB, JSON.stringify(db, null, 2));
 }
 
-// ========================================
-// CREAR / OBTENER USUARIO
-// ========================================
+function crearUsuario() {
+  return {
+    nombre: "Usuario",
+    registrado: false,
+    edad: null,
+    cumpleanos: null,
+    xp: 0,
+    nivel: 1,
+    dinero: 500,
+    banco: 0,
+    inventario: {}
+  };
+}
 
 function obtenerUsuario(id) {
-
   const db = cargarUsuarios();
 
   if (!db[id]) {
-
-    db[id] = {
-      nombre: "Usuario",
-      registrado: false,
-      xp: 0,
-      nivel: 1,
-      dinero: 500,
-      banco: 0,
-      inventario: {}
-    };
-
+    db[id] = crearUsuario();
     guardarUsuarios(db);
   }
 
-  return db[id];
+  // Compatibilidad con usuarios antiguos
+  const user = db[id];
+  if (user.edad === undefined) user.edad = null;
+  if (user.cumpleanos === undefined) user.cumpleanos = null;
+  if (user.xp === undefined) user.xp = 0;
+  if (user.nivel === undefined) user.nivel = 1;
+  if (user.dinero === undefined) user.dinero = 500;
+  if (user.banco === undefined) user.banco = 0;
+  if (!user.inventario) user.inventario = {};
+
+  guardarUsuarios(db);
+  return user;
 }
 
 // ========================================
@@ -63,50 +67,25 @@ function obtenerUsuario(id) {
 // ========================================
 
 function ganarXP(id) {
-
   const db = cargarUsuarios();
 
-  if (!db[id]) {
-
-    db[id] = {
-      nombre: "Usuario",
-      registrado: false,
-      xp: 0,
-      nivel: 1,
-      dinero: 500,
-      banco: 0,
-      inventario: {}
-    };
-  }
+  if (!db[id]) db[id] = crearUsuario();
 
   const user = db[id];
-
-  const xpGanada =
-    Math.floor(
-      Math.random() * 11
-    ) + 5;
+  const xpGanada = Math.floor(Math.random() * 11) + 5;
 
   user.xp += xpGanada;
 
   let nivelesSubidos = 0;
   let recompensaTotal = 0;
 
-  while (
-    user.xp >= user.nivel * 100
-  ) {
-
-    user.xp -=
-      user.nivel * 100;
-
+  while (user.xp >= user.nivel * 100) {
+    user.xp -= user.nivel * 100;
     user.nivel++;
-
     nivelesSubidos++;
 
-    const recompensa =
-      user.nivel * 250;
-
+    const recompensa = user.nivel * 250;
     user.dinero += recompensa;
-
     recompensaTotal += recompensa;
   }
 
@@ -123,107 +102,144 @@ function ganarXP(id) {
 }
 
 // ========================================
-// FUNCIÓN PRINCIPAL
-// COMPATIBLE CON TU INDEX.JS
+// COMANDOS DE USUARIO
 // ========================================
 
-async function usuario(
-  sock,
-  chat,
-  comando,
-  args,
-  id
-) {
-
+async function usuario(sock, chat, comando, args, id) {
   const db = cargarUsuarios();
 
-  // Crear usuario si no existe
-  if (!db[id]) {
-
-    db[id] = {
-      nombre: "Usuario",
-      registrado: false,
-      xp: 0,
-      nivel: 1,
-      dinero: 500,
-      banco: 0,
-      inventario: {}
-    };
-
-    guardarUsuarios(db);
-  }
+  if (!db[id]) db[id] = crearUsuario();
 
   const user = db[id];
 
+  if (user.edad === undefined) user.edad = null;
+  if (user.cumpleanos === undefined) user.cumpleanos = null;
+  if (user.xp === undefined) user.xp = 0;
+  if (user.nivel === undefined) user.nivel = 1;
+  if (user.dinero === undefined) user.dinero = 500;
+  if (user.banco === undefined) user.banco = 0;
+  if (!user.inventario) user.inventario = {};
+
   // ========================================
   // REGISTRAR
+  // Formato: .registrar Nombre|Edad|DD/MM
   // ========================================
 
   if (comando === "registrar") {
-
     if (user.registrado) {
-
       await sock.sendMessage(chat, {
-        text:
-`✅ Ya estás registrado.
+        text: `✅ Ya estás registrado.
 
 👤 Nombre: ${user.nombre}
+🎂 Edad: ${user.edad ?? "Sin registrar"}
+🎉 Cumpleaños: ${user.cumpleanos ?? "Sin registrar"}
 ⭐ Nivel: ${user.nivel}`
       });
-
       return true;
     }
 
-    user.registrado = true;
+    const datos = (args || []).join(" ").split("|").map(x => x.trim());
 
-    if (args && args.length > 0) {
-      user.nombre = args.join(" ");
+    if (datos.length !== 3 || !datos[0] || !datos[1] || !datos[2]) {
+      await sock.sendMessage(chat, {
+        text: `📝 REGISTRO TITANBOT
+
+Usa este formato:
+.registrar Nombre|Edad|DD/MM
+
+Ejemplo:
+.registrar Aoi Mizuno|16|15/08`
+      });
+      return true;
     }
 
+    const nombre = datos[0];
+    const edad = Number(datos[1]);
+    const cumpleanos = datos[2];
+
+    if (!Number.isInteger(edad) || edad < 1 || edad > 120) {
+      await sock.sendMessage(chat, {
+        text: "❌ La edad debe ser un número válido entre 1 y 120."
+      });
+      return true;
+    }
+
+    const fecha = cumpleanos.match(/^(\d{1,2})\/(\d{1,2})$/);
+    if (!fecha) {
+      await sock.sendMessage(chat, {
+        text: "❌ Escribe el cumpleaños en formato DD/MM, por ejemplo 15/08."
+      });
+      return true;
+    }
+
+    const dia = Number(fecha[1]);
+    const mes = Number(fecha[2]);
+    const diasMes = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+    if (mes < 1 || mes > 12 || dia < 1 || dia > diasMes[mes - 1]) {
+      await sock.sendMessage(chat, {
+        text: "❌ Esa fecha de cumpleaños no es válida."
+      });
+      return true;
+    }
+
+    user.nombre = nombre;
+    user.edad = edad;
+    user.cumpleanos = `${String(dia).padStart(2, "0")}/${String(mes).padStart(2, "0")}`;
+    user.registrado = true;
     user.dinero += 500;
 
     guardarUsuarios(db);
 
     await sock.sendMessage(chat, {
-      text:
-`🎉 REGISTRO COMPLETADO
+      text: `🎉 REGISTRO COMPLETADO
 
 👤 Nombre: ${user.nombre}
+🎂 Edad: ${user.edad} años
+🎉 Cumpleaños: ${user.cumpleanos}
 
 🎁 Recompensa:
 +500 TitanCoins
 
-⭐ Nivel: 1
+⭐ Nivel: ${user.nivel}
 
-¡Bienvenido a TitanBot!`
+¡Bienvenido a TitanBot! ⚡`
     });
 
     return true;
   }
 
   // ========================================
-  // PERFIL
+  // PERFIL CON FOTO DE WHATSAPP
   // ========================================
 
   if (comando === "perfil") {
-
-    await sock.sendMessage(chat, {
-      text:
-`👤 PERFIL
+    const texto = `👤 PERFIL TITANBOT ⚡
 
 📛 Nombre: ${user.nombre}
+🎂 Edad: ${user.edad ?? "Sin registrar"}
+🎉 Cumpleaños: ${user.cumpleanos ?? "Sin registrar"}
 
 ⭐ Nivel: ${user.nivel}
+✨ XP: ${user.xp}/${user.nivel * 100}
 
-✨ XP:
-${user.xp}/${user.nivel * 100}
+💰 TitanCoins: ${user.dinero}
+🏦 Banco: ${user.banco}`;
 
-💰 TitanCoins:
-${user.dinero}
+    guardarUsuarios(db);
 
-🏦 Banco:
-${user.banco}`
-    });
+    try {
+      const foto = await sock.profilePictureUrl(id, "image");
+
+      await sock.sendMessage(chat, {
+        image: { url: foto },
+        caption: texto
+      });
+    } catch (error) {
+      // Si WhatsApp no permite obtener la foto,
+      // mostrar igualmente todos los datos.
+      await sock.sendMessage(chat, { text: texto });
+    }
 
     return true;
   }
@@ -233,30 +249,16 @@ ${user.banco}`
   // ========================================
 
   if (comando === "nivel") {
-
-    const necesario =
-      user.nivel * 100;
-
-    const falta =
-      Math.max(
-        0,
-        necesario - user.xp
-      );
+    const necesario = user.nivel * 100;
+    const falta = Math.max(0, necesario - user.xp);
 
     await sock.sendMessage(chat, {
-      text:
-`⭐ NIVEL
+      text: `⭐ NIVEL TITAN
 
 👤 ${user.nombre}
-
-🏆 Nivel actual:
-${user.nivel}
-
-✨ XP:
-${user.xp}/${necesario}
-
-📈 Falta:
-${falta} XP`
+🏆 Nivel: ${user.nivel}
+✨ XP: ${user.xp}/${necesario}
+📈 Falta: ${falta} XP`
     });
 
     return true;
@@ -267,17 +269,12 @@ ${falta} XP`
   // ========================================
 
   if (comando === "xp") {
-
     await sock.sendMessage(chat, {
-      text:
-`✨ EXPERIENCIA
+      text: `✨ EXPERIENCIA
 
 👤 ${user.nombre}
-
 ⭐ Nivel: ${user.nivel}
-
-✨ XP:
-${user.xp}/${user.nivel * 100}`
+✨ XP: ${user.xp}/${user.nivel * 100}`
     });
 
     return true;
@@ -288,36 +285,21 @@ ${user.xp}/${user.nivel * 100}`
   // ========================================
 
   if (comando === "rank") {
+    const usuarios = Object.entries(db);
 
-    const usuarios =
-      Object.entries(db);
-
-    usuarios.sort(
-      (a, b) =>
-        b[1].nivel - a[1].nivel ||
-        b[1].xp - a[1].xp
+    usuarios.sort((a, b) =>
+      b[1].nivel - a[1].nivel || b[1].xp - a[1].xp
     );
 
-    const posicion =
-      usuarios.findIndex(
-        ([usuarioId]) =>
-          usuarioId === id
-      ) + 1;
+    const posicion = usuarios.findIndex(([uid]) => uid === id) + 1;
 
     await sock.sendMessage(chat, {
-      text:
-`🏆 TU RANK
+      text: `🏆 TU RANK
 
 👤 ${user.nombre}
-
-📊 Posición:
-#${posicion}
-
-⭐ Nivel:
-${user.nivel}
-
-✨ XP:
-${user.xp}`
+📊 Posición: #${posicion}
+⭐ Nivel: ${user.nivel}
+✨ XP: ${user.xp}`
     });
 
     return true;
@@ -328,62 +310,30 @@ ${user.xp}`
   // ========================================
 
   if (comando === "top") {
+    const usuarios = Object.entries(db);
 
-    const usuarios =
-      Object.entries(db);
-
-    usuarios.sort(
-      (a, b) =>
-        b[1].nivel - a[1].nivel ||
-        b[1].xp - a[1].xp
+    usuarios.sort((a, b) =>
+      b[1].nivel - a[1].nivel || b[1].xp - a[1].xp
     );
 
-    let texto =
-`🏆 TOP TITANBOT
+    let texto = "🏆 TOP TITANBOT\n\n";
 
-`;
-
-    usuarios
-      .slice(0, 10)
-      .forEach(
-        ([usuarioId, datos], index) => {
-
-          texto +=
-`#${index + 1} 👤 ${datos.nombre}
+    usuarios.slice(0, 10).forEach(([uid, datos], index) => {
+      texto += `#${index + 1} 👤 ${datos.nombre}
 ⭐ Nivel: ${datos.nivel}
 ✨ XP: ${datos.xp}
 
 `;
-        }
-      );
-
-    await sock.sendMessage(chat, {
-      text: texto
     });
 
+    await sock.sendMessage(chat, { text: texto });
     return true;
   }
-
-  // ========================================
-  // NO ES COMANDO DE USUARIO
-  // ========================================
 
   return false;
 }
 
-// ========================================
-// EXPORTACIONES
-// ========================================
-
-// IMPORTANTE:
-// Exportamos usuario directamente porque
-// tu index.js hace:
-//
-// await usuario(...)
-
 module.exports = usuario;
-
-// Funciones adicionales
 module.exports.usuario = usuario;
 module.exports.obtenerUsuario = obtenerUsuario;
 module.exports.cargarUsuarios = cargarUsuarios;
