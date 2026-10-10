@@ -118,58 +118,58 @@ module.exports = async function halloween(
 
   // 🎞️ ENVIAR VIDEO EN .dulce
   if (comando === "dulce") {
-    const archivo = path.join(
-      __dirname,
-      "../media/dulce.mp4"
-    );
+  const archivo = path.join(
+    __dirname,
+    "../media/dulce.mp4"
+  );
 
-    try {
-      if (!fs.existsSync(archivo)) {
-        throw new Error("No existe el archivo media/dulce.mp4");
-      }
-
-      const video = fs.readFileSync(archivo);
-
-      if (video.length === 0) {
-        throw new Error("El archivo dulce.mp4 está vacío");
-      }
-
-      await sock.sendMessage(
-        chat,
-        {
-          video: video,
-          mimetype: "video/mp4",
-          caption: texto
-        },
-        { quoted: msg }
-      );
-    } catch (error) {
-      console.error(
-        "[HALLOWEEN] Error al enviar el video:",
-        error
-      );
-
-      await sock.sendMessage(
-        chat,
-        {
-          text:
-            texto +
-            "\n\n⚠️ No se pudo enviar el video de Halloween."
-        },
-        { quoted: msg }
-      );
+  try {
+    if (!fs.existsSync(archivo)) {
+      throw new Error("No existe el archivo media/dulce.mp4");
     }
-  } else {
-    // Enviar texto para .susto y .maldicion
+
+    const video = fs.readFileSync(archivo);
+
+    if (video.length === 0) {
+      throw new Error("El archivo dulce.mp4 está vacío");
+    }
+
     await sock.sendMessage(
       chat,
-      { text: texto },
+      {
+        video: video,
+        mimetype: "video/mp4",
+        gifPlayback: true,
+        caption: texto
+      },
+      { quoted: msg }
+    );
+  } catch (error) {
+    console.error(
+      "[HALLOWEEN] Error al enviar la animación:",
+      error
+    );
+
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+          texto +
+          "\n\n⚠️ No se pudo enviar la animación de Halloween."
+      },
       { quoted: msg }
     );
   }
+} else {
+  // Enviar texto para .susto y .maldicion
+  await sock.sendMessage(
+    chat,
+    { text: texto },
+    { quoted: msg }
+  );
+}
 
-  cooldowns.set(key, Date.now());
+cooldowns.set(key, Date.now());
 
-  return true;
-};
-      
+return true;
+  
