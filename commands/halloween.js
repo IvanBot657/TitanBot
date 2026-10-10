@@ -56,18 +56,16 @@ module.exports = async function halloween(
     return false;
   }
 
-  const ahora = Date.now();
   const key = obtenerCooldownKey(chat, id, comando);
+  const ahora = Date.now();
   const ultimoUso = cooldowns.get(key) || 0;
   const restante = COOLDOWN_MS - (ahora - ultimoUso);
 
   if (restante > 0) {
-    const segundos = Math.ceil(restante / 1000);
-
     await sock.sendMessage(
       chat,
       {
-        text: `🎃 Espera ${segundos} segundo(s) antes de volver a usar este comando.`
+        text: `🎃 Espera ${Math.ceil(restante / 1000)} segundo(s) antes de volver a usar este comando.`
       },
       { quoted: msg }
     );
@@ -116,60 +114,60 @@ module.exports = async function halloween(
       "\n\n🎃 ¡La maldición es ficticia y solo por diversión!";
   }
 
-  // 🎞️ ENVIAR VIDEO EN .dulce
+  // 🎞️ GIF/VIDEO PARA .dulce
   if (comando === "dulce") {
-  const archivo = path.join(
-    __dirname,
-    "../media/dulce.mp4"
-  );
-
-  try {
-    if (!fs.existsSync(archivo)) {
-      throw new Error("No existe el archivo media/dulce.mp4");
-    }
-
-    const video = fs.readFileSync(archivo);
-
-    if (video.length === 0) {
-      throw new Error("El archivo dulce.mp4 está vacío");
-    }
-
-    await sock.sendMessage(
-      chat,
-      {
-        video: video,
-        mimetype: "video/mp4",
-        gifPlayback: true,
-        caption: texto
-      },
-      { quoted: msg }
-    );
-  } catch (error) {
-    console.error(
-      "[HALLOWEEN] Error al enviar la animación:",
-      error
+    const archivo = path.join(
+      __dirname,
+      "../media/dulce.mp4"
     );
 
+    try {
+      if (!fs.existsSync(archivo)) {
+        throw new Error(`No se encontró el archivo: ${archivo}`);
+      }
+
+      const video = fs.readFileSync(archivo);
+
+      if (video.length === 0) {
+        throw new Error("El archivo dulce.mp4 está vacío");
+      }
+
+      await sock.sendMessage(
+        chat,
+        {
+          video,
+          mimetype: "video/mp4",
+          gifPlayback: true,
+          caption: texto
+        },
+        { quoted: msg }
+      );
+    } catch (error) {
+      console.error(
+        "[HALLOWEEN] Error al enviar la animación:",
+        error
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            texto +
+            "\n\n⚠️ No se pudo enviar la animación de Halloween."
+        },
+        { quoted: msg }
+      );
+    }
+  } else {
+    // Enviar texto para .susto y .maldicion
     await sock.sendMessage(
       chat,
-      {
-        text:
-          texto +
-          "\n\n⚠️ No se pudo enviar la animación de Halloween."
-      },
+      { text: texto },
       { quoted: msg }
     );
   }
-} else {
-  // Enviar texto para .susto y .maldicion
-  await sock.sendMessage(
-    chat,
-    { text: texto },
-    { quoted: msg }
-  );
-}
 
-cooldowns.set(key, Date.now());
+  cooldowns.set(key, Date.now());
 
-return true;
-  
+  return true;
+};
