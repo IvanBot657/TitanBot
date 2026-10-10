@@ -4,7 +4,7 @@ const fs = require("fs");
 // =====================================================
 // 🎃 TITANBOT - COMANDOS DE HALLOWEEN
 // Comandos: dulce, susto, maldicion
-// GIF: ../media/dulce.gif
+// Archivo multimedia: ../media/dulce.mp4
 // =====================================================
 
 const cooldowns = new Map();
@@ -54,7 +54,6 @@ module.exports = async function halloween(
 
   if (!comandos.includes(comando)) return false;
 
-  // Control de uso: 10 segundos por usuario y comando.
   const ahora = Date.now();
   const key = obtenerCooldownKey(chat, id, comando);
   const ultimoUso = cooldowns.get(key) || 0;
@@ -76,9 +75,7 @@ module.exports = async function halloween(
 
   let texto = "";
 
-  // =====================================================
   // 🍬 COMANDO .dulce
-  // =====================================================
   if (comando === "dulce") {
     const suerte = Math.random() * 100;
 
@@ -101,9 +98,7 @@ module.exports = async function halloween(
     }
   }
 
-  // =====================================================
   // 👻 COMANDO .susto
-  // =====================================================
   if (comando === "susto") {
     texto =
       "🌑👻 *MODO SUSTO ACTIVADO* 👻🌑\n\n" +
@@ -111,9 +106,7 @@ module.exports = async function halloween(
       "\n\n🕯️ La noche aún guarda secretos…";
   }
 
-  // =====================================================
   // 🔮 COMANDO .maldicion
-  // =====================================================
   if (comando === "maldicion") {
     texto =
       "🔮💀 *EL ORÁCULO DE HALLOWEEN* 💀🔮\n\n" +
@@ -121,27 +114,28 @@ module.exports = async function halloween(
       "\n\n🎃 ¡La maldición es ficticia y solo por diversión!";
   }
 
-  // Registrar el uso después de validar el comando.
+  // Registrar el uso del comando.
   cooldowns.set(key, ahora);
 
-  // =====================================================
-  // 🎞️ ENVIAR GIF EN .dulce
-  // =====================================================
+  // 🎞️ ENVIAR ANIMACIÓN EN .dulce
   if (comando === "dulce") {
-    const gifDulce = path.join(
+    const archivo = path.join(
       __dirname,
-      "../media/dulce.gif"
+      "../media/dulce.mp4"
     );
 
     try {
-      if (!fs.existsSync(gifDulce)) {
-        throw new Error("No se encontró media/dulce.gif");
+      if (!fs.existsSync(archivo)) {
+        throw new Error(`No se encontró el archivo: ${archivo}`);
       }
+
+      const video = fs.readFileSync(archivo);
 
       await sock.sendMessage(
         chat,
         {
-          video: fs.readFileSync(gifDulce),
+          video,
+          mimetype: "video/mp4",
           gifPlayback: true,
           caption: texto
         },
@@ -149,8 +143,8 @@ module.exports = async function halloween(
       );
     } catch (error) {
       console.error(
-        "[HALLOWEEN] Error al enviar el GIF:",
-        error.message
+        "[HALLOWEEN] Error al enviar la animación:",
+        error
       );
 
       await sock.sendMessage(
@@ -160,7 +154,6 @@ module.exports = async function halloween(
       );
     }
   } else {
-    // .susto y .maldicion envían texto.
     await sock.sendMessage(
       chat,
       { text: texto },
