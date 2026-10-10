@@ -13,13 +13,13 @@ echo "ERROR: Este instalador está diseñado para Termux."
 exit 1
 fi
 
-Instalar herramientas necesarias
+#Instalar herramientas necesarias
 
 echo "[1/4] Instalando dependencias del sistema..."
 pkg update -y
 pkg install -y nodejs git curl
 
-Verificar instalaciones
+#Verificar instalaciones
 
 if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
 echo "ERROR: No se pudo instalar Node.js/npm."
@@ -31,7 +31,7 @@ echo "ERROR: Git no está instalado."
 exit 1
 fi
 
-Descargar el proyecto
+#Descargar el proyecto
 
 echo "[2/4] Preparando TITANBOT..."
 
@@ -51,7 +51,7 @@ cd "$HOME/TitanBot"
 
 fi
 
-Instalar dependencias del proyecto
+#Instalar dependencias del proyecto
 
 echo "[3/4] Instalando paquetes de TITANBOT..."
 
@@ -60,7 +60,7 @@ echo "ERROR: No se encontró package.json."
 exit 1
 fi
 
-npm install
+#npm install
 
 Iniciar el bot
 
