@@ -62,7 +62,7 @@ fi
 
 #npm install
 
-Iniciar el bot
+#Iniciar el bot
 
 echo "[4/4] Iniciando TITANBOT..."
 npm start
