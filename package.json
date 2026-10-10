@@ -22,6 +22,8 @@
     "simple-ytdl-core": "^1.1.1",
     "link-preview-js": "^3.0.0",
     "bgutils-js": "^4.0.3",
-    "googlevideo": "^4.1.1"
+    "googlevideo": "^4.1.1",
+    "yt-search": "^2.12.1",
+    "@distube/ytdl-core": "^4.15.9"
   }
 }
