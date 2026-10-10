@@ -17,7 +17,7 @@ Instalar herramientas necesarias
 
 echo "[1/4] Instalando dependencias del sistema..."
 pkg update -y
-pkg install -y nodejs git
+pkg install -y nodejs git curl
 
 Verificar instalaciones
 
