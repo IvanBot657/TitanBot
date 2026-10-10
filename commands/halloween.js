@@ -116,7 +116,7 @@ module.exports = async function halloween(
       "\n\n🎃 ¡La maldición es ficticia y solo por diversión!";
   }
 
-  // 🎞️ ENVIAR ANIMACIÓN EN .dulce
+  // 🎞️ ENVIAR VIDEO EN .dulce
   if (comando === "dulce") {
     const archivo = path.join(
       __dirname,
@@ -139,14 +139,13 @@ module.exports = async function halloween(
         {
           video: video,
           mimetype: "video/mp4",
-          gifPlayback: true,
           caption: texto
         },
         { quoted: msg }
       );
     } catch (error) {
       console.error(
-        "[HALLOWEEN] Error al enviar la animación:",
+        "[HALLOWEEN] Error al enviar el video:",
         error
       );
 
@@ -155,7 +154,7 @@ module.exports = async function halloween(
         {
           text:
             texto +
-            "\n\n⚠️ No se pudo enviar la animación de Halloween."
+            "\n\n⚠️ No se pudo enviar el video de Halloween."
         },
         { quoted: msg }
       );
@@ -169,9 +168,8 @@ module.exports = async function halloween(
     );
   }
 
-  // Registrar el uso después de procesar el comando.
   cooldowns.set(key, Date.now());
 
   return true;
 };
-  
+      
