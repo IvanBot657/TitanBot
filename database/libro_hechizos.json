@@ -1,0 +1,65 @@
+{
+  "sombra": {
+    "nombre": "Sombra Errante",
+    "emoji": "🌑",
+    "coste": 10,
+    "rango": 1,
+    "descripcion": "Una sombra rodea al objetivo y lo confunde por unos instantes."
+  },
+  "escudo": {
+    "nombre": "Escudo Umbrío",
+    "emoji": "🛡️",
+    "coste": 15,
+    "rango": 1,
+    "descripcion": "Levanta una protección mágica temporal."
+  },
+  "chispa": {
+    "nombre": "Chispa Arcana",
+    "emoji": "✨",
+    "coste": 10,
+    "rango": 1,
+    "descripcion": "Libera una descarga de energía arcana."
+  },
+  "vinculo": {
+    "nombre": "Vínculo de Humo",
+    "emoji": "🕸️",
+    "coste": 20,
+    "rango": 2,
+    "descripcion": "Un vínculo de humo marca al objetivo."
+  },
+  "niebla": {
+    "nombre": "Niebla Negra",
+    "emoji": "🌫️",
+    "coste": 20,
+    "rango": 2,
+    "descripcion": "Una niebla cubre el lugar durante el conjuro."
+  },
+  "cuervo": {
+    "nombre": "Llamado del Cuervo",
+    "emoji": "🐦‍⬛",
+    "coste": 25,
+    "rango": 2,
+    "descripcion": "Un cuervo espectral lleva un presagio."
+  },
+  "dominacion": {
+    "nombre": "Dominación Oscura",
+    "emoji": "👁️",
+    "coste": 35,
+    "rango": 3,
+    "descripcion": "Una marca de autoridad mágica aparece sobre el objetivo."
+  },
+  "portal": {
+    "nombre": "Portal de Sombras",
+    "emoji": "🌀",
+    "coste": 40,
+    "rango": 3,
+    "descripcion": "Abre un portal ficticio a un reino sombrío."
+  },
+  "supremo": {
+    "nombre": "Edicto del Grimorio",
+    "emoji": "👑",
+    "coste": 0,
+    "rango": 4,
+    "descripcion": "Poder reservado al propietario del bot."
+  }
+}
