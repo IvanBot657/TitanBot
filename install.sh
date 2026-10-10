@@ -6,7 +6,7 @@ echo "=================================="
 echo "       TITANBOT INSTALLER"
 echo "=================================="
 
-Comprobar que se ejecuta en Termux
+#Comprobar que se ejecuta en Termux
 
 if [ ! -d "/data/data/com.termux/files/usr" ]; then
 echo "ERROR: Este instalador está diseñado para Termux."
