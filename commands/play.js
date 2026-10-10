@@ -1,14 +1,15 @@
-
-const axios = require("axios");
 const ytSearch = require("yt-search");
-const { ogmp3 } = require("../lib/ogmp3");
+const axios = require("axios");
+const { playaudio } = require("../lib/playaudio");
 
 async function play(sock, chat, comando, args, id, msg) {
   try {
     if (!args || !args.length) {
       await sock.sendMessage(
         chat,
-        { text: "🎵 Escribe el nombre de una canción.\nEjemplo: .play Bad Bunny" },
+        {
+          text: "🎵 Escribe el nombre de una canción.\nEjemplo: .play Bad Bunny"
+        },
         { quoted: msg }
       );
       return true;
@@ -18,12 +19,12 @@ async function play(sock, chat, comando, args, id, msg) {
 
     await sock.sendMessage(
       chat,
-      { text: "🔎 Buscando la canción: " + consulta },
+      { text: `🔎 Buscando: ${consulta}` },
       { quoted: msg }
     );
 
     const resultado = await ytSearch(consulta);
-    const video = resultado.videos && resultado.videos[0];
+    const video = resultado.videos?.[0];
 
     if (!video) {
       await sock.sendMessage(
@@ -39,41 +40,27 @@ async function play(sock, chat, comando, args, id, msg) {
       {
         image: { url: video.thumbnail },
         caption:
-          "🎵 *" + video.title + "*\n\n" +
-          "👤 Canal: " + (video.author?.name || "Desconocido") + "\n" +
-          "⏱️ Duración: " + (video.timestamp || "Desconocida") + "\n" +
-          "🔗 " + video.url + "\n\n" +
-          "⏳ Preparando el audio..."
+          `🎵 *${video.title}*\n\n` +
+          `👤 Canal: ${video.author?.name || "Desconocido"}\n` +
+          `⏱️ Duración: ${video.timestamp || "Desconocida"}\n` +
+          `🔗 ${video.url}\n\n` +
+          "⏳ Preparando el MP3..."
       },
       { quoted: msg }
     );
 
-    const descarga = await ogmp3.download(video.url, "192", "audio");
+    const descarga = await playaudio.download(video.url, "128k");
 
-    if (!descarga || !descarga.status || !descarga.result?.download) {
-      await sock.sendMessage(
-        chat,
-        { text: "❌ No se pudo obtener el audio. Intenta más tarde." },
-        { quoted: msg }
-      );
-      return true;
+    if (!descarga?.buffer?.length) {
+      throw new Error("La API no devolvió audio.");
     }
-
-    // Descargar el archivo de audio desde la URL devuelta por OGMP3.
-    const respuesta = await axios.get(descarga.result.download, {
-      responseType: "arraybuffer",
-      timeout: 120000,
-      maxContentLength: 40 * 1024 * 1024
-    });
-
-    const audio = Buffer.from(respuesta.data);
 
     await sock.sendMessage(
       chat,
       {
-        audio,
+        audio: descarga.buffer,
         mimetype: "audio/mpeg",
-        fileName: (descarga.result.title || video.title) + ".mp3"
+        fileName: descarga.fileName || "audio.mp3"
       },
       { quoted: msg }
     );
@@ -82,15 +69,15 @@ async function play(sock, chat, comando, args, id, msg) {
   } catch (error) {
     console.error("[PLAY ERROR]", error);
 
-    try {
-      await sock.sendMessage(
-        chat,
-        { text: "❌ Error al obtener el audio. Inténtalo nuevamente más tarde." },
-        { quoted: msg }
-      );
-    } catch (sendError) {
-      console.error("[PLAY SEND ERROR]", sendError);
-    }
+    await sock.sendMessage(
+      chat,
+      {
+        text:
+          "❌ No pude obtener el audio.\n" +
+          "La API puede estar caída o haber rechazado la conversión."
+      },
+      { quoted: msg }
+    ).catch(() => {});
 
     return true;
   }
