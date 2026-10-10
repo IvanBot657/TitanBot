@@ -1,5 +1,5 @@
 // =====================================================
-// 📕 TITANBOT — LIBRO PROHIBIDO
+// 🎃 TITANBOT — LIBRO PROHIBIDO | EDICIÓN OCTUBRE
 // Sin IA, sin API y sin dependencias adicionales.
 // =====================================================
 const fs = require("fs");
@@ -190,7 +190,7 @@ async function libro(sock, chat, comando, args, id, msg) {
   try {
     if (alias === "libro") {
       if (String(args[0] || "").toLowerCase() === "supremo" && !esPropietario) {
-        await sock.sendMessage(chat, { text: "🔒 Solo el propietario de TITANBOT puede abrir el sello supremo." });
+        await sock.sendMessage(chat, { text: `🎃🔒 *SELLO SUPREMO* 🔒🎃\n🕯️ Solo el propietario de TITANBOT puede abrir esta página prohibida.` });
         guardarJSON(USERS_FILE, db);
         return true;
       }
@@ -200,7 +200,8 @@ async function libro(sock, chat, comando, args, id, msg) {
       }).join("\n") || "Ninguno";
       const regen = Math.max(0, Math.ceil((REGEN_MS - (Date.now() - perfil.ultimaRegeneracion)) / 60000));
       await sock.sendMessage(chat, { text:
-`📕 ════ LIBRO PROHIBIDO ════ 📕
+`🎃🕸️ ═══ LIBRO PROHIBIDO ═══ 🕸️🎃
+🕯️ *EDICIÓN ESPECIAL DE OCTUBRE* 🦇
 🌘 Portador: @${actor.split("@")[0]}
 🜏 Rango: ${nombreRango(perfil.rango)}
 ⚡ Energía: ${perfil.energia}/${MAX_ENERGIA}
@@ -208,17 +209,19 @@ async function libro(sock, chat, comando, args, id, msg) {
 ✨ Experiencia mágica: ${perfil.experienciaMagica}
 📜 Rituales completados: ${perfil.rituales}
 
-🔓 HECHIZOS DESBLOQUEADOS
+🦇 ══ HECHIZOS DESBLOQUEADOS ══ 🦇
 ${lista}
 
-📖 Comandos:
-.libro
-.hechizo [hechizo] [@usuario]
-.ojo
-.invocar
-.maldicion @usuario
-.proteccion
-.ritual`,
+🎃 ══ COMANDOS DEL GRIMORIO ══ 🎃
+📖 .libro — Abre el grimorio
+🪄 .hechizo [hechizo] [@usuario] — Conjura magia
+👁️ .ojo — Revela un secreto
+🌑 .invocar — Llama a una criatura
+💀 .maldicion @usuario — Marca con sombras
+🛡️ .proteccion — Activa el escudo umbrío
+🔥 .ritual — Realiza un ritual
+
+🕸️ *En octubre, las sombras despiertan…*`,
         mentions: [actor] });
       guardarJSON(USERS_FILE, db);
       return true;
@@ -226,14 +229,15 @@ ${lista}
 
     if (alias === "ojo") {
       const secretos = [
-        "👁️ El ojo del grimorio revela una puerta que solo aparece bajo la luna.",
-        "🕯️ Una página en blanco acaba de escribir tu nombre.",
-        "🐦‍⬛ El cuervo conoce un secreto, pero exige una chispa de energía.",
-        "🌑 La sombra más larga apunta hacia un hechizo aún sellado.",
-        "🔮 El libro susurra: quien domina su energía, domina su destino."
+        "🎃👁️ El ojo del grimorio revela una puerta que solo aparece bajo la luna de octubre.",
+        "🕯️📜 Una página en blanco acaba de escribir tu nombre… con tinta negra.",
+        "🐦‍⬛🕸️ El cuervo conoce un secreto de Halloween, pero exige una chispa de energía.",
+        "🌑🎃 La sombra más larga apunta hacia un hechizo sellado desde la noche de octubre.",
+        "🔮🦇 El libro susurra: quien domina su energía, domina su destino… incluso en Halloween."
       ];
       if (!cobrar(perfil, 5)) {
-        await sock.sendMessage(chat, { text: `⚡ Energía insuficiente. Tienes ${perfil.energia}/${MAX_ENERGIA}.` });
+        await sock.sendMessage(chat, { text: `🎃⚡ ¡La energía oscura no alcanza! Tienes ${perfil.energia}/${MAX_ENERGIA}.
+🕯️ Espera a que el grimorio recupere su poder.` });
       } else {
         await sock.sendMessage(chat, { text: secretos[Math.floor(Math.random() * secretos.length)] });
       }
@@ -251,11 +255,13 @@ ${lista}
       ];
       const coste = esPropietario ? 0 : esAdmin && chat.endsWith("@g.us") ? 10 : 15;
       if (!cobrar(perfil, coste)) {
-        await sock.sendMessage(chat, { text: `⚡ Te faltan energías. Coste: ${coste}; tienes ${perfil.energia}.` });
+        await sock.sendMessage(chat, { text: `🎃⚡ La magia se está agotando.
+🕯️ Coste: ${coste} de energía
+🔋 Disponible: ${perfil.energia}` });
       } else {
         const c = criaturas[Math.floor(Math.random() * criaturas.length)];
         perfil.experienciaMagica += 8;
-        await sock.sendMessage(chat, { text: `${c[0]} ══ INVOCACIÓN ══ ${c[0]}\n\n${c[1]} ${c[2]}.\n🜏 Portador: @${actor.split("@")[0]}\n⚡ Energía: ${perfil.energia}/${MAX_ENERGIA}${esAdmin && chat.endsWith("@g.us") ? "\n👑 Poder de administrador reconocido." : ""}`, mentions: [actor] });
+        await sock.sendMessage(chat, { text: `🎃🕯️ ══ INVOCACIÓN DE OCTUBRE ══ 🕯️🎃\n\n${c[0]} *${c[1]}* ${c[2]}.\n🜏 Portador: @${actor.split("@")[0]}\n⚡ Energía: ${perfil.energia}/${MAX_ENERGIA}${esAdmin && chat.endsWith("@g.us") ? "\n👑 Poder de administrador reconocido." : ""}`, mentions: [actor] });
       }
       guardarJSON(USERS_FILE, db);
       return true;
@@ -264,11 +270,12 @@ ${lista}
     if (alias === "proteccion" || alias === "protección") {
       const coste = esPropietario ? 0 : 15;
       if (!cobrar(perfil, coste)) {
-        await sock.sendMessage(chat, { text: `🛡️ No tienes energía suficiente. Coste: ${coste}; disponible: ${perfil.energia}.` });
+        await sock.sendMessage(chat, { text: `🎃🛡️ El escudo sigue sellado: no tienes energía suficiente.
+🕯️ Coste: ${coste} | Disponible: ${perfil.energia}` });
       } else {
         perfil.proteccionHasta = Date.now() + DURACION_ESCUDO_MS;
         perfil.experienciaMagica += 5;
-        await sock.sendMessage(chat, { text: `🛡️ ESCUDO UMBRÍO ACTIVADO\n\n@${actor.split("@")[0]}, quedas protegido contra maldiciones del Libro durante 15 minutos.\n⚡ Energía: ${perfil.energia}/${MAX_ENERGIA}`, mentions: [actor] });
+        await sock.sendMessage(chat, { text: `🎃🛡️ ══ ESCUDO UMBRÍO ACTIVADO ══ 🛡️🎃\n\n🕯️ @${actor.split("@")[0]}, las sombras te rodean y te protegen contra maldiciones del Libro durante 15 minutos.\n⚡ Energía: ${perfil.energia}/${MAX_ENERGIA}`, mentions: [actor] });
       }
       guardarJSON(USERS_FILE, db);
       return true;
@@ -276,12 +283,12 @@ ${lista}
 
     if (alias === "maldicion" || alias === "maldición") {
       if (!menciones.length) {
-        await sock.sendMessage(chat, { text: "🌑 Menciona a alguien para lanzar la maldición.\nEjemplo: .maldicion @usuario" });
+        await sock.sendMessage(chat, { text: `🎃💀 *FALTA EL OBJETIVO* 💀🎃\n🕸️ Menciona a alguien para lanzar la maldición.\n📜 Ejemplo: .maldicion @usuario` });
         guardarJSON(USERS_FILE, db);
         return true;
       }
       if (normalizarId(objetivo) === actor) {
-        await sock.sendMessage(chat, { text: "📕 El grimorio no permite maldecirte a ti mismo con este conjuro." });
+        await sock.sendMessage(chat, { text: "🎃📕 El grimorio prohíbe lanzar esta maldición sobre tu propia sombra." });
         guardarJSON(USERS_FILE, db);
         return true;
       }
@@ -292,11 +299,11 @@ ${lista}
         const objetivoKey = normalizarId(objetivo);
         const dbObjetivo = obtenerPerfil(db, objetivoKey);
         if (dbObjetivo.proteccionHasta > Date.now() && !esPropietario) {
-          await sock.sendMessage(chat, { text: `🛡️ La protección de @${objetivoKey.split("@")[0]} ha rechazado la maldición.`, mentions: [objetivo] });
+          await sock.sendMessage(chat, { text: `🎃🛡️ ¡La protección mágica de @${objetivoKey.split("@")[0]} ha rechazado la maldición! 🕯️`, mentions: [objetivo] });
         } else {
           dbObjetivo.maldiciones[chat] = Date.now() + DURACION_MALDICION_MS;
           perfil.experienciaMagica += 12;
-          await sock.sendMessage(chat, { text: `🌑 ══ MALDICIÓN TEMPORAL ══ 🌑\n\n@${actor.split("@")[0]} lanza una marca de sombras sobre @${objetivoKey.split("@")[0]}.\n⏳ Efecto de rol: 10 minutos.\n📕 La marca queda registrada en el grimorio.${esAdmin && chat.endsWith("@g.us") ? "\n👑 Maldición reforzada por autoridad de administrador." : ""}`, mentions: [actor, objetivo] });
+          await sock.sendMessage(chat, { text: `🎃💀 ══ MALDICIÓN DE OCTUBRE ══ 💀🎃\n\n@${actor.split("@")[0]} lanza una marca de sombras sobre @${objetivoKey.split("@")[0]}.\n⏳ Efecto de rol: 10 minutos.\n📕 La marca queda registrada en el grimorio.${esAdmin && chat.endsWith("@g.us") ? "\n👑 Maldición reforzada por autoridad de administrador." : ""}`, mentions: [actor, objetivo] });
         }
       }
       guardarJSON(USERS_FILE, db);
@@ -306,7 +313,8 @@ ${lista}
     if (alias === "ritual") {
       if (perfil.rituales > 0 && Date.now() - (perfil.ultimoRitual || 0) < 60 * 60 * 1000) {
         const restante = Math.ceil((60 * 60 * 1000 - (Date.now() - perfil.ultimoRitual)) / 60000);
-        await sock.sendMessage(chat, { text: `🕯️ El círculo aún está enfriándose. Vuelve en ${restante} min.` });
+        await sock.sendMessage(chat, { text: `🎃🕯️ El círculo de Halloween aún está enfriándose.
+⏳ Vuelve en ${restante} min.` });
         guardarJSON(USERS_FILE, db);
         return true;
       }
@@ -343,7 +351,7 @@ ${lista}
           extra = "⚡ Ya conoces los hechizos disponibles de tu rango; recuperas 15 de energía.";
         }
       }
-      await sock.sendMessage(chat, { text: `🕯️ ═══ RITUAL COMPLETADO ═══ 🕯️\n\n${extra}\n✨ Experiencia mágica: ${perfil.experienciaMagica}\n📕 Rango: ${nombreRango(perfil.rango)}\n⚡ Energía: ${perfil.energia}/${MAX_ENERGIA}` });
+      await sock.sendMessage(chat, { text: `🎃🕯️ ═══ RITUAL DE OCTUBRE COMPLETADO ═══ 🕯️🎃\n\n${extra}\n✨ Experiencia mágica: ${perfil.experienciaMagica}\n📕 Rango: ${nombreRango(perfil.rango)}\n⚡ Energía: ${perfil.energia}/${MAX_ENERGIA}` });
       guardarJSON(USERS_FILE, db);
       return true;
     }
@@ -355,28 +363,30 @@ ${lista}
       if (nombreHechizo === "niegranegra") nombreHechizo = "niebla";
       const h = hechizos[nombreHechizo];
       if (!h) {
-        await sock.sendMessage(chat, { text: `📖 Hechizo desconocido: ${nombreHechizo}.\nUsa .libro para ver tus hechizos desbloqueados.` });
+        await sock.sendMessage(chat, { text: `🎃📖 Hechizo desconocido: ${nombreHechizo}.\n🕸️ Usa .libro para consultar las páginas desbloqueadas del grimorio.` });
         guardarJSON(USERS_FILE, db);
         return true;
       }
       if (nombreHechizo === "supremo" && !esPropietario) {
-        await sock.sendMessage(chat, { text: "👑 El Edicto del Grimorio está sellado para el propietario de TITANBOT." });
+        await sock.sendMessage(chat, { text: "🎃👑 El Edicto del Grimorio permanece sellado; solo el propietario de TITANBOT puede pronunciarlo." });
         guardarJSON(USERS_FILE, db);
         return true;
       }
       if (!perfil.hechizos.includes(nombreHechizo) && nombreHechizo !== "supremo" && !esPropietario) {
-        await sock.sendMessage(chat, { text: `🔒 ${h.nombre} aún está sellado. Desbloquéalo mediante .ritual.` });
+        await sock.sendMessage(chat, { text: `🎃🔒 ${h.nombre} aún está sellado entre las páginas prohibidas.
+🔥 Intenta desbloquearlo mediante .ritual.` });
         guardarJSON(USERS_FILE, db);
         return true;
       }
       if (nombreHechizo !== "supremo" && perfil.rango < h.rango && !esPropietario) {
-        await sock.sendMessage(chat, { text: `🔒 Necesitas rango ${h.rango} para usar ${h.nombre}.` });
+        await sock.sendMessage(chat, { text: `🎃🔒 Las sombras aún no te reconocen. Necesitas rango ${h.rango} para usar ${h.nombre}.` });
         guardarJSON(USERS_FILE, db);
         return true;
       }
       const coste = esPropietario ? 0 : h.coste;
       if (!cobrar(perfil, coste)) {
-        await sock.sendMessage(chat, { text: `⚡ Energía insuficiente. ${h.nombre} cuesta ${coste}; tienes ${perfil.energia}.` });
+        await sock.sendMessage(chat, { text: `🎃⚡ La energía oscura es insuficiente para ${h.nombre}.
+🕯️ Coste: ${coste} | Disponible: ${perfil.energia}` });
         guardarJSON(USERS_FILE, db);
         return true;
       }
@@ -384,7 +394,7 @@ ${lista}
       if (menciones.length && nombreHechizo !== "supremo") {
         const dbObjetivo = obtenerPerfil(db, objetivoKey);
         if (dbObjetivo.proteccionHasta > Date.now() && !esPropietario) {
-          await sock.sendMessage(chat, { text: `🛡️ El escudo de @${objetivoKey.split("@")[0]} desvía el hechizo.`, mentions: [objetivo] });
+          await sock.sendMessage(chat, { text: `🎃🛡️ ¡El escudo de @${objetivoKey.split("@")[0]} desvía el conjuro entre chispas mágicas!`, mentions: [objetivo] });
           guardarJSON(USERS_FILE, db);
           return true;
         }
@@ -395,7 +405,7 @@ ${lista}
       const poder = nombreHechizo === "supremo"
         ? "👑 La voluntad del propietario se impone: todos reconocen la autoridad del Grimorio."
         : `${h.emoji} ${h.descripcion}`;
-      await sock.sendMessage(chat, { text: `📕 ══ ${h.nombre.toUpperCase()} ══ 📕\n\n${poder}${targetText}\n\n🜏 Portador: @${actor.split("@")[0]}\n⚡ Energía: ${perfil.energia}/${MAX_ENERGIA}`, mentions: menciones.length ? [actor, objetivo] : [actor] });
+      await sock.sendMessage(chat, { text: `🎃📕 ══ ${h.nombre.toUpperCase()} ══ 📕🎃\n\n${poder}${targetText}\n\n🜏 Portador: @${actor.split("@")[0]}\n⚡ Energía: ${perfil.energia}/${MAX_ENERGIA}`, mentions: menciones.length ? [actor, objetivo] : [actor] });
       guardarJSON(USERS_FILE, db);
       return true;
     }
@@ -403,7 +413,7 @@ ${lista}
     return false;
   } catch (error) {
     console.error("📕 Error en Libro Prohibido:", error);
-    await sock.sendMessage(chat, { text: "📕 El grimorio no pudo completar el conjuro. Inténtalo de nuevo." }).catch(() => {});
+    await sock.sendMessage(chat, { text: "🎃📕 Las páginas del grimorio se agitaron y el conjuro falló. Inténtalo de nuevo. 🕯️" }).catch(() => {});
     guardarJSON(USERS_FILE, db);
     return true;
   }
