@@ -1,14 +1,15 @@
+// commands/play.js
+// TITANBOT - Play con miniatura, sin enviar audio
+
 const ytSearch = require("yt-search");
-const axios = require("axios");
-const { playaudio } = require("../lib/playaudio");
 
 async function play(sock, chat, comando, args, id, msg) {
   try {
-    if (!args || !args.length) {
+    if (!args || args.length === 0) {
       await sock.sendMessage(
         chat,
         {
-          text: "🎵 Escribe el nombre de una canción.\nEjemplo: .play Bad Bunny"
+          text: "🎵 Escribe el nombre de una canción.\n\nEjemplo: .play Bad Bunny"
         },
         { quoted: msg }
       );
@@ -19,7 +20,7 @@ async function play(sock, chat, comando, args, id, msg) {
 
     await sock.sendMessage(
       chat,
-      { text: `🔎 Buscando: ${consulta}` },
+      { text: `🔎 Buscando: ${consulta}...` },
       { quoted: msg }
     );
 
@@ -29,41 +30,41 @@ async function play(sock, chat, comando, args, id, msg) {
     if (!video) {
       await sock.sendMessage(
         chat,
-        { text: "❌ No encontré esa canción." },
+        { text: "❌ No encontré ninguna canción." },
         { quoted: msg }
       );
       return true;
     }
 
-    await sock.sendMessage(
-      chat,
-      {
-        image: { url: video.thumbnail },
-        caption:
-          `🎵 *${video.title}*\n\n` +
-          `👤 Canal: ${video.author?.name || "Desconocido"}\n` +
-          `⏱️ Duración: ${video.timestamp || "Desconocida"}\n` +
-          `🔗 ${video.url}\n\n` +
-          "⏳ Preparando el MP3..."
-      },
-      { quoted: msg }
-    );
+    const mensaje =
+      `🎵 *TITANBOT PLAY*\n\n` +
+      `🎶 *Título:* ${video.title}\n` +
+      `👤 *Canal:* ${video.author?.name || "Desconocido"}\n` +
+      `⏱️ *Duración:* ${video.timestamp || "Desconocida"}\n` +
+      `👁️ *Vistas:* ${
+        video.views != null
+          ? Number(video.views).toLocaleString("es-CO")
+          : "No disponibles"
+      }\n\n` +
+      `🔗 *Escuchar en YouTube:*\n${video.url}\n\n` +
+      `✨ _TITANBOT · Música_`;
 
-    const descarga = await playaudio.download(video.url, "128k");
-
-    if (!descarga?.buffer?.length) {
-      throw new Error("La API no devolvió audio.");
+    if (video.thumbnail) {
+      await sock.sendMessage(
+        chat,
+        {
+          image: { url: video.thumbnail },
+          caption: mensaje
+        },
+        { quoted: msg }
+      );
+    } else {
+      await sock.sendMessage(
+        chat,
+        { text: mensaje },
+        { quoted: msg }
+      );
     }
-
-    await sock.sendMessage(
-      chat,
-      {
-        audio: descarga.buffer,
-        mimetype: "audio/mpeg",
-        fileName: descarga.fileName || "audio.mp3"
-      },
-      { quoted: msg }
-    );
 
     return true;
   } catch (error) {
@@ -72,9 +73,7 @@ async function play(sock, chat, comando, args, id, msg) {
     await sock.sendMessage(
       chat,
       {
-        text:
-          "❌ No pude obtener el audio.\n" +
-          "La API puede estar caída o haber rechazado la conversión."
+        text: "❌ No pude buscar la canción. Inténtalo de nuevo."
       },
       { quoted: msg }
     ).catch(() => {});
