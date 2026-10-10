@@ -3,12 +3,21 @@ const fs = require("fs");
 
 // =====================================================
 // 🎃 TITANBOT - COMANDOS DE HALLOWEEN
-// Comandos: dulce, susto, maldicion
-// Multimedia: ../media/dulce.mp4
+// Comandos: dulce, susto, maldicion,
+//           asustar, bailar, comer, invocar
 // =====================================================
 
 const cooldowns = new Map();
 const COOLDOWN_MS = 10_000;
+
+// 🎞️ Archivos multimedia
+const animaciones = {
+  dulce: "dulce.mp4",
+  asustar: "asustar.mp4",
+  bailar: "bailar.mp4",
+  comer: "comer.mp4",
+  invocar: "invocar.mp4"
+};
 
 const dulces = [
   "🍬 Encontraste una bolsa de caramelos mágicos.",
@@ -50,12 +59,21 @@ module.exports = async function halloween(
   id,
   msg
 ) {
-  const comandos = ["dulce", "susto", "maldicion"];
+  const comandos = [
+    "dulce",
+    "susto",
+    "maldicion",
+    "asustar",
+    "bailar",
+    "comer",
+    "invocar"
+  ];
 
   if (!comandos.includes(comando)) {
     return false;
   }
 
+  // ⏳ COOLDOWN POR COMANDO
   const key = obtenerCooldownKey(chat, id, comando);
   const ahora = Date.now();
   const ultimoUso = cooldowns.get(key) || 0;
@@ -99,7 +117,7 @@ module.exports = async function halloween(
   }
 
   // 👻 COMANDO .susto
-  if (comando === "susto") {
+  else if (comando === "susto") {
     texto =
       "🌑👻 *MODO SUSTO ACTIVADO* 👻🌑\n\n" +
       elegir(sustos) +
@@ -107,18 +125,49 @@ module.exports = async function halloween(
   }
 
   // 🔮 COMANDO .maldicion
-  if (comando === "maldicion") {
+  else if (comando === "maldicion") {
     texto =
       "🔮💀 *EL ORÁCULO DE HALLOWEEN* 💀🔮\n\n" +
       elegir(maldiciones) +
       "\n\n🎃 ¡La maldición es ficticia y solo por diversión!";
   }
 
-  // 🎞️ GIF/VIDEO PARA .dulce
-  if (comando === "dulce") {
+  // 😱 COMANDO .asustar
+  else if (comando === "asustar") {
+    texto =
+      "😱🎃 *¡PREPÁRATE PARA EL SUSTO!* 🎃😱\n\n" +
+      "👻 ¡Una presencia misteriosa ha aparecido!";
+  }
+
+  // 💃 COMANDO .bailar
+  else if (comando === "bailar") {
+    texto =
+      "💀🕺 *¡BAILE DE LOS MUERTOS!* 🕺💀\n\n" +
+      "🎶 ¡Que comience la fiesta de Halloween!";
+  }
+
+  // 🍬 COMANDO .comer
+  else if (comando === "comer") {
+    texto =
+      "🍭🍫 *¡HORA DE LOS DULCES!* 🍫🍭\n\n" +
+      "🎃 ¡Los monstruos también tienen hambre!";
+  }
+
+  // 🔮 COMANDO .invocar
+  else if (comando === "invocar") {
+    texto =
+      "🔮🌑 *RITUAL DE HALLOWEEN* 🌑🔮\n\n" +
+      "🦇 ¡Una misteriosa criatura responde a la invocación!";
+  }
+
+  // 🎞️ ENVIAR ANIMACIÓN O MENSAJE
+  const nombreArchivo = animaciones[comando];
+
+  if (nombreArchivo) {
     const archivo = path.join(
       __dirname,
-      "../media/dulce.mp4"
+      "../media",
+      nombreArchivo
     );
 
     try {
@@ -129,7 +178,7 @@ module.exports = async function halloween(
       const video = fs.readFileSync(archivo);
 
       if (video.length === 0) {
-        throw new Error("El archivo dulce.mp4 está vacío");
+        throw new Error(`El archivo ${nombreArchivo} está vacío`);
       }
 
       await sock.sendMessage(
@@ -144,7 +193,7 @@ module.exports = async function halloween(
       );
     } catch (error) {
       console.error(
-        "[HALLOWEEN] Error al enviar la animación:",
+        `[HALLOWEEN] Error con ${comando}:`,
         error
       );
 
@@ -153,13 +202,13 @@ module.exports = async function halloween(
         {
           text:
             texto +
-            "\n\n⚠️ No se pudo enviar la animación de Halloween."
+            `\n\n⚠️ No se pudo enviar la animación ${nombreArchivo}.`
         },
         { quoted: msg }
       );
     }
   } else {
-    // Enviar texto para .susto y .maldicion
+    // Mensajes de .susto y .maldicion
     await sock.sendMessage(
       chat,
       { text: texto },
