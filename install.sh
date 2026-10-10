@@ -13,7 +13,7 @@ echo "ERROR: Este instalador está diseñado para Termux."
 exit 1
 fi
 
-#Instalar herramientas necesarias
+# Instalar herramientas necesarias
 
 echo "[1/4] Instalando dependencias del sistema..."
 pkg update -y
