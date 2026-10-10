@@ -4,7 +4,7 @@ const fs = require("fs");
 // =====================================================
 // 🎃 TITANBOT - COMANDOS DE HALLOWEEN
 // Comandos: dulce, susto, maldicion
-// Archivo multimedia: ../media/dulce.mp4
+// Multimedia: ../media/dulce.mp4
 // =====================================================
 
 const cooldowns = new Map();
@@ -52,7 +52,9 @@ module.exports = async function halloween(
 ) {
   const comandos = ["dulce", "susto", "maldicion"];
 
-  if (!comandos.includes(comando)) return false;
+  if (!comandos.includes(comando)) {
+    return false;
+  }
 
   const ahora = Date.now();
   const key = obtenerCooldownKey(chat, id, comando);
@@ -114,9 +116,6 @@ module.exports = async function halloween(
       "\n\n🎃 ¡La maldición es ficticia y solo por diversión!";
   }
 
-  // Registrar el uso del comando.
-  cooldowns.set(key, ahora);
-
   // 🎞️ ENVIAR ANIMACIÓN EN .dulce
   if (comando === "dulce") {
     const archivo = path.join(
@@ -126,15 +125,19 @@ module.exports = async function halloween(
 
     try {
       if (!fs.existsSync(archivo)) {
-        throw new Error(`No se encontró el archivo: ${archivo}`);
+        throw new Error("No existe el archivo media/dulce.mp4");
       }
 
       const video = fs.readFileSync(archivo);
 
+      if (video.length === 0) {
+        throw new Error("El archivo dulce.mp4 está vacío");
+      }
+
       await sock.sendMessage(
         chat,
         {
-          video,
+          video: video,
           mimetype: "video/mp4",
           gifPlayback: true,
           caption: texto
@@ -149,11 +152,16 @@ module.exports = async function halloween(
 
       await sock.sendMessage(
         chat,
-        { text: texto },
+        {
+          text:
+            texto +
+            "\n\n⚠️ No se pudo enviar la animación de Halloween."
+        },
         { quoted: msg }
       );
     }
   } else {
+    // Enviar texto para .susto y .maldicion
     await sock.sendMessage(
       chat,
       { text: texto },
@@ -161,5 +169,9 @@ module.exports = async function halloween(
     );
   }
 
+  // Registrar el uso después de procesar el comando.
+  cooldowns.set(key, Date.now());
+
   return true;
 };
+  
