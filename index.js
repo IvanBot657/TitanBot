@@ -44,6 +44,7 @@ const  isla = require ( "./commands/isla" ) ;
 const  duelo = require ( "./commands/duelo" ) ;
 const  boss = require ( "./commands/Juegos/boss" ) ;
 const temporada = require("./commands/temporada");
+const play = require("./commands/play");
 
 const PORT = process.env.PORT || 10000;
 
@@ -1985,6 +1986,26 @@ ${resultadoXP.nivel}
             // =========================================
 
             let ejecutado = false;
+
+            // =========================================
+            // 🎵 PLAY: búsqueda, portada y audio
+            // Debe ir al inicio para que otros módulos
+            // no intercepten el comando.
+            // =========================================
+            if (!ejecutado) {
+              const resultadoPlay = await play(
+                sock,
+                chat,
+                comando,
+                args,
+                id,
+                msg
+              );
+
+              if (resultadoPlay !== false) {
+                ejecutado = true;
+              }
+            }
 
             // =========================================
             // 🔒 ENRUTAMIENTO EXCLUSIVO DE COMANDOS
