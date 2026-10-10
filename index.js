@@ -2402,6 +2402,26 @@ ${resultadoXP.nivel}
 
 
             // ========================================
+            // 🎵 COMANDO PLAY
+           // ========================================
+
+           if (!ejecutado && comando === "play") {
+            const resultado = await play(
+              sock,
+              chat,
+              comando,
+              args,
+              id,
+              msg
+            );
+
+            if (resultado !== false) {
+             ejecutado = true;
+          }
+       }
+
+
+            // ========================================
             // EVENTOS DEL GRUPO
            // ========================================
 
