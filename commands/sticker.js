@@ -1,5 +1,6 @@
-// commands/sticker.js
-// TitanBot - Sistema de Stickers
+// ========================================
+// 🎨 TITANBOT - SISTEMA DE STICKERS
+// ========================================
 
 const {
   downloadMediaMessage
@@ -8,7 +9,7 @@ const {
 const sharp = require("sharp");
 
 // ========================================
-// MENSAJE CITADO
+// 📩 MENSAJE CITADO
 // ========================================
 
 function obtenerMensajeCitado(msg) {
@@ -23,34 +24,30 @@ function obtenerMensajeCitado(msg) {
     key: {
       remoteJid: msg.key.remoteJid,
       id: contexto.stanzaId,
-      participant: contexto.participant
+      participant: contexto.participant,
+      fromMe: false
     },
     message: contexto.quotedMessage
   };
 }
 
 // ========================================
-// BUSCAR MEDIA
+// 🔎 BUSCAR IMAGEN O STICKER
 // ========================================
 
 function obtenerMedia(msg) {
-  if (!msg?.message) return null;
+  const mensaje = msg?.message;
 
-  if (msg.message.imageMessage) {
+  if (!mensaje) return null;
+
+  if (mensaje.imageMessage) {
     return {
       tipo: "imagen",
       mensaje: msg
     };
   }
 
-  if (msg.message.videoMessage) {
-    return {
-      tipo: "video",
-      mensaje: msg
-    };
-  }
-
-  if (msg.message.stickerMessage) {
+  if (mensaje.stickerMessage) {
     return {
       tipo: "sticker",
       mensaje: msg
@@ -61,7 +58,7 @@ function obtenerMedia(msg) {
 }
 
 // ========================================
-// DESCARGAR MEDIA
+// 📥 DESCARGAR ARCHIVO
 // ========================================
 
 async function descargarMedia(sock, mensaje) {
@@ -70,20 +67,49 @@ async function descargarMedia(sock, mensaje) {
     "buffer",
     {},
     {
-      logger: undefined,
+      logger: console,
       reuploadRequest: sock.updateMediaMessage
     }
   );
+
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+    throw new Error("La descarga no devolvió una imagen válida.");
+  }
 
   return buffer;
 }
 
 // ========================================
-// CREAR STICKER
+// 🧪 VALIDAR IMAGEN
+// ========================================
+
+async function validarImagen(buffer) {
+  try {
+    const metadata = await sharp(buffer, {
+      failOn: "error"
+    }).metadata();
+
+    if (!metadata.width || !metadata.height) {
+      throw new Error("La imagen no tiene dimensiones válidas.");
+    }
+
+    return metadata;
+  } catch (error) {
+    throw new Error(
+      `Formato de imagen no compatible o archivo dañado: ${error.message}`
+    );
+  }
+}
+
+// ========================================
+// 🎨 CONVERTIR A STICKER WEBP
 // ========================================
 
 async function convertirASticker(buffer) {
-  return await sharp(buffer)
+  await validarImagen(buffer);
+
+  return sharp(buffer)
+    .rotate()
     .resize(512, 512, {
       fit: "contain",
       background: {
@@ -94,21 +120,30 @@ async function convertirASticker(buffer) {
       }
     })
     .webp({
-      quality: 85
+      quality: 85,
+      effort: 4
     })
     .toBuffer();
 }
 
 // ========================================
-// COMANDO PRINCIPAL
+// 📝 ESCAPAR TEXTO PARA SVG
 // ========================================
 
-async function sticker(
-  sock,
-  msg,
-  comando,
-  args = []
-) {
+function escaparTexto(texto) {
+  return texto
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+// ========================================
+// 🚀 COMANDO PRINCIPAL
+// ========================================
+
+async function sticker(sock, msg, comando, args = []) {
   try {
     if (!msg?.key?.remoteJid) {
       return true;
@@ -121,34 +156,20 @@ async function sticker(
       .replace(/^\./, "");
 
     // ====================================
-    // .sticker
+    // 🎨 .sticker
     // ====================================
 
     if (comando === "sticker") {
-      const citado =
-        obtenerMensajeCitado(msg);
+      const citado = obtenerMensajeCitado(msg);
 
-      let mensajeMedia = null;
+      const mediaDirecta = obtenerMedia(msg);
+      const mediaCitada = citado
+        ? obtenerMedia(citado)
+        : null;
 
-      // Imagen/video enviado junto al comando
-      const mediaDirecta =
-        obtenerMedia(msg);
-
-      if (mediaDirecta) {
-        mensajeMedia =
-          mediaDirecta.mensaje;
-      }
-
-      // Imagen/video citado
-      if (!mensajeMedia && citado) {
-        const mediaCitada =
-          obtenerMedia(citado);
-
-        if (mediaCitada) {
-          mensajeMedia =
-            mediaCitada.mensaje;
-        }
-      }
+      const mensajeMedia =
+        mediaDirecta?.mensaje ||
+        mediaCitada?.mensaje;
 
       if (!mensajeMedia) {
         await sock.sendMessage(
@@ -156,9 +177,9 @@ async function sticker(
           {
             text:
               "🎨 *STICKER*\n\n" +
-              "Envía una imagen y responde con:\n" +
-              "*.sticker*\n\n" +
-              "También puedes responder a un video corto."
+              "1. Envía una imagen y escribe *.sticker* en el texto.\n" +
+              "2. O responde a una imagen con *.sticker*.\n\n" +
+              "Nota: los videos no se convierten en esta versión."
           },
           { quoted: msg }
         );
@@ -166,20 +187,16 @@ async function sticker(
         return true;
       }
 
-      const buffer =
-        await descargarMedia(
-          sock,
-          mensajeMedia
-        );
+      const buffer = await descargarMedia(
+        sock,
+        mensajeMedia
+      );
 
-      const webp =
-        await convertirASticker(buffer);
+      const webp = await convertirASticker(buffer);
 
       await sock.sendMessage(
         chat,
-        {
-          sticker: webp
-        },
+        { sticker: webp },
         { quoted: msg }
       );
 
@@ -187,12 +204,11 @@ async function sticker(
     }
 
     // ====================================
-    // .stickertexto
+    // 📝 .stickertexto
     // ====================================
 
     if (comando === "stickertexto") {
-      const texto =
-        args.join(" ").trim();
+      const texto = args.join(" ").trim();
 
       if (!texto) {
         await sock.sendMessage(
@@ -200,9 +216,8 @@ async function sticker(
           {
             text:
               "📝 *STICKER DE TEXTO*\n\n" +
-              "Escribe el texto.\n\n" +
               "Ejemplo:\n" +
-              ".stickertexto Hola TitanBot 🤖"
+              ".stickertexto Hola TitanBot"
           },
           { quoted: msg }
         );
@@ -210,12 +225,8 @@ async function sticker(
         return true;
       }
 
-      const textoSeguro =
-        texto
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;");
+      const textoSeguro = escaparTexto(texto)
+        .replace(/\r?\n/g, " ");
 
       const svg = `
         <svg
@@ -226,39 +237,44 @@ async function sticker(
           <rect
             width="512"
             height="512"
-            rx="70"
+            rx="55"
             fill="white"
           />
-
-          <text
-            x="256"
-            y="256"
-            text-anchor="middle"
-            dominant-baseline="middle"
-            font-family="Arial"
-            font-size="46"
-            font-weight="bold"
-            fill="black"
+          <foreignObject
+            x="30"
+            y="30"
+            width="452"
+            height="452"
           >
-            ${textoSeguro}
-          </text>
+            <div
+              xmlns="http://www.w3.org/1999/xhtml"
+              style="
+                width:452px;
+                height:452px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                text-align:center;
+                overflow-wrap:anywhere;
+                font-family:Arial,sans-serif;
+                font-size:36px;
+                font-weight:bold;
+                color:black;
+              "
+            >${textoSeguro}</div>
+          </foreignObject>
         </svg>
       `;
 
-      const webp =
-        await sharp(
-          Buffer.from(svg)
-        )
-          .webp({
-            quality: 90
-          })
-          .toBuffer();
+      const webp = await sharp(
+        Buffer.from(svg)
+      )
+        .webp({ quality: 90 })
+        .toBuffer();
 
       await sock.sendMessage(
         chat,
-        {
-          sticker: webp
-        },
+        { sticker: webp },
         { quoted: msg }
       );
 
@@ -266,12 +282,11 @@ async function sticker(
     }
 
     // ====================================
-    // .toimg
+    // 🖼️ .toimg
     // ====================================
 
     if (comando === "toimg") {
-      const citado =
-        obtenerMensajeCitado(msg);
+      const citado = obtenerMensajeCitado(msg);
 
       if (!citado?.message?.stickerMessage) {
         await sock.sendMessage(
@@ -287,23 +302,22 @@ async function sticker(
         return true;
       }
 
-      const buffer =
-        await descargarMedia(
-          sock,
-          citado
-        );
+      const buffer = await descargarMedia(
+        sock,
+        citado
+      );
 
-      const imagen =
-        await sharp(buffer)
-          .png()
-          .toBuffer();
+      await validarImagen(buffer);
+
+      const imagen = await sharp(buffer)
+        .png()
+        .toBuffer();
 
       await sock.sendMessage(
         chat,
         {
           image: imagen,
-          caption:
-            "🖼️ Sticker convertido a imagen."
+          caption: "🖼️ Sticker convertido a imagen."
         },
         { quoted: msg }
       );
@@ -312,19 +326,18 @@ async function sticker(
     }
 
     // ====================================
-    // .take
+    // ✏️ .take
     // ====================================
 
     if (comando === "take") {
-      const citado =
-        obtenerMensajeCitado(msg);
+      const citado = obtenerMensajeCitado(msg);
 
       if (!citado?.message?.stickerMessage) {
         await sock.sendMessage(
           chat,
           {
             text:
-              "✏️ Responde directamente a un sticker con:\n" +
+              "✏️ Responde a un sticker con:\n" +
               "*.take TitanBot*"
           },
           { quoted: msg }
@@ -333,20 +346,16 @@ async function sticker(
         return true;
       }
 
-      const buffer =
-        await descargarMedia(
-          sock,
-          citado
-        );
+      const buffer = await descargarMedia(
+        sock,
+        citado
+      );
 
-      const webp =
-        await convertirASticker(buffer);
+      const webp = await convertirASticker(buffer);
 
       await sock.sendMessage(
         chat,
-        {
-          sticker: webp
-        },
+        { sticker: webp },
         { quoted: msg }
       );
 
@@ -354,7 +363,7 @@ async function sticker(
     }
 
     // ====================================
-    // COMANDO NO ES DE STICKERS
+    // ❌ COMANDO NO RECONOCIDO AQUÍ
     // ====================================
 
     return false;
@@ -370,7 +379,8 @@ async function sticker(
         msg.key.remoteJid,
         {
           text:
-            "❌ No pude crear/procesar el sticker."
+            "❌ No pude procesar el sticker.\n\n" +
+            `Motivo: ${error.message}`
         },
         { quoted: msg }
       );
