@@ -1,6 +1,6 @@
 // =========================================
 // 🎰 TITANBOT - RULETA
-// Máximo 4 participantes aleatorios
+// Máximo 4 participantes
 // =========================================
 
 const resultados = [
