@@ -2811,10 +2811,11 @@ ${resultadoXP.nivel}
               "bailar",
               "comer",
               "suspiro",
-              "luna",
-              "roja",
+              "lunaroja",
               "morder",
-              "elegancia"
+              "elegancia",
+              "gifbailar",
+              "gifinvocar"
             ]);
 
             if (!ejecutado && comandosHalloween.has(comando)) {
