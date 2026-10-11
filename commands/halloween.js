@@ -16,9 +16,9 @@ const COOLDOWN_MS = 10_000;
 const animaciones = {
   dulce: "dulce.mp4",
   asustar: "asustar.mp4",
-  baila: "bailar.mp4",
+  bailar: "bailar.mp4",
   comer: "comer.mp4",
-  invoca: "invocar.mp4",
+  invocar: "invocar.mp4",
 
   // 🩸 Nuevos videos
   suspiro: "suspiro.mp4",
@@ -80,9 +80,9 @@ module.exports = async function halloween(
     "susto",
     "maldicion",
     "asustar",
-    "baila",
+    "bailar",
     "comer",
-    "invoca",
+    "invocar",
     "suspiro",
     "lunaroja",
     "morder",
