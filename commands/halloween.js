@@ -1,12 +1,9 @@
-
 const path = require("path");
 const fs = require("fs");
 
 // =====================================================
 // 🎃 TITANBOT - COMANDOS DE HALLOWEEN
-// Comandos: dulce, susto, maldicion, asustar,
-// bailar, comer, invocar, suspiro, lunaroja,
-// morder, elegancia
+// GIFs separados de los comandos normales.
 // =====================================================
 
 const cooldowns = new Map();
@@ -16,15 +13,16 @@ const COOLDOWN_MS = 10_000;
 const animaciones = {
   dulce: "dulce.mp4",
   asustar: "asustar.mp4",
-  bailar: "bailar.mp4",
   comer: "comer.mp4",
-  invocar: "invocar.mp4",
 
-  // 🩸 Nuevos videos
   suspiro: "suspiro.mp4",
   lunaroja: "luna-roja.mp4",
   morder: "morder.mp4",
-  elegancia: "elegancia.mp4"
+  elegancia: "elegancia.mp4",
+
+  // 🎞️ GIFs independientes
+  gifbailar: "bailar.mp4",
+  gifinvocar: "invocar.mp4"
 };
 
 // 🍬 Mensajes de dulces
@@ -75,25 +73,28 @@ module.exports = async function halloween(
     .trim()
     .replace(/^\./, "");
 
+  // ✅ Comandos que procesa este archivo.
+  // bailar e invocar quedan reservados para sus
+  // comandos normales en index.js u otros módulos.
   const comandos = [
     "dulce",
     "susto",
     "maldicion",
     "asustar",
-    "bailar",
     "comer",
-    "invocar",
     "suspiro",
     "lunaroja",
     "morder",
-    "elegancia"
+    "elegancia",
+    "gifbailar",
+    "gifinvocar"
   ];
 
   if (!comandos.includes(comando)) {
     return false;
   }
 
-  // ⏳ COOLDOWN POR COMANDO
+  // ⏳ Tiempo de espera por comando
   const key = obtenerCooldownKey(chat, id, comando);
   const ahora = Date.now();
   const ultimoUso = cooldowns.get(key) || 0;
@@ -159,25 +160,11 @@ module.exports = async function halloween(
       "👻 ¡Una presencia misteriosa ha aparecido!";
   }
 
-  // 💃 COMANDO .bailar
-  else if (comando === "bailar") {
-    texto =
-      "💀🕺 *¡BAILE DE LOS MUERTOS!* 🕺💀\n\n" +
-      "🎶 ¡Que comience la fiesta de Halloween!";
-  }
-
   // 🍬 COMANDO .comer
   else if (comando === "comer") {
     texto =
       "🍭🍫 *¡HORA DE LOS DULCES!* 🍫🍭\n\n" +
       "🎃 ¡Los monstruos también tienen hambre!";
-  }
-
-  // 🔮 COMANDO .invocar
-  else if (comando === "invocar") {
-    texto =
-      "🔮🌑 *RITUAL DE HALLOWEEN* 🌑🔮\n\n" +
-      "🦇 ¡Una misteriosa criatura responde a la invocación!";
   }
 
   // 🖤 COMANDO .suspiro
@@ -208,7 +195,21 @@ module.exports = async function halloween(
       "El estilo oscuro nunca pasa desapercibido.";
   }
 
-  // 🎞️ ENVIAR ANIMACIÓN O MENSAJE
+  // 🎞️ GIF DE BAILAR
+  else if (comando === "gifbailar") {
+    texto =
+      "💀🕺 *¡BAILE DE LOS MUERTOS!* 🕺💀\n\n" +
+      "🎶 ¡Que comience la fiesta de Halloween!";
+  }
+
+  // 🔮 GIF DE INVOCAR
+  else if (comando === "gifinvocar") {
+    texto =
+      "🔮🌑 *RITUAL DE HALLOWEEN* 🌑🔮\n\n" +
+      "🦇 ¡Una misteriosa criatura responde a la invocación!";
+  }
+
+  // 🎞️ ENVIAR ANIMACIÓN
   const nombreArchivo = animaciones[comando];
 
   if (nombreArchivo) {
