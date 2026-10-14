@@ -1,28 +1,33 @@
-🤖 TITANBOT
+🤖 TITANBOT ⚡ — Busco colaboradores
 
-Bot de WhatsApp desarrollado con Node.js y Baileys.
+¡Hola, comunidad! 👋
 
-📱 Instalación en Termux
+Estoy desarrollando TITANBOT, un bot de WhatsApp creado con Node.js. El proyecto está en constante desarrollo y quiero seguir mejorándolo con ayuda de otros programadores.
 
-Instala Git y curl:
+🛠️ Tecnologías
 
-pkg update -y
-pkg install -y git curl
+- Node.js y JavaScript
+- Baileys para la conexión con WhatsApp
+- Express para funciones web y servicios
+- PostgreSQL y otras herramientas para ampliar sus funciones
 
-Ejecuta el instalador oficial:
+🚀 ¿En qué quiero colaborar?
 
-bash <(curl -fsSL https://raw.githubusercontent.com/IvanBot657/TitanBot/main/install.sh)
+Busco personas interesadas en ayudar con:
 
-🔗 Conexión de WhatsApp
+- Crear nuevos comandos y sistemas.
+- Mejorar los comandos existentes.
+- Corregir errores y optimizar el código.
+- Desarrollar funciones web y nuevas características.
+- Probar el bot y compartir ideas.
 
-Sigue las instrucciones que muestre TITANBOT para vincular tu propia cuenta mediante QR o código de vinculación, según las opciones disponibles.
+🤝 ¿Quién puede participar?
 
-🔐 Seguridad
+Programadores principiantes o experimentados que quieran aprender, compartir conocimientos y trabajar en equipo.
 
-- No compartas tus archivos de sesión.
-- No publiques claves API ni contraseñas.
-- Cada usuario debe vincular su propia cuenta de WhatsApp.
+Proyecto: TITANBOT ⚡
+Repositorio: [Pega aquí el enlace de tu GitHub]
 
-👨‍💻 Repositorio
+Si te interesa colaborar, puedes dejar una propuesta o abrir una conversación para que organicemos las tareas.
 
-https://github.com/IvanBot657/TitanBot
+¡Gracias por apoyar el desarrollo de TITANBOT! 🚀
