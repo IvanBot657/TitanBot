@@ -2,7 +2,7 @@
 version: 1
 type: worker
 build:
-  framework: node
+  framework: auto
 run:
-  command: node index.js
+  command: "node index.js"
   
