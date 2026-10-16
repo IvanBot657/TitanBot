@@ -1,0 +1,8 @@
+
+version: 1
+type: worker
+build:
+  framework: node
+run:
+  command: node index.js
+  
