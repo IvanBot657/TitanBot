@@ -262,15 +262,17 @@ await sock.sendMessage(chat, {
 🦇🕸️╞══════🎃══════╡🕸️🦇
 
 ━━〔 👻 HALLOWEEN TITAN 〕━━━╮
-┃ • .dulce 
-┃ • .asustar 
-┃ • .gifibailar 
-┃ • .comer 
-┃ • .gifinvocar 
-┃ • .suspiro 
+┃ • .dulce
+┃ • .susto
+┃ • .maldicion
+┃ • .asustar
+┃ • .comer
+┃ • .suspiro
 ┃ • .lunaroja
-┃ • .morder 
-┃ • .elegancia              
+┃ • .morder
+┃ • .elegancia
+┃ • .gifbailar
+┃ • .gifinvocar            
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
 🕷️🦇═══════🎃═══════🦇🕷️
