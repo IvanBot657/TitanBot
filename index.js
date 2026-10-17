@@ -2824,8 +2824,8 @@ ${resultadoXP.nivel}
             const comandosHalloween = new Set([
               "dulce",
               "susto",
+              "maldicion",
               "asustar",
-              "bailar",
               "comer",
               "suspiro",
               "lunaroja",
