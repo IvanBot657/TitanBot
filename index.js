@@ -2679,36 +2679,44 @@ ${resultadoXP.nivel}
 
             }
 
-
-               // =========================================
-               // 🐾 MASCOTA
+               
+              // =========================================
+              // 🐾 SISTEMA COMPLETO DE MASCOTAS
               // =========================================
 
               if (
-              !ejecutado &&
-             (
-              comando === "mascota" ||
-              comando === "crearmascota"
-             )
-           ) {
+                !ejecutado &&
+                [
+                  "mascota",
+                  "crearmascota",
+                  "alimentar",
+                  "jugar",
+                  "bañar",
+                  "banar",
+                  "dormir",
+                  "estado",
+                  "evolucionar",
+                  "tienda",
+                  "comprar",
+                  "inventario"
+                ].includes(comando)
+              ) {
+                const resultado =
+                  await mascotaCommand.ejecutarMascota(
+                    sock,
+                    chat,
+                    comando,
+                    args,
+                    id,
+                    msg
+                  );
 
-             const resultado =
-             await mascotaCommand.ejecutarMascota(
-               sock,
-               chat,
-               comando,
-               args,
-               id,
-               msg
-             );
+                if (resultado) {
+                  ejecutado = true;
+                }
+              }
 
-              if (resultado) {
-               ejecutado = true;
-             }
-
-          }
-
-
+            
             // =========================================
             // 🏝️ ISLA
             // =========================================
