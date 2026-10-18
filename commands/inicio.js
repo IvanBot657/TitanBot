@@ -449,6 +449,18 @@ await sock.sendMessage(chat, {
 ╰━━━━━━━━━━━━━━━━━━━━╯
 🪵🦇═══════🎃═══════🦇🪵
 
+🪵🦇═══════🎃═══════🦇🪵
+╭━━━〔 🌑 MAGICKA MÁXIMA 〕━━━╮ 
+┃ • .magicka 
+┃ • .magicka estado 
+┃ • .magicka despertar 
+┃ • .magicka entrenar 
+┃ • .magicka hechizo 
+┃ • .magicka maxima
+┃ • .magi 
+╰━━━━━━━━━━━━━━━━━━━━╯
+🪵🦇═══════🎃═══════🦇🪵
+
 🦇🕸️╞══════🎃══════╡🕸️🦇
 ╭━━━〔 ⚙️ CONFIGURACIÓN DEL GRUPO 〕━━━╮
 ┃ • .linkgrupo
