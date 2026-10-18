@@ -1,0 +1,33 @@
+// TITANBOT - VIDA PROPIA modular y extensible; integra con index.js existente.
+'use strict';
+const core=require('./vida');
+const {storage:db,safety,memory,planner,actions,conversation,events,analytics,moderation,personality,scheduler}=core;
+const COMMANDS=['vidapropia','vida-propia','vidatitan'];
+async function send(sock,chat,text){await sock.sendMessage(chat,{text:`🤖 *TITANBOT · VIDA PROPIA*\n\n${safety.cleanText(text,3000)}`});}
+function config(chat){const all=db.read('config',{});return all[chat]||{enabled:false};}
+function setEnabled(chat,enabled,actor){db.update('config',{},all=>{const c=all[chat]||(all[chat]={});c.enabled=enabled;c.enabledBy=String(actor||'').slice(0,100);c.updatedAt=db.now();});}
+function requireGroup(chat){return safety.isGroup(chat);}
+async function manejarMensaje(sock,chat,text,name='miembro',actor=''){ if(!requireGroup(chat)||!text||safety.isCommand(text))return false;const c=config(chat);if(!c.enabled)return false;try{return await conversation.process(sock,chat,text,name,actor);}catch(e){console.error('[VIDA PROPIA]',safety.safeError(e));analytics.increment(chat,'errors');return false;} }
+function help(){return `⚡ *VIDA PROPIA · COMANDOS*\n\n.vidapropia activar | desactivar | estado\n.vidapropia demo\n.vidapropia memoria\n.vidapropia recordar <texto>\n.vidapropia olvidar <texto>\n.vidapropia personalidad <titan|amigable|sabio|comediante|moderador>\n.vidapropia tono <texto>\n.vidapropia probabilidad <0-50>\n.vidapropia acciones\n.vidapropia estadisticas\n.vidapropia eventos\n.vidapropia ideas\n.vidapropia revisar\n.vidapropia ayuda\n\nLa autonomía solo ejecuta acciones incluidas en el registro seguro. Las acciones de administración del grupo no están habilitadas.`;}
+async function execute(sock,chat,comando,args=[],id,msg){if(!COMMANDS.includes(String(comando).toLowerCase()))return false;if(!requireGroup(chat)){await send(sock,chat,'Este sistema está diseñado para grupos de WhatsApp.');return true;}const action=String(args[0]||'estado').toLowerCase(),tail=args.slice(1).join(' ');try{
+if(['activar','on'].includes(action)){setEnabled(chat,true,id);await send(sock,chat,'✅ VIDA PROPIA activada. Participaré ocasionalmente y ejecutaré solo acciones permitidas.');return true;}
+if(['desactivar','off'].includes(action)){setEnabled(chat,false,id);await send(sock,chat,'🛑 VIDA PROPIA desactivada en este grupo.');return true;}
+if(['estado','status'].includes(action)){const c=config(chat),m=memory.stats(chat),a=analytics.report(chat);await send(sock,chat,`Estado: ${c.enabled?'🟢 ACTIVA':'🔴 DESACTIVADA'}\nPersonalidad: ${c.personality||personality.presets().titan}\nRecuerdos: ${m.facts}\nMensajes atendidos: ${a.messages}\nAcciones disponibles: ${actions.list().length}\nCooldown: ${Math.round((c.cooldownMs||600000)/60000)} min`);return true;}
+if(['ayuda','help','comandos'].includes(action)){await send(sock,chat,help());return true;}
+if(['demo','demostracion'].includes(action)){await send(sock,chat,'⚡ *DEMOSTRACIÓN SEGURA*\n\n1. Compruebo el módulo de acciones.\n2. Consulto memoria del grupo.\n3. Reviso límites de seguridad.\n4. Registro la prueba.\n\nNo he cambiado permisos ni ejecutado código externo.');analytics.record(chat,'demo',{actor:id||''});return true;}
+if(action==='memoria'){const s=memory.stats(chat),facts=memory.listFacts(chat).slice(-12);await send(sock,chat,`🧠 *MEMORIA DEL GRUPO*\nRecuerdos: ${s.facts}\nMensajes recientes: ${s.turns}\nPreferencias: ${s.preferences}\n\n${facts.map((f,i)=>`${i+1}. ${f.text}`).join('\n')||'Todavía no hay recuerdos.'}\n\nUsa .vidapropia recordar <texto> para guardar un dato no sensible.`);return true;}
+if(action==='recordar'){if(!tail){await send(sock,chat,'Uso: .vidapropia recordar <dato no sensible>');return true;}const r=memory.addFact(chat,tail,'comando');await send(sock,chat,r.ok?'🧠 Recuerdo guardado.':`No se guardó: ${r.reason}`);return true;}
+if(action==='olvidar'){const r=memory.removeFact(chat,tail);await send(sock,chat,r?'🧹 Recuerdo eliminado.':'No encontré ese recuerdo.');return true;}
+if(action==='personalidad'){const ok=personality.setPreset(chat,tail);await send(sock,chat,ok?`Personalidad configurada: ${tail}.`:`Opciones: ${Object.keys(personality.presets()).join(', ')}`);return true;}
+if(action==='tono'){const ok=personality.setPersonality(chat,tail);await send(sock,chat,ok?'Personalidad personalizada guardada.':'Escribe una descripción más larga.');return true;}
+if(action==='probabilidad'){const n=Number(tail);const ok=personality.setProbability(chat,n/100);await send(sock,chat,ok?`Probabilidad por mensaje elegible: ${n}%. Se mantiene el límite de frecuencia.`:'Usa un número entre 0 y 50.');return true;}
+if(action==='acciones'){await send(sock,chat,'⚙️ *ACCIONES REGISTRADAS*\n'+actions.list().map((x,i)=>`${i+1}. ${x}`).join('\n'));return true;}
+if(['estadisticas','stats'].includes(action)){const a=analytics.report(chat),daily=analytics.daily(chat);await send(sock,chat,`📊 *ESTADÍSTICAS*\nMensajes atendidos: ${a.messages}\nRespuestas en últimas 24 h: ${daily.speeches}\nErrores: ${a.errors}\nÚltima respuesta: ${a.lastSpoke||'ninguna'}\n\nAcciones más usadas:\n${analytics.topActions(chat).map(x=>`${x.action}: ${x.count}`).join('\n')||'Sin acciones registradas'}`);return true;}
+if(action==='eventos'){const list=events.list(chat).slice(0,10);await send(sock,chat,'📅 *EVENTOS*\n'+(list.map(e=>`• ${e.title} — ${e.when} [${e.status}] (${e.id})`).join('\n')||'No hay eventos guardados.'));return true;}
+if(action==='ideas'){const list=events.ideas(chat).slice(0,10);await send(sock,chat,'💡 *IDEAS*\n'+(list.map(e=>`• ${e.text} — ${e.votes} votos [${e.id}]`).join('\n')||'Todavía no hay ideas.'));return true;}
+if(action==='idea'){if(!tail){await send(sock,chat,'Uso: .vidapropia idea <propuesta>');return true;}const idea=events.addIdea(chat,tail,id||'miembro');await send(sock,chat,`💡 Idea guardada: ${idea.text}\nID: ${idea.id}`);return true;}
+if(action==='revisar'){const items=moderation.list(chat).filter(x=>x.status==='review').slice(0,8);await send(sock,chat,'🔎 *REVISIÓN DE SPAM (sin sanciones automáticas)*\n'+(items.map(x=>`• ${x.reasons.join(', ')} — ${x.id}`).join('\n')||'No hay alertas pendientes.'));return true;}
+if(action==='personalidades'){await send(sock,chat,Object.entries(personality.presets()).map(([k,v])=>`${k}: ${v}`).join('\n'));return true;}
+await send(sock,chat,help());return true;
+}catch(e){console.error('[VIDA:COMANDO]',safety.safeError(e));analytics.increment(chat,'errors');await send(sock,chat,'Hubo un error procesando el comando. Revisa los logs del servidor.');return true;}}
+module.exports=execute;module.exports.manejarMensaje=manejarMensaje;module.exports.help=help;module.exports.core=core;
