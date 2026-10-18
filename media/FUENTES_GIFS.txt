@@ -1,0 +1,63 @@
+MAGICKA MÁXIMA — GIFS REALES DESDE LA WEB
+========================================
+
+Este paquete NO incluye GIFs dibujados ni generados por IA. El código descarga
+GIFs publicados en GIPHY cuando el comando necesita enviarlos y guarda una
+copia en media/magicka para reutilizarlos.
+
+GIFS / FUENTES
+--------------
+Bruja violeta:
+https://giphy.com/gifs/magic-broom-bruja-h65kQIFwqiUgVUhNZU
+
+Brujería / ritual:
+https://giphy.com/gifs/witch-witchcraft-caldron-sRFEaE29kg99CehAH5
+
+Transformación (Winx Club):
+https://giphy.com/gifs/Winx-Club-stella-winx-club-gvTITk4aovjVP6gUt6
+
+Magia oscura:
+https://giphy.com/gifs/witch-loony-luvgoods-kfsNqQVJnhWuovEPQ5
+
+Los GIFs y sus derechos pertenecen a sus respectivos creadores y plataformas.
+Este paquete enlaza esos recursos y no afirma que sean de dominio público.
+Si una URL deja de funcionar, el comando seguirá respondiendo en texto.
+
+INSTALACIÓN
+-----------
+1. Haz copia de seguridad de tu bot.
+2. Copia commands/magicka.js a la carpeta commands.
+3. Copia media/magicka a la carpeta media del proyecto (incluye este README).
+4. En index.js, añade junto a los otros require:
+   const magicka = require("./commands/magicka");
+
+5. Antes del manejador genérico de anime, añade:
+   const comandoNormalizado = String(comando || "").toLowerCase().replace(/^\./, "");
+   if (!ejecutado && ["magicka", "magi"].includes(comandoNormalizado)) {
+       ejecutado = true;
+       await magicka(sock, chat, comandoNormalizado, args, id, msg);
+   }
+
+No reemplaces index.js completo. Ajusta únicamente nombres de variables si tu
+index.js usa nombres distintos. No borres otros comandos.
+
+COMANDOS
+--------
+.magicka
+.magicka estado
+.magicka despertar
+.magicka entrenar
+.magicka hechizo
+.magicka maxima
+Alias: .magi
+
+REGLAS
+------
+- Nivel inicial 1, nivel máximo 10.
+- Energía inicial 30, máximo 100; regenera 1 punto cada 10 minutos.
+- Entrenar cuesta 10 energía y da 50 XP.
+- Despertar cuesta 15 energía y da 25 XP.
+- Hechizo cuesta 5 energía y da 10 XP.
+- Magicka Máxima requiere nivel 3 y 30 energía, dura 60 minutos.
+- No utiliza IA ni requiere instalar paquetes adicionales.
+- Requiere que el hosting permita conexiones HTTPS salientes a GIPHY.
