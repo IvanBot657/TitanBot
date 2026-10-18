@@ -480,6 +480,59 @@ await sock.sendMessage(chat, {
 🪵🦇═══════🎃═══════🦇🪵
 
 🦇🕸️╞══════🎃══════╡🕸️🦇
+
+╭━━━〔 🟢 COMANDOS BÁSICOS 〕━━━╮
+┃ • .vidapropia
+┃
+┃ • .vidapropia ayuda
+┃
+┃ • .vidapropia estado
+┃
+┃ • .vidapropia activar
+┃
+┃ • .vidapropia desactivar
+┃
+┃ • .vidapropia demo
+┃
+┃ • .vidapropia memoria
+┃
+┃ • .vidapropia eventos
+┃
+┃ • .vidapropia ideas
+┃
+┃ • .vidapropia acciones
+┃
+┃ • .vidapropia estadisticas
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+🦇🕸️╞══════🎃══════╡🕸️🦇
+
+╭━━━〔 🔴 COMANDOS AVANZADOS 〕━━━╮
+┃ • .vidapropia diagnostico
+┃
+┃ • .vidapropia informe
+┃
+┃ • .vidapropia seguridad
+┃
+┃ • .vidapropia recordar <texto>
+┃
+┃ • .vidapropia olvidar <texto>
+┃
+┃ • .vidapropia personalidad <tipo>
+┃
+┃ • .vidapropia personalidades
+┃
+┃ • .vidapropia tono <texto>
+┃
+┃ • .vidapropia probabilidad <0-50>
+┃
+┃ • .vidapropia idea <propuesta>
+┃
+┃ • .vidapropia revisar
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+
+🪵🦇═══════🎃═══════🦇🪵
+
+🦇🕸️╞══════🎃══════╡🕸️🦇
 ╭━━━〔 ⚙️ CONFIGURACIÓN DEL GRUPO 〕━━━╮
 ┃ • .linkgrupo
 ┃ • .setnombre
