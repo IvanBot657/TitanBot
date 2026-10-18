@@ -19,7 +19,7 @@ const NIVEL_MAXIMO = 10;
 
 // Las siete animaciones se incluyen como MP4 compatibles con WhatsApp.
 const VIDEOS_MAGICKA = [
-    "magicka_estado.mp4",
+    "magicka_1.mp4",
     "magicka_2.mp4",
     "magicka_3.mp4",
     "magicka_4.mp4",
