@@ -322,6 +322,24 @@ await sock.sendMessage(chat, {
 ╰━━━━━━━━━━━━━━━━━━━━╯
 🪵🦇═══════🎃═══════🦇🪵
 
+🪵🦇═══════🎃═══════🦇🪵
+╭━━━〔 ⚔️ CLANES TITAN 〕━━━╮
+┃ • .crearclan <nombre>
+┃ • .clan
+┃ • .claninfo
+┃ • .unirme <nombre>
+┃ • .salirclan
+┃ • .invitarclan @usuario
+┃ • .aceptarclan
+┃ • .rechazarclan
+┃ • .rangoclan @usuario <rango>
+┃ • .expulsarclan @usuario
+┃ • .guerraclan <nombre>
+┃ • .rankingclan
+┃ • .disolverclan
+╰━━━━━━━━━━━━━━━━━━━━╯
+🪵🦇═══════🎃═══════🦇🪵
+
 🦇🕸️╞══════🎃══════╡🕸️🦇
 ╭━━━〔 👑 RANKING PREMIUM 〕━━━╮
 ┃
