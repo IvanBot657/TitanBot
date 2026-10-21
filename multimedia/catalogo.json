@@ -1,5 +1,12 @@
-
 {
-  "peliculas": [],
-  "series": []
+  "peliculas": [
+    {
+      "titulo": "Mi película de prueba"
+    }
+  ],
+  "series": [
+    {
+      "titulo": "Mi serie de prueba"
+    }
+  ]
 }
