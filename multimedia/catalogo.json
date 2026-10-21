@@ -1,12 +1,9 @@
 {
   "peliculas": [
     {
-      "titulo": "Mi película de prueba"
+      "titulo": "Mi película de prueba",
+      "archivo": "mi-video.mp4"
     }
   ],
-  "series": [
-    {
-      "titulo": "Mi serie de prueba"
-    }
-  ]
+  "series": []
 }
