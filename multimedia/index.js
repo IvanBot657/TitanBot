@@ -27,7 +27,11 @@ function leerCatalogo() {
         ? datos.series : []
     };
   } catch (error) {
-    console.error("[MEDIA] Error leyendo catálogo:", error.message);
+    console.error(
+      "[MEDIA] Error leyendo catálogo:",
+      error.message
+    );
+
     return { peliculas: [], series: [] };
   }
 }
@@ -70,7 +74,9 @@ async function manejarMultimedia({
 
   if (!busqueda) {
     await sock.sendMessage(jid, {
-      text: "Escribe un título. Ejemplo: .pelicula Mi película"
+      text:
+        "Escribe un título.\n" +
+        "Ejemplo: .pelicula Mi película"
     }, opciones);
 
     return true;
@@ -101,7 +107,9 @@ async function manejarMultimedia({
 
   if (!resultados.length) {
     await sock.sendMessage(jid, {
-      text: "🔎 No encontré ese título en el catálogo de TITANBOT MEDIA."
+      text:
+        "🔎 No encontré ese título en el catálogo " +
+        "de TITANBOT MEDIA."
     }, opciones);
 
     return true;
@@ -113,31 +121,50 @@ async function manejarMultimedia({
     await sock.sendMessage(jid, {
       text:
         `🎬 ${item.titulo}\n\n` +
-        "⚠️ Este título está en el catálogo, " +
-        "pero todavía no tiene un archivo asociado."
+        "⚠️ Este título no tiene un archivo asociado."
     }, opciones);
 
     return true;
   }
 
-  // Solo se permiten nombres de archivo, no rutas externas.
+  // Aceptar únicamente el nombre del archivo.
   const nombreArchivo = path.basename(item.archivo);
 
-  if (nombreArchivo !== item.archivo) {
+  if (
+    nombreArchivo !== item.archivo ||
+    nombreArchivo === "." ||
+    nombreArchivo === ".."
+  ) {
     await sock.sendMessage(jid, {
-      text: "⚠️ La ruta del archivo no es válida."
+      text: "⚠️ El nombre del archivo no es válido."
     }, opciones);
 
     return true;
   }
 
-  const archivo = path.join(CARPETA_VIDEOS, nombreArchivo);
+  const archivo = path.join(
+    CARPETA_VIDEOS,
+    nombreArchivo
+  );
+
+  // Diagnóstico en los registros del hosting.
+  console.log("[MEDIA] Ruta del vídeo:", archivo);
+  console.log(
+    "[MEDIA] Carpeta existe:",
+    fs.existsSync(CARPETA_VIDEOS)
+  );
+  console.log(
+    "[MEDIA] Archivos disponibles:",
+    fs.existsSync(CARPETA_VIDEOS)
+      ? fs.readdirSync(CARPETA_VIDEOS)
+      : "La carpeta no existe"
+  );
 
   try {
     const info = await fs.promises.stat(archivo);
 
     if (!info.isFile()) {
-      throw new Error("La ruta no es un archivo.");
+      throw new Error("La ruta no corresponde a un archivo.");
     }
 
     if (path.extname(archivo).toLowerCase() !== ".mp4") {
@@ -154,15 +181,35 @@ async function manejarMultimedia({
       caption: `🎬 ${item.titulo}`
     }, opciones);
 
-    console.log(`[MEDIA] Vídeo enviado: ${item.titulo}`);
+    console.log(
+      `[MEDIA] Vídeo enviado correctamente: ${item.titulo}`
+    );
   } catch (error) {
-    console.error("[MEDIA] Error enviando vídeo:", error.message);
+    console.error(
+      "[MEDIA] Error enviando vídeo:",
+      error.code || "",
+      error.message
+    );
+
+    let mensaje =
+      "❌ No pude enviar el vídeo.\n\n";
+
+    if (error.code === "ENOENT") {
+      mensaje +=
+        "No se encontró el archivo en el servidor.\n" +
+        `Archivo esperado: ${nombreArchivo}\n` +
+        "Comprueba que esté dentro de multimedia/videos " +
+        "y que el hosting lo haya incluido en el despliegue.";
+    } else if (error.code === "EACCES") {
+      mensaje +=
+        "El servidor no tiene permiso para leer el archivo.";
+    } else {
+      mensaje +=
+        "Revisa los registros del hosting para conocer el error.";
+    }
 
     await sock.sendMessage(jid, {
-      text:
-        "❌ No pude enviar el vídeo.\n\n" +
-        "Comprueba que el archivo exista en multimedia/videos " +
-        "y que el servidor tenga acceso a él."
+      text: mensaje
     }, opciones);
   }
 
@@ -170,3 +217,4 @@ async function manejarMultimedia({
 }
 
 module.exports = { manejarMultimedia };
+      
