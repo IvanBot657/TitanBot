@@ -1,67 +1,64 @@
+// =========================================
+// 🖤 DARK - COMANDO SECRETO DE TITANBOT
+// Disponible para todos los usuarios
+// =========================================
 
-const comandosDark = new Map();
+module.exports = async (sock, chat, comando, args = [], id, msg) => {
+  if (comando !== "dark") return false;
 
-module.exports = async (sock, msg, args = []) => {
   try {
-    const chatId = msg.key.remoteJid;
-    const remitente = msg.pushName || "Usuario";
-    const texto = args.join(" ").trim();
+    const opcion = (args[0] || "").toLowerCase();
 
-    const menu = `╔════════════════════╗
-       🖤  T I T A N   D A R K
-╚════════════════════╝
+    if (!opcion) {
+      const texto = `
+🖤 *TITANBOT DARK*
 
-👤 Usuario: ${remitente}
+Bienvenido al lado oscuro...
 
-⚡ MODO SECRETO ACTIVADO
+🌑 *Comandos secretos:*
 
-Elige una opción:
+.dark 1 — Mensaje oscuro
+.dark 2 — Frase misteriosa
+.dark 3 — Activar modo tenebroso
 
-1️⃣  Perfil oscuro
-2️⃣  Frase oscura
-3️⃣  Ayuda
+⚡ Disponible para todos los usuarios.
+      `.trim();
 
-Escribe:
-.dark 1
-.dark 2
-.dark 3
-
-━━━━━━━━━━━━━━━━━━━━
-⚠️ TITANBOT · DARK MODE`;
-
-    if (!texto || texto === "3") {
-      await sock.sendMessage(chatId, { text: menu }, { quoted: msg });
-      return;
+      await sock.sendMessage(chat, { text: texto }, { quoted: msg });
+      return true;
     }
 
-    if (texto === "1") {
-      await sock.sendMessage(chatId, {
-        text: `🖤 PERFIL DARK\n\n👤 Nombre: ${remitente}\n⚡ Estado: Modo oscuro activado\n🌑 Bienvenido al lado secreto de TITANBOT.`
-      }, { quoted: msg });
-      return;
+    const respuestas = {
+      "1": "🖤 *DARK MODE*\nLa oscuridad también tiene su propio brillo... 🌑",
+      "2": "🌘 *FRASE MISTERIOSA*\nNo todos los monstruos viven en la oscuridad; algunos sonríen bajo la luz.",
+      "3": "☠️ *MODO TENEBROSO*\nLas sombras despiertan... 🖤⚡"
+    };
+
+    if (!respuestas[opcion]) {
+      await sock.sendMessage(
+        chat,
+        {
+          text: "❌ Opción inválida.\n\nEscribe *.dark* para ver las opciones."
+        },
+        { quoted: msg }
+      );
+      return true;
     }
 
-    if (texto === "2") {
-      const frases = [
-        "🌑 Incluso la noche más oscura termina con el amanecer.",
-        "🖤 El silencio también puede ser una respuesta.",
-        "⚡ No necesitas hacer ruido para demostrar tu poder.",
-        "🌘 Tu historia no termina en tus momentos más oscuros."
-      ];
+    await sock.sendMessage(
+      chat,
+      { text: respuestas[opcion] },
+      { quoted: msg }
+    );
 
-      const frase = frases[Math.floor(Math.random() * frases.length)];
-
-      await sock.sendMessage(chatId, {
-        text: `🖤 FRASE DARK\n\n${frase}`
-      }, { quoted: msg });
-      return;
-    }
-
-    await sock.sendMessage(chatId, {
-      text: "❌ Opción no válida.\nEscribe *.dark* para ver el menú."
-    }, { quoted: msg });
-
+    return true;
   } catch (error) {
     console.error("Error en el comando dark:", error);
+
+    await sock.sendMessage(chat, {
+      text: "❌ No se pudo ejecutar el comando .dark. Inténtalo de nuevo."
+    });
+
+    return true;
   }
 };
