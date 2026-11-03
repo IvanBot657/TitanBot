@@ -1,0 +1,328 @@
+const path = require("path");
+const fs = require("fs");
+
+// =====================================================
+// 🎃 TITANBOT - COMANDOS DE HALLOWEEN
+// GIFs separados de los comandos normales.
+// =====================================================
+
+const cooldowns = new Map();
+const COOLDOWN_MS = 10_000;
+
+// 🎞️ Archivos multimedia
+const animaciones = {
+  dulce: "dulce.mp4",
+  asustar: "asustar.mp4",
+  comer: "comer.mp4",
+
+  suspiro: "suspiro.mp4",
+  lunaroja: "luna-roja.mp4",
+  morder: "morder.mp4",
+  elegancia: "elegancia.mp4",
+
+  // 🎞️ GIFs independientes
+  gifbailar: "bailar.mp4",
+  gifinvocar: "invocar.mp4",
+  alascelestiales: "alas-celestiales.mp4",
+  magiaarcana: "magia-arcana.mp4",
+  estallidoluminoso: "estallido-luminoso.mp4",
+  portaloscuro: "portal-oscuro.mp4",
+  auraescarlata: "aura-escarlata.mp4",
+  danzaastral: "danza-astral.mp4",
+  espadaenergetica: "espada-energetica.mp4",
+  llamainterior: "llama-interior.mp4",
+  bastonmagico: "baston-magico.mp4"
+};
+
+// 🍬 Mensajes de dulces
+const dulces = [
+  "🍬 Encontraste una bolsa de caramelos mágicos.",
+  "🍫 ¡Un vampiro te regaló chocolates!",
+  "🍭 ¡Una bruja te obsequió una piruleta encantada!",
+  "🧁 ¡Encontraste una cesta llena de dulces!",
+  "🍪 Un murciélago dejó galletas frente a tu puerta."
+];
+
+// 👻 Mensajes de sustos
+const sustos = [
+  "👻 ¡Un fantasma apareció detrás de ti!",
+  "🧟 ¡Escuchas pasos de un zombi en el cementerio!",
+  "🕷️ ¡Una araña gigante cayó sobre tu calabaza!",
+  "🌫️ Una niebla misteriosa te rodea…",
+  "🎃 ¡La calabaza acaba de girar la cabeza!"
+];
+
+// 🔮 Maldiciones
+const maldiciones = [
+  "🦇 Maldición del murciélago: durante un minuto, todo te parece sospechoso.",
+  "🌙 Maldición lunar: hoy los gatos te miran como si supieran tu secreto.",
+  "🕸️ Maldición de la telaraña: ¡has quedado atrapado en una historia de terror!",
+  "🧙 Maldición de la bruja: tu próxima risa sonará como la de un villano.",
+  "💀 Maldición del esqueleto: ¡tus huesos imaginarios hacen música al caminar!"
+];
+
+function elegir(lista) {
+  return lista[Math.floor(Math.random() * lista.length)];
+}
+
+function obtenerCooldownKey(chat, id, comando) {
+  return `${chat}:${id}:${comando}`;
+}
+
+module.exports = async function halloween(
+  sock,
+  chat,
+  comando,
+  args,
+  id,
+  msg
+) {
+  comando = String(comando || "")
+    .toLowerCase()
+    .trim()
+    .replace(/^\./, "");
+
+  // ✅ Comandos que procesa este archivo.
+  // bailar e invocar quedan reservados para sus
+  // comandos normales en index.js u otros módulos.
+  const comandos = [
+    "dulce",
+    "susto",
+    "maldicion",
+    "asustar",
+    "comer",
+    "suspiro",
+    "lunaroja",
+    "morder",
+    "elegancia",
+    "gifbailar",
+    "gifinvocar",
+    "alascelestiales",
+    "magiaarcana",
+    "estallidoluminoso",
+    "portaloscuro",
+    "auraescarlata",
+    "danzaastral",
+    "espadaenergetica",
+    "llamainterior",
+    "bastonmagico"
+  ];
+
+  if (!comandos.includes(comando)) {
+    return false;
+  }
+
+  // ⏳ Tiempo de espera por comando
+  const key = obtenerCooldownKey(chat, id, comando);
+  const ahora = Date.now();
+  const ultimoUso = cooldowns.get(key) || 0;
+  const restante = COOLDOWN_MS - (ahora - ultimoUso);
+
+  if (restante > 0) {
+    await sock.sendMessage(
+      chat,
+      {
+        text: `🎃 Espera ${Math.ceil(restante / 1000)} segundo(s) antes de volver a usar este comando.`
+      },
+      { quoted: msg }
+    );
+
+    return true;
+  }
+
+  let texto = "";
+
+  // 🍬 COMANDO .dulce
+  if (comando === "dulce") {
+    const suerte = Math.random() * 100;
+
+    if (suerte < 60) {
+      texto =
+        "🍬🎃 *¡DULCE O TRAVESURA!* 🎃🍬\n\n" +
+        elegir(dulces) +
+        "\n\n✨ ¡Qué buena suerte tienes!";
+    } else if (suerte < 90) {
+      texto =
+        "👻 *¡TRAVESURA!* 👻\n\n" +
+        elegir(sustos) +
+        "\n\n🎃 ¡Corre antes de que vuelva!";
+    } else {
+      texto =
+        "🌟🎃 *¡PREMIO LEGENDARIO!* 🎃🌟\n\n" +
+        "👑 ¡Encontraste la CALABAZA DORADA!\n\n" +
+        "💎 Eres una leyenda de Halloween.\n" +
+        "🍬 ¡La suerte está de tu lado!";
+    }
+  }
+
+  // 👻 COMANDO .susto
+  else if (comando === "susto") {
+    texto =
+      "🌑👻 *MODO SUSTO ACTIVADO* 👻🌑\n\n" +
+      elegir(sustos) +
+      "\n\n🕯️ La noche aún guarda secretos…";
+  }
+
+  // 🔮 COMANDO .maldicion
+  else if (comando === "maldicion") {
+    texto =
+      "🔮💀 *EL ORÁCULO DE HALLOWEEN* 💀🔮\n\n" +
+      elegir(maldiciones) +
+      "\n\n🎃 ¡La maldición es ficticia y solo por diversión!";
+  }
+
+  // 😱 COMANDO .asustar
+  else if (comando === "asustar") {
+    texto =
+      "😱🎃 *¡PREPÁRATE PARA EL SUSTO!* 🎃😱\n\n" +
+      "👻 ¡Una presencia misteriosa ha aparecido!";
+  }
+
+  // 🍬 COMANDO .comer
+  else if (comando === "comer") {
+    texto =
+      "🍭🍫 *¡HORA DE LOS DULCES!* 🍫🍭\n\n" +
+      "🎃 ¡Los monstruos también tienen hambre!";
+  }
+
+  // 🖤 COMANDO .suspiro
+  else if (comando === "suspiro") {
+    texto =
+      "🖤 *SUSPIRO* 🖤\n\n" +
+      "Un suspiro que dice más que mil palabras...";
+  }
+
+  // 🌕 COMANDO .lunaroja
+  else if (comando === "lunaroja") {
+    texto =
+      "🌕🩸 *LUNA ROJA* 🩸🌕\n\n" +
+      "La noche revela su lado más misterioso...";
+  }
+
+  // 🧛 COMANDO .morder
+  else if (comando === "morder") {
+    texto =
+      "🧛🩸 *MORDER* 🩸🧛\n\n" +
+      "Cuidado... alguien tiene sed esta noche.";
+  }
+
+  // 🥀 COMANDO .elegancia
+  else if (comando === "elegancia") {
+    texto =
+      "🖤🥀 *ELEGANCIA* 🥀🖤\n\n" +
+      "El estilo oscuro nunca pasa desapercibido.";
+  }
+
+  // 🎞️ GIF DE BAILAR
+  else if (comando === "gifbailar") {
+    texto =
+      "💀🕺 *¡BAILE DE LOS MUERTOS!* 🕺💀\n\n" +
+      "🎶 ¡Que comience la fiesta de Halloween!";
+  }
+
+  // 🔮 GIF DE INVOCAR
+  else if (comando === "gifinvocar") {
+    texto =
+      "🔮🌑 *RITUAL DE HALLOWEEN* 🌑🔮\n\n" +
+      "🦇 ¡Una misteriosa criatura responde a la invocación!";
+  }
+
+  else if (comando === "alascelestiales") {
+    texto = "🪽✨ *ALAS CELESTIALES* ✨🪽\n\nUna luz celestial ilumina el campo de batalla.";
+  }
+
+  else if (comando === "magiaarcana") {
+    texto = "🔮🌌 *MAGIA ARCANA* 🌌🔮\n\nEl poder de un antiguo bastón despierta.";
+  }
+
+  else if (comando === "estallidoluminoso") {
+    texto = "✨💥 *ESTALLIDO LUMINOSO* 💥✨\n\nUna explosión de energía ilumina el cielo.";
+  }
+
+  else if (comando === "portaloscuro") {
+    texto = "🌑🌀 *PORTAL OSCURO* 🌀🌑\n\nUna presencia misteriosa emerge de la oscuridad.";
+  }
+
+  else if (comando === "auraescarlata") {
+    texto = "🔴🔥 *AURA ESCARLATA* 🔥🔴\n\nUna energía intensa despierta.";
+  }
+
+  else if (comando === "danzaastral") {
+    texto = "🌠⚔️ *DANZA ASTRAL* ⚔️🌠\n\nUna figura misteriosa se mueve entre destellos.";
+  }
+
+  else if (comando === "espadaenergetica") {
+    texto = "⚔️💥 *ESPADA ENERGÉTICA* 💥⚔️\n\nUn ataque atraviesa la oscuridad.";
+  }
+
+  else if (comando === "llamainterior") {
+    texto = "🔥🌟 *LLAMA INTERIOR* 🌟🔥\n\nUna llamarada de poder se manifiesta.";
+  }
+
+  else if (comando === "bastonmagico") {
+    texto = "🪄🌌 *BASTÓN MÁGICO* 🌌🪄\n\nLa magia del bastón llena el escenario.";
+  }
+
+  // 🎞️ ENVIAR ANIMACIÓN
+  const nombreArchivo = animaciones[comando];
+
+  if (nombreArchivo) {
+    const archivo = path.join(
+      __dirname,
+      "../media",
+      nombreArchivo
+    );
+
+    try {
+      if (!fs.existsSync(archivo)) {
+        throw new Error(
+          `No se encontró el archivo: ${archivo}`
+        );
+      }
+
+      const video = fs.readFileSync(archivo);
+
+      if (video.length === 0) {
+        throw new Error(
+          `El archivo ${nombreArchivo} está vacío`
+        );
+      }
+
+      await sock.sendMessage(
+        chat,
+        {
+          video,
+          mimetype: "video/mp4",
+          gifPlayback: true,
+          caption: texto
+        },
+        { quoted: msg }
+      );
+    } catch (error) {
+      console.error(
+        `[HALLOWEEN] Error con ${comando}:`,
+        error
+      );
+
+      await sock.sendMessage(
+        chat,
+        {
+          text:
+            texto +
+            `\n\n⚠️ No se pudo enviar la animación ${nombreArchivo}.`
+        },
+        { quoted: msg }
+      );
+    }
+  } else {
+    await sock.sendMessage(
+      chat,
+      { text: texto },
+      { quoted: msg }
+    );
+  }
+
+  cooldowns.set(key, Date.now());
+
+  return true;
+};
