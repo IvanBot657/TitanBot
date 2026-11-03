@@ -1,0 +1,162 @@
+[
+  {
+    "id": "C001",
+    "nombre": "Naruto Uzumaki",
+    "anime": "Naruto",
+    "rareza": "Común",
+    "valor": 100,
+    "imagen": "naruto.jpg"
+  },
+  {
+    "id": "C002",
+    "nombre": "Sasuke Uchiha",
+    "anime": "Naruto",
+    "rareza": "Rara",
+    "valor": 250,
+    "imagen": "sasuke.jpg"
+  },
+  {
+    "id": "C003",
+    "nombre": "Sakura Haruno",
+    "anime": "Naruto",
+    "rareza": "Común",
+    "valor": 100,
+    "imagen": "sakura.jpg"
+  },
+  {
+    "id": "C004",
+    "nombre": "Kakashi Hatake",
+    "anime": "Naruto",
+    "rareza": "Épica",
+    "valor": 500,
+    "imagen": "kakashi.jpg"
+  },
+  {
+    "id": "C005",
+    "nombre": "Itachi Uchiha",
+    "anime": "Naruto",
+    "rareza": "Legendaria",
+    "valor": 1000,
+    "imagen": "itachi.jpg"
+  },
+  {
+    "id": "C006",
+    "nombre": "Goku",
+    "anime": "Dragon Ball",
+    "rareza": "Común",
+    "valor": 100,
+    "imagen": "goku.jpg"
+  },
+  {
+    "id": "C007",
+    "nombre": "Vegeta",
+    "anime": "Dragon Ball",
+    "rareza": "Rara",
+    "valor": 250,
+    "imagen": "vegeta.jpg"
+  },
+  {
+    "id": "C008",
+    "nombre": "Gohan",
+    "anime": "Dragon Ball",
+    "rareza": "Épica",
+    "valor": 500,
+    "imagen": "gohan.jpg"
+  },
+  {
+    "id": "C009",
+    "nombre": "Beerus",
+    "anime": "Dragon Ball",
+    "rareza": "Legendaria",
+    "valor": 1000,
+    "imagen": "beerus.jpg"
+  },
+  {
+    "id": "C010",
+    "nombre": "Gogeta",
+    "anime": "Dragon Ball",
+    "rareza": "Mítica",
+    "valor": 2500,
+    "imagen": "gogeta.jpg"
+  },
+  {
+    "id": "C011",
+    "nombre": "Monkey D. Luffy",
+    "anime": "One Piece",
+    "rareza": "Común",
+    "valor": 100,
+    "imagen": "luffy.jpg"
+  },
+  {
+    "id": "C012",
+    "nombre": "Roronoa Zoro",
+    "anime": "One Piece",
+    "rareza": "Rara",
+    "valor": 250,
+    "imagen": "zoro.jpg"
+  },
+  {
+    "id": "C013",
+    "nombre": "Sanji",
+    "anime": "One Piece",
+    "rareza": "Épica",
+    "valor": 500,
+    "imagen": "sanji.jpg"
+  },
+  {
+    "id": "C014",
+    "nombre": "Trafalgar Law",
+    "anime": "One Piece",
+    "rareza": "Legendaria",
+    "valor": 1000,
+    "imagen": "law.jpg"
+  },
+  {
+    "id": "C015",
+    "nombre": "Shanks",
+    "anime": "One Piece",
+    "rareza": "Mítica",
+    "valor": 2500,
+    "imagen": "shanks.jpg"
+  },
+  {
+    "id": "C016",
+    "nombre": "Tanjiro Kamado",
+    "anime": "Demon Slayer",
+    "rareza": "Común",
+    "valor": 100,
+    "imagen": "tanjiro.jpg"
+  },
+  {
+    "id": "C017",
+    "nombre": "Nezuko Kamado",
+    "anime": "Demon Slayer",
+    "rareza": "Rara",
+    "valor": 250,
+    "imagen": "nezuko.jpg"
+  },
+  {
+    "id": "C018",
+    "nombre": "Rengoku Kyojuro",
+    "anime": "Demon Slayer",
+    "rareza": "Épica",
+    "valor": 500,
+    "imagen": "rengoku.jpg"
+  },
+  {
+    "id": "C019",
+    "nombre": "Gojo Satoru",
+    "anime": "Jujutsu Kaisen",
+    "rareza": "Legendaria",
+    "valor": 1000,
+    "imagen": "gojo.jpg"
+  },
+  {
+    "id": "C020",
+    "nombre": "Sukuna",
+    "anime": "Jujutsu Kaisen",
+    "rareza": "Mítica",
+    "valor": 2500,
+    "imagen": "sukuna.jpg"
+  }
+]
