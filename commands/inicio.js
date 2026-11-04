@@ -536,6 +536,7 @@ navideña comienza. ¡Una aventura te espera! 🎁
 🌟 Sistema v3.1.0
 🎁 Que la magia de la Navidad comience... 🎁
 ╚══════════════════════════════╝
+`
 });
 
 return true;
