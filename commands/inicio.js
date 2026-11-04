@@ -26,34 +26,37 @@ await sock.sendMessage(chat, {
   image: fs.readFileSync("./titanbot.png"),  
   caption: `
 
-🎃👻 𝓗𝓐𝓟𝓟𝓨 𝓗𝓐𝓛𝓛𝓞𝓦𝓔𝓔𝓝 👻🎃
+
+🎄❄️ 𝓕𝓔𝓛𝓘𝓩 𝓝𝓐𝓥𝓘𝓓𝓐𝓓 ❄️🎄
 
 ꧁༺ 𝓐𝓸𝓲 𝓜𝓲𝔃𝓾𝓷𝓸 ༻꧂
-🌙 Guardiana de la noche de Halloween.
+☃️ Guardiana de la magia navideña.
 
-👻 ¡Bienvenido a la noche de los espíritus! Las sombras despiertan, los misterios comienzan y una aventura terrorífica te espera junto a TITANBOT. 🦇
+🎅 ¡Bienvenido a la Navidad de TITANBOT!
+Las luces brillan, la nieve cae y la magia
+navideña comienza. ¡Una aventura te espera! 🎁
 
-🕸️━━━━━━━━━━━━━━━━━━━━🕸️
+❄️━━━━━━━━━━━━━━━━━━━━❄️
 
-🎃🕸️ 𝕋𝕀𝕋𝔸ℕ𝔹𝕆𝕋 🕸️🎃
-🦇 EDICIÓN ESPECIAL • OCTUBRE
-🌕 Versión: 3.1.0 🌕
+🎄🎁 𝕋𝕀𝕋𝔸ℕ𝔹𝕆𝕋 🎁🎄
+✨ EDICIÓN ESPECIAL • NAVIDAD
+🌟 Versión: 3.1.0 🌟
 
-🕯️☠️ MENÚ PRINCIPAL ☠️🕯️
+🕯️🎅 MENÚ PRINCIPAL 🎅🕯️
 ╔══════════════════════════╗
-║ 🎃 ¡BIENVENIDO AL TERROR! ║
+║ 🎁 ¡BIENVENIDO A LA NAVIDAD! ║
 ╚══════════════════════════╝
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ━━〔 🏆 TEMPORADA TITAN 〕━━━╮
 ┃ • .temporada
 ┃ • .temporadatop
 ┃ • .temporadarecompensas
 ┃ • .temporadamision
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🏠 INICIO 〕━━━╮
 ┃ • .menu
 ┃ • .ping
@@ -61,9 +64,9 @@ await sock.sendMessage(chat, {
 ┃ • .version
 ┃ • .owner
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 👤 USUARIO 〕━━━╮
 ┃ • .registrar
 ┃ • .perfil
@@ -72,9 +75,9 @@ await sock.sendMessage(chat, {
 ┃ • .rank
 ┃ • .top
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ━〔 ⚔️ DUELO TITAN 〕━━━╮
 ┃ • .duelo @usuario
 ┃ • .aceptarduelo
@@ -87,9 +90,9 @@ await sock.sendMessage(chat, {
 ┃ • .cargar
 ┃ • .riesgo
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 💰 ECONOMÍA 〕━━━╮
 ┃ • .saldo
 ┃ • .daily
@@ -101,9 +104,9 @@ await sock.sendMessage(chat, {
 ┃ • .comprar
 ┃ • .transferir
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🐾 MASCOTAS 〕━━━╮
 ┃ • .mascota
 ┃ • .crearmascota
@@ -117,19 +120,19 @@ await sock.sendMessage(chat, {
 ┃ • .comprar
 ┃ • .inventario
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ━━━〔 🎯 MISIONES 〕━━━╮
 ┃ • .misiones
 ┃ • .mision
 ┃ • .misionesinfo
 ┃ • .misioncompletar
 ┃ • .misionreclamar
-╰━━━━━━━━━━━━━━━━
-🪵🦇═══════🎃═══════🦇🪵
+╰━━━━━━━━━━━━━━━━━━━━╯
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🎮 JUEGOS 〕━━━╮
 ┃ • .juegos
 ┃ • .dado
@@ -141,9 +144,9 @@ await sock.sendMessage(chat, {
 ┃ • .suerte
 ┃ • .8ball
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ━━〔 🔮 PREDICCIÓN 〕━━━╮
 ┃ • .prediccion
 ┃ • .amor
@@ -156,14 +159,13 @@ await sock.sendMessage(chat, {
 ┃ • .epica
 ┃ • .troll
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
 ╭━━━ 🎰 RULETA ━━━╮
 ┃ • .ruleta
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ━━〔 🎭 PERSONALIDAD 〕━━━╮
 ┃ • .personalidad
 ┃ • .aventurero
@@ -177,19 +179,17 @@ await sock.sendMessage(chat, {
 ┃ • .lider
 ┃ • .creativo
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 💍 MATRIMONIO 〕━━━╮
-┃
 ┃ 💍 .casar @usuario
 ┃ 📜 .matrimonio
 ┃ 💔 .divorcio
-┃
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🎭 ROLEPLAY 〕━━━╮
 ┃ • .abrazar
 ┃ • .besar
@@ -202,9 +202,9 @@ await sock.sendMessage(chat, {
 ┃ • .enojado
 ┃ • .bailar
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🎉 DIVERSIÓN 〕━━━╮
 ┃ • .ship
 ┃ • .compatibilidad
@@ -217,9 +217,9 @@ await sock.sendMessage(chat, {
 ┃ • .reto
 ┃ • .8ball
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🎌 ANIME 〕━━━╮
 ┃ • .reclamar
 ┃ • .mispersonajes
@@ -233,7 +233,7 @@ await sock.sendMessage(chat, {
 ┃ • .waifu
 ┃ • .husbando
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
 ╭━━━ ⚔️ BATALLAS ━━━╮
 ┃ • .batalla @usuario
@@ -245,9 +245,8 @@ await sock.sendMessage(chat, {
 ┃ • .batallainfo
 ┃ • .rendirse
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 👥 GRUPOS 〕━━━╮
 ┃ • .admins
 ┃ • .tagall
@@ -258,10 +257,10 @@ await sock.sendMessage(chat, {
 ┃ • .antilink
 ┃ • .antispam
 ╰━━━━━━━━━━━━━━━━━━━━╯
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
-
-━━〔 👻 HALLOWEEN TITAN 〕━━━╮
+🎄❄️╞══════🎁══════╡❄️🎄
+━━〔 🎅 COMANDOS ESPECIALES 〕━━━╮
 ┃ • .dulce
 ┃ • .susto
 ┃ • .maldicion
@@ -272,14 +271,11 @@ await sock.sendMessage(chat, {
 ┃ • .morder
 ┃ • .elegancia
 ┃ • .gifbailar
-┃ • .gifinvocar            
+┃ • .gifinvocar
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+🎁❄️═══════🎄═══════❄️🎁
 
-🕷️🦇═══════🎃═══════🦇🕷️
-
-🪵🦇═══════🎃═══════🦇🪵
-
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ━〔 📅 EVENTOS DEL GRUPO 〕━━━╮
 ┃ • .evento
 ┃ • .evento crear
@@ -296,18 +292,18 @@ await sock.sendMessage(chat, {
 ┃ 🎉 SORTEOS
 ┃ • .sorteo
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ━〔 🎨 STICKERS 〕━━━━━━╮
 ┃ • .sticker
 ┃ • .stickertexto
 ┃ • .toimg
 ┃ • .take
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ━━〔 📖 HISTORIA 〕━━━╮
 ┃ • .historia
 ┃ • .origen
@@ -320,9 +316,9 @@ await sock.sendMessage(chat, {
 ┃ • .futuro
 ┃ • .leyenda
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🪵🦇═══════🎃═══════🦇🪵
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 ⚔️ CLANES TITAN 〕━━━╮
 ┃ • .crearclan <nombre>
 ┃ • .clan
@@ -338,74 +334,56 @@ await sock.sendMessage(chat, {
 ┃ • .rankingclan
 ┃ • .disolverclan
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 👑 RANKING PREMIUM 〕━━━╮
-┃
 ┃ 🏆 COMANDOS DISPONIBLES
-┃
 ┃ 👑 .rankingpremium
 ┃ 📊 Ver el ranking premium
-┃
 ┃ 🥇 .top
 ┃ 📈 Ver los mejores usuarios
-┃
 ┃ 👤 .mi-ranking
 ┃ 🎖️ Ver tu posición
-┃
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🐾 RACHA ANIMAL 〕━━━╮
-┃
 ┃ 🔥 .racha
 ┃ ┗ Registra tu racha diaria
-┃
 ┃ 📊 .rachaestado
 ┃ ┗ Mira tu racha y récord
-┃
 ┃ 🐾 .rachalista
 ┃ ┗ Mira los 50 animales
-┃
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🎖️ TÍTULOS 〕━━━╮
-┃
 ┃ 🎖️ .titulo
 ┃ ┗ Ver tu título actual
-┃
 ┃ 📜 .titulos
 ┃ ┗ Ver todos los títulos
-┃
 ┃ 📊 .tituloestado
 ┃ ┗ Ver tu progreso
-┃
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🃏 CARTAS 〕━━━╮
-┃
 ┃ 🎴 .carta
 ┃ ┗ Obtener una carta aleatoria
-┃
 ┃ 📚 .cartas
 ┃ ┗ Ver tu colección
-┃
 ┃ 🔎 .cartainfo 1
 ┃ ┗ Ver información de una carta
-┃
 ┃ 🏆 .cartasranking
 ┃ ┗ Ranking de coleccionistas
-┃
-╰━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+╰━━━━━━━━━━━━━━━━━━━━╯
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🏆 EJÉRCITO DORADO 〕━━━╮
 ┃ • .ejercito
 ┃ • .reclutar
@@ -414,9 +392,9 @@ await sock.sendMessage(chat, {
 ┃ • .fortaleza
 ┃ • .entrenar
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🛡️ ADMINISTRACIÓN 〕━━━╮
 ┃ • .promote @usuario
 ┃ • .demote @usuario
@@ -426,9 +404,9 @@ await sock.sendMessage(chat, {
 ┃ • .unmute
 ┃ • .warn @usuario
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🏝️ ISLA 〕━━━╮
 ┃ • .isla
 ┃ • .adoptar
@@ -438,10 +416,10 @@ await sock.sendMessage(chat, {
 ┃ • .islastats
 ┃ • .islaranking
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
-╭━━━〔 🎃📖 LIBRO PROHIBIDO 〕━━━╮
+🎄❄️╞══════🎁══════╡❄️🎄
+╭━━━〔 🎄📖 LIBRO PROHIBIDO 〕━━━╮
 ┃ 🕯️ .libro
 ┃ 🪄 .hechizo
 ┃ 🪄 .hechizo @usuario
@@ -451,88 +429,65 @@ await sock.sendMessage(chat, {
 ┃ 🛡️ .proteccion
 ┃ 🔥 .ritual
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ━━〔 👹 BOSS 〕━━━━━━━━╮
 ┃ • .boss
 ┃ • .bossestado
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🎉 EVENTOS 〕━━━╮
 ┃ • .evento
 ┃ • .eventos
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🪵🦇═══════🎃═══════🦇🪵
-╭━━━〔 🌑 MAGICKA MÁXIMA 〕━━━╮ 
-┃ • .magicka 
-┃ • .magicka estado 
-┃ • .magicka despertar 
-┃ • .magicka entrenar 
-┃ • .magicka hechizo 
+🎄❄️╞══════🎁══════╡❄️🎄
+╭━━━〔 🌑 MAGICKA MÁXIMA 〕━━━╮
+┃ • .magicka
+┃ • .magicka estado
+┃ • .magicka despertar
+┃ • .magicka entrenar
+┃ • .magicka hechizo
 ┃ • .magicka maxima
-┃ • .magi 
+┃ • .magi
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
-
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🟢 COMANDOS BÁSICOS 〕━━━╮
 ┃ • .vidapropia
-┃
 ┃ • .vidapropia ayuda
-┃
 ┃ • .vidapropia estado
-┃
 ┃ • .vidapropia activar
-┃
 ┃ • .vidapropia desactivar
-┃
 ┃ • .vidapropia demo
-┃
 ┃ • .vidapropia memoria
-┃
 ┃ • .vidapropia eventos
-┃
 ┃ • .vidapropia ideas
-┃
 ┃ • .vidapropia acciones
-┃
 ┃ • .vidapropia estadisticas
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
-🦇🕸️╞══════🎃══════╡🕸️🦇
 
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🔴 COMANDOS AVANZADOS 〕━━━╮
 ┃ • .vidapropia diagnostico
-┃
 ┃ • .vidapropia informe
-┃
 ┃ • .vidapropia seguridad
-┃
 ┃ • .vidapropia recordar <texto>
-┃
 ┃ • .vidapropia olvidar <texto>
-┃
 ┃ • .vidapropia personalidad <tipo>
-┃
 ┃ • .vidapropia personalidades
-┃
 ┃ • .vidapropia tono <texto>
-┃
 ┃ • .vidapropia probabilidad <0-50>
-┃
 ┃ • .vidapropia idea <propuesta>
-┃
 ┃ • .vidapropia revisar
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 
-🪵🦇═══════🎃═══════🦇🪵
-
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️═══════🎁═══════❄️🎄
 ╭━━━〔 ⚙️ CONFIGURACIÓN DEL GRUPO 〕━━━╮
 ┃ • .linkgrupo
 ┃ • .setnombre
@@ -541,9 +496,9 @@ await sock.sendMessage(chat, {
 ┃ • .cerrar
 ┃ • .abrir
 ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🛠️ HERRAMIENTAS 〕━━━╮
 ┃ • .hora
 ┃ • .fecha
@@ -554,9 +509,9 @@ await sock.sendMessage(chat, {
 ┃ • .minusculas
 ┃ • .ping
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 ⚙️ AJUSTES 〕━━━╮
 ┃ • .configgrupo
 ┃ • .estadogrupo
@@ -565,22 +520,22 @@ await sock.sendMessage(chat, {
 ┃ • .antilinkestado
 ┃ • .antispamestado
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
-🦇🕸️╞══════🎃══════╡🕸️🦇
+🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 👑 OWNER 〕━━━╮
 ┃ • .botstatus
 ┃ • .broadcast
 ┃ • .shutdown
 ╰━━━━━━━━━━━━━━━━━━━━╯
-🪵🦇═══════🎃═══════🦇🪵
+🎁❄️═══════🎄═══════❄️🎁
 
 ╔══════════════════════════════╗
-🦇🕸️═══════🎃═══════🕸️🦇
-🦇 ${config.nombre} • HALLOWEEN 🎃
-🌕 Sistema v3.1.0
-🕸️ Que comiencen las sombras... 🕸️
-╚══════════════════════════════╝`
+🎄❄️═══════🎁═══════❄️🎄
+🎅 ${config.nombre} • NAVIDAD 🎄
+🌟 Sistema v3.1.0
+🎁 Que la magia de la Navidad comience... 🎁
+╚══════════════════════════════╝
 });
 
 return true;
