@@ -547,7 +547,7 @@ return true;
 // ==============================
 if (cmd === "ping") {
   await sock.sendMessage(chat, {
-    text: `🏓 *PONG!*
+  text: `🏓 *PONG!*
 
 🤖 ${config.nombre}
 ⚡ Bot activo
