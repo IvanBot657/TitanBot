@@ -411,14 +411,8 @@ await sock.sendMessage(chat, {
 
 🎄❄️╞══════🎁══════╡❄️🎄
 ╭━━━〔 🃏 CARTAS 〕━━━╮
-┃ 🎴 .𝗰𝗮𝗿𝘁𝗮
-┃ ┗ Obtener una carta aleatoria
-┃ 📚 .𝗰𝗮𝗿𝘁𝗮𝘀
-┃ ┗ Ver tu colección
-┃ 🔎 .𝗰𝗮𝗿𝘁𝗮𝗶𝗻𝗳𝗼 1
-┃ ┗ Ver información de una carta
-┃ 🏆 .𝗰𝗮𝗿𝘁𝗮𝘀𝗿𝗮𝗻𝗸𝗶𝗻𝗴
-┃ ┗ Ranking de coleccionistas
+┃ 🎴 • .𝗽𝗼𝗸𝗲𝗺𝗼𝗻 
+┃    • .𝗼𝗻𝗲𝗽𝗶𝗲𝗰𝗲
 ╰━━━━━━━━━━━━━━━━━━━━╯
 🎁❄️═══════🎄═══════❄️🎁
 
